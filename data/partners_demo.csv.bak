@@ -1,0 +1,4 @@
+cnpj,uf,razao_social,nome_fantasia,municipio_nome,cnae_principal,segmento,prioridade
+12345678000190,SP,Haras Exemplo LTDA,Haras Exemplo,Sao Paulo,0152-1/02,CAVALOS,1
+98765432000110,MG,Clinica Vet Minas LTDA,Vet Minas,Belo Horizonte,9313-1/00,SERVICOS,2
+11222333000155,GO,Loja Equestre GO LTDA,Equestre GO,Goiania,4647-8/01,EQUIPAMENTOS,3
