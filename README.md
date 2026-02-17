@@ -188,6 +188,9 @@ Ambas as UIs seguem a mesma logica de negocio.
 - exibe conversao para qualificado;
 - mostra modelo de ML em producao e parametros de fine tuning.
 
+![Tela Visao geral](docs/readme_images/ui-visao-geral.png)
+_Painel executivo com indicadores de volume, status e conversao._
+
 ### 8.2 Criar lead (demos)
 - formulario manual para criar lead;
 - atalhos inteligentes:
@@ -195,6 +198,9 @@ Ambas as UIs seguem a mesma logica de negocio.
   - `Gerar AQUECENDO`
   - `Gerar QUALIFICADO`
 - simulacao de eventos do funil (page view, hook, CTA/WhatsApp).
+
+![Tela Criar lead (demos)](docs/readme_images/ui-criar-lead-demos.png)
+_Formulario para criar leads de forma guiada e acelerar demonstracoes do funil._
 
 ### 8.3 Leads
 - tabela com numeracao (`N`) e selecao (`SEL`);
@@ -205,6 +211,9 @@ Ambas as UIs seguem a mesma logica de negocio.
   - excluir lead (individual ou em lote por checkbox);
   - handoff para `ENVIADO`.
 
+![Tela Leads](docs/readme_images/ui-leads.png)
+_Visao tabular para consulta, filtro e execucao das acoes operacionais._
+
 ### 8.4 CRM (Kanban)
 - movimentacao visual entre colunas:
   - `CURIOSO`, `AQUECENDO`, `QUALIFICADO`, `ENVIADO`;
@@ -212,10 +221,24 @@ Ambas as UIs seguem a mesma logica de negocio.
 - controle de volume via slider de quantidade de matches;
 - agendamento de proxima acao.
 
+![Tela CRM (Kanban)](docs/readme_images/ui-crm-kanban.png)
+_Kanban comercial para acompanhar etapa, prioridade e proxima acao de cada lead._
+
 ### 8.5 Parceiros
 - listagem por UF, municipio, CNAE e segmento;
 - consistencia de `Nome fantasia` sincronizada com tabela de parceiros;
 - exportacao CSV para uso comercial.
+
+![Tela Parceiros](docs/readme_images/ui-parceiros.png)
+_Diretorio de parceiros para roteamento de oportunidades com criterio geografico e de segmento._
+
+### 8.6 Configuracoes
+- parametros de backend e proxy visiveis para suporte rapido;
+- manutencao de leads com deduplicacao (dry-run e execucao);
+- controles de operacao para reduzir inconsistencias de base.
+
+![Tela Configuracoes](docs/readme_images/ui-configuracoes.png)
+_Area tecnica de ajuste e manutencao operacional da plataforma._
 
 ---
 
