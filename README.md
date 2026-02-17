@@ -28,6 +28,8 @@
 - [6. Como Clonar e Rodar (Guia para Experientes)](#6-como-clonar-e-rodar-guia-para-experientes)
 - [7. Enderecos e Health Checks](#7-enderecos-e-health-checks)
 - [8. Como Usar as UIs na Pratica](#8-como-usar-as-uis-na-pratica)
+- [8.1 Fase 1 - UI Streamlit (MVP funcional)](#81-fase-1---ui-streamlit-mvp-funcional)
+- [8.2 Fase 2 - UI Node.js + EJS (escalabilidade)](#82-fase-2---ui-nodejs--ejs-escalabilidade)
 - [9. Como a Solucao Apoia a Tomada de Decisao](#9-como-a-solucao-apoia-a-tomada-de-decisao)
 - [10. Motor de Machine Learning (Dual Models)](#10-motor-de-machine-learning-dual-models)
 - [11. Fluxo de Dados e Endpoints Principais](#11-fluxo-de-dados-e-endpoints-principais)
@@ -38,7 +40,8 @@
 
 ---
 
-## 1. Desafio do Hackathon
+## 1. Desafio do Hackathon
+
 [![⬆️ Voltar ao Índice](https://img.shields.io/badge/%E2%AC%86%EF%B8%8F-Voltar%20ao%20%C3%8Dndice-0b5fff?style=for-the-badge)](#indice)
 O desafio central foi responder, de forma pratica e demonstravel:
 
@@ -52,7 +55,8 @@ Problemas de negocio enderecados:
 
 ---
 
-## 2. Nossa Proposta de Solucao
+## 2. Nossa Proposta de Solucao
+
 [![⬆️ Voltar ao Índice](https://img.shields.io/badge/%E2%AC%86%EF%B8%8F-Voltar%20ao%20%C3%8Dndice-0b5fff?style=for-the-badge)](#indice)
 Construimos um sistema integrado com 2 interfaces (Node.js e Streamlit) sobre o mesmo backend e mesma base:
 
@@ -67,7 +71,8 @@ Resultado: o time consegue decidir com rapidez quem atender primeiro, para quem 
 
 ---
 
-## 3. Arquitetura da Plataforma
+## 3. Arquitetura da Plataforma
+
 [![⬆️ Voltar ao Índice](https://img.shields.io/badge/%E2%AC%86%EF%B8%8F-Voltar%20ao%20%C3%8Dndice-0b5fff?style=for-the-badge)](#indice)
 ```mermaid
 flowchart LR
@@ -86,7 +91,8 @@ Principio de arquitetura:
 
 ---
 
-## 4. Tecnologias Utilizadas
+## 4. Tecnologias Utilizadas
+
 [![⬆️ Voltar ao Índice](https://img.shields.io/badge/%E2%AC%86%EF%B8%8F-Voltar%20ao%20%C3%8Dndice-0b5fff?style=for-the-badge)](#indice)
 | Camada | Stack |
 |---|---|
@@ -100,7 +106,8 @@ Principio de arquitetura:
 
 ---
 
-## 5. Como Clonar e Rodar (Guia para Leigos)
+## 5. Como Clonar e Rodar (Guia para Leigos)
+
 [![⬆️ Voltar ao Índice](https://img.shields.io/badge/%E2%AC%86%EF%B8%8F-Voltar%20ao%20%C3%8Dndice-0b5fff?style=for-the-badge)](#indice)
 ### 5.1 Pre-requisitos
 Instale antes:
@@ -140,7 +147,8 @@ Se retornar `200`, esta no ar.
 
 ---
 
-## 6. Como Clonar e Rodar (Guia para Experientes)
+## 6. Como Clonar e Rodar (Guia para Experientes)
+
 [![⬆️ Voltar ao Índice](https://img.shields.io/badge/%E2%AC%86%EF%B8%8F-Voltar%20ao%20%C3%8Dndice-0b5fff?style=for-the-badge)](#indice)
 ```bash
 git clone https://github.com/brodyandre/growth_equestre_hackathon_2026.git
@@ -167,7 +175,8 @@ docker compose logs -f scoring
 
 ---
 
-## 7. Enderecos e Health Checks
+## 7. Enderecos e Health Checks
+
 [![⬆️ Voltar ao Índice](https://img.shields.io/badge/%E2%AC%86%EF%B8%8F-Voltar%20ao%20%C3%8Dndice-0b5fff?style=for-the-badge)](#indice)
 | Servico | URL | Objetivo |
 |---|---|---|
@@ -179,70 +188,81 @@ docker compose logs -f scoring
 
 ---
 
-## 8. Como Usar as UIs na Pratica
-[![⬆️ Voltar ao Índice](https://img.shields.io/badge/%E2%AC%86%EF%B8%8F-Voltar%20ao%20%C3%8Dndice-0b5fff?style=for-the-badge)](#indice)
-Ambas as UIs seguem a mesma logica de negocio.
+## 8. Como Usar as UIs na Pratica
 
-### 8.1 Visao geral
-- mostra total de leads e distribuicao por status;
-- exibe conversao para qualificado;
-- mostra modelo de ML em producao e parametros de fine tuning.
+[![?? Voltar ao ?ndice](https://img.shields.io/badge/%E2%AC%86%EF%B8%8F-Voltar%20ao%20%C3%8Dndice-0b5fff?style=for-the-badge)](#indice)
+As duas interfaces usam a mesma regra de negocio e os mesmos endpoints.
 
-![Tela Visao geral](docs/readme_images/ui-visao-geral.png)
-_Painel executivo com indicadores de volume, status e conversao._
+### 8.1 Fase 1 - UI Streamlit (MVP funcional)
+Primeiro estruturamos o produto na Streamlit para validar rapidamente fluxo, dados e narrativa de pitch.
 
-### 8.2 Criar lead (demos)
-- formulario manual para criar lead;
-- atalhos inteligentes:
-  - `Gerar CURIOSO`
-  - `Gerar AQUECENDO`
-  - `Gerar QUALIFICADO`
-- simulacao de eventos do funil (page view, hook, CTA/WhatsApp).
+#### 8.1.1 Visao geral (Streamlit)
+Painel inicial com volume de leads, distribuicao por status, conversao e resumo comercial.
 
-![Tela Criar lead (demos)](docs/readme_images/ui-criar-lead-demos.png)
-_Formulario para criar leads de forma guiada e acelerar demonstracoes do funil._
+![Streamlit - Visao geral](docs/readme_images/streamlit-visao-geral.png)
 
-### 8.3 Leads
-- tabela com numeracao (`N`) e selecao (`SEL`);
-- filtros e busca rapida;
-- acoes:
-  - calcular/atualizar score;
-  - editar lead;
-  - excluir lead (individual ou em lote por checkbox);
-  - handoff para `ENVIADO`.
+#### 8.1.2 Leads (Streamlit)
+Tabela operacional para filtrar, acompanhar score/status e executar acoes de atendimento.
 
-![Tela Leads](docs/readme_images/ui-leads.png)
-_Visao tabular para consulta, filtro e execucao das acoes operacionais._
+![Streamlit - Leads](docs/readme_images/streamlit-leads.png)
 
-### 8.4 CRM (Kanban)
-- movimentacao visual entre colunas:
-  - `CURIOSO`, `AQUECENDO`, `QUALIFICADO`, `ENVIADO`;
-- ao selecionar lead, mostra matching de parceiros;
-- controle de volume via slider de quantidade de matches;
-- agendamento de proxima acao.
+#### 8.1.3 CRM (Kanban) (Streamlit)
+Board visual para priorizar atendimento e acompanhar o progresso por etapa.
 
-![Tela CRM (Kanban)](docs/readme_images/ui-crm-kanban.png)
-_Kanban comercial para acompanhar etapa, prioridade e proxima acao de cada lead._
+![Streamlit - CRM (Kanban)](docs/readme_images/streamlit-crm-kanban.png)
 
-### 8.5 Parceiros
-- listagem por UF, municipio, CNAE e segmento;
-- consistencia de `Nome fantasia` sincronizada com tabela de parceiros;
-- exportacao CSV para uso comercial.
+#### 8.1.4 Parceiros (Streamlit)
+Diretorio para busca por UF/segmento e exportacao de lista de prospeccao.
 
-![Tela Parceiros](docs/readme_images/ui-parceiros.png)
-_Diretorio de parceiros para roteamento de oportunidades com criterio geografico e de segmento._
+![Streamlit - Parceiros](docs/readme_images/streamlit-parceiros.png)
 
-### 8.6 Configuracoes
-- parametros de backend e proxy visiveis para suporte rapido;
-- manutencao de leads com deduplicacao (dry-run e execucao);
-- controles de operacao para reduzir inconsistencias de base.
+#### 8.1.5 Criar lead (demo) (Streamlit)
+Formulario com atalhos por status para gerar cenarios rapidamente e simular funil.
 
-![Tela Configuracoes](docs/readme_images/ui-configuracoes.png)
-_Area tecnica de ajuste e manutencao operacional da plataforma._
+![Streamlit - Criar lead (demo)](docs/readme_images/streamlit-criar-lead-demo.png)
+
+#### 8.1.6 Roteiro de demo (Streamlit)
+Pagina guiada para pitch: cria cenario completo, mostra ordem recomendada e checklist de apresentacao.
+
+![Streamlit - Roteiro de demo](docs/readme_images/streamlit-roteiro-demo.png)
+
+### 8.2 Fase 2 - UI Node.js + EJS (escalabilidade)
+Com a Streamlit validada, migramos para Node.js + EJS para elevar escalabilidade de frontend, roteamento e evolucao de produto com maior controle.
+
+#### 8.2.1 Visao geral (Node.js)
+KPIs executivos, conversao, resumo de status e modelo de ML em producao.
+
+![Node.js - Visao geral](docs/readme_images/ui-visao-geral.png)
+
+#### 8.2.2 Criar lead (demos) (Node.js)
+Criacao manual assistida e atalhos para CURIOSO/AQUECENDO/QUALIFICADO.
+
+![Node.js - Criar lead (demos)](docs/readme_images/ui-criar-lead-demos.png)
+
+#### 8.2.3 Leads (Node.js)
+Consulta rapida, filtros e acoes de score, edicao, exclusao e handoff.
+
+![Node.js - Leads](docs/readme_images/ui-leads.png)
+
+#### 8.2.4 CRM (Kanban) (Node.js)
+Gestao por etapas (`CURIOSO`, `AQUECENDO`, `QUALIFICADO`, `ENVIADO`) com detalhes e proxima acao.
+
+![Node.js - CRM (Kanban)](docs/readme_images/ui-crm-kanban.png)
+
+#### 8.2.5 Parceiros (Node.js)
+Busca, filtros e consistencia de dados para matching e exportacao CSV.
+
+![Node.js - Parceiros](docs/readme_images/ui-parceiros.png)
+
+#### 8.2.6 Configuracoes (Node.js)
+Parametros tecnicos e manutencao operacional (incluindo deduplicacao).
+
+![Node.js - Configuracoes](docs/readme_images/ui-configuracoes.png)
 
 ---
 
-## 9. Como a Solucao Apoia a Tomada de Decisao
+## 9. Como a Solucao Apoia a Tomada de Decisao
+
 [![⬆️ Voltar ao Índice](https://img.shields.io/badge/%E2%AC%86%EF%B8%8F-Voltar%20ao%20%C3%8Dndice-0b5fff?style=for-the-badge)](#indice)
 O sistema transforma dados operacionais em decisao comercial:
 
@@ -259,7 +279,8 @@ O sistema transforma dados operacionais em decisao comercial:
 
 ---
 
-## 10. Motor de Machine Learning (Dual Models)
+## 10. Motor de Machine Learning (Dual Models)
+
 [![⬆️ Voltar ao Índice](https://img.shields.io/badge/%E2%AC%86%EF%B8%8F-Voltar%20ao%20%C3%8Dndice-0b5fff?style=for-the-badge)](#indice)
 ### 10.1 Notebook principal
 - `tools/ml/lead_scoring_caminho1_dual_models.ipynb`
@@ -295,7 +316,8 @@ docker compose up -d --build scoring
 
 ---
 
-## 11. Fluxo de Dados e Endpoints Principais
+## 11. Fluxo de Dados e Endpoints Principais
+
 [![⬆️ Voltar ao Índice](https://img.shields.io/badge/%E2%AC%86%EF%B8%8F-Voltar%20ao%20%C3%8Dndice-0b5fff?style=for-the-badge)](#indice)
 | Endpoint | Metodo | Uso |
 |---|---|---|
@@ -314,7 +336,8 @@ docker compose up -d --build scoring
 
 ---
 
-## 12. Estrutura de Pastas
+## 12. Estrutura de Pastas
+
 [![⬆️ Voltar ao Índice](https://img.shields.io/badge/%E2%AC%86%EF%B8%8F-Voltar%20ao%20%C3%8Dndice-0b5fff?style=for-the-badge)](#indice)
 ```text
 .
@@ -333,7 +356,8 @@ docker compose up -d --build scoring
 
 ---
 
-## 13. Troubleshooting
+## 13. Troubleshooting
+
 [![⬆️ Voltar ao Índice](https://img.shields.io/badge/%E2%AC%86%EF%B8%8F-Voltar%20ao%20%C3%8Dndice-0b5fff?style=for-the-badge)](#indice)
 ### 13.1 Porta 3100 recusando conexao
 ```powershell
@@ -361,7 +385,8 @@ netstat -ano | findstr :8501
 
 ---
 
-## 14. Branches e Estrategia de Trabalho
+## 14. Branches e Estrategia de Trabalho
+
 [![⬆️ Voltar ao Índice](https://img.shields.io/badge/%E2%AC%86%EF%B8%8F-Voltar%20ao%20%C3%8Dndice-0b5fff?style=for-the-badge)](#indice)
 Convencao adotada:
 - `feature/fe` -> entregas da UI Node.js
@@ -375,7 +400,8 @@ Recomendacao:
 
 ---
 
-## 15. Documentacao Complementar
+## 15. Documentacao Complementar
+
 [![⬆️ Voltar ao Índice](https://img.shields.io/badge/%E2%AC%86%EF%B8%8F-Voltar%20ao%20%C3%8Dndice-0b5fff?style=for-the-badge)](#indice)
 Materiais completos (PT-BR e Espanhol) em:
 - `docs/resolução_desafio_growth_equestre/`
