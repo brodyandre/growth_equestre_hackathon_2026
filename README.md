@@ -38,9 +38,8 @@
 
 ---
 
-
+## 1. Desafio do Hackathon
 [![⬆️ Voltar ao Índice](https://img.shields.io/badge/%E2%AC%86%EF%B8%8F-Voltar%20ao%20%C3%8Dndice-0b5fff?style=for-the-badge)](#indice)
-
 O desafio central foi responder, de forma pratica e demonstravel:
 
 > Como transformar um visitante casual em lead qualificado para produtos e servicos de alto valor no mercado equestre?
@@ -53,9 +52,8 @@ Problemas de negocio enderecados:
 
 ---
 
-
+## 2. Nossa Proposta de Solucao
 [![⬆️ Voltar ao Índice](https://img.shields.io/badge/%E2%AC%86%EF%B8%8F-Voltar%20ao%20%C3%8Dndice-0b5fff?style=for-the-badge)](#indice)
-
 Construimos um sistema integrado com 2 interfaces (Node.js e Streamlit) sobre o mesmo backend e mesma base:
 
 1. Captura e enriquecimento de leads.
@@ -69,9 +67,8 @@ Resultado: o time consegue decidir com rapidez quem atender primeiro, para quem 
 
 ---
 
-
+## 3. Arquitetura da Plataforma
 [![⬆️ Voltar ao Índice](https://img.shields.io/badge/%E2%AC%86%EF%B8%8F-Voltar%20ao%20%C3%8Dndice-0b5fff?style=for-the-badge)](#indice)
-
 ```mermaid
 flowchart LR
     U1[UI Node.js / EJS<br/>porta 3100] --> B[Backend Node/Express<br/>porta 3000]
@@ -89,9 +86,8 @@ Principio de arquitetura:
 
 ---
 
-
+## 4. Tecnologias Utilizadas
 [![⬆️ Voltar ao Índice](https://img.shields.io/badge/%E2%AC%86%EF%B8%8F-Voltar%20ao%20%C3%8Dndice-0b5fff?style=for-the-badge)](#indice)
-
 | Camada | Stack |
 |---|---|
 | UI Web | Node.js, Express, EJS, JS vanilla |
@@ -104,9 +100,8 @@ Principio de arquitetura:
 
 ---
 
-
+## 5. Como Clonar e Rodar (Guia para Leigos)
 [![⬆️ Voltar ao Índice](https://img.shields.io/badge/%E2%AC%86%EF%B8%8F-Voltar%20ao%20%C3%8Dndice-0b5fff?style=for-the-badge)](#indice)
-
 ### 5.1 Pre-requisitos
 Instale antes:
 - Git
@@ -145,9 +140,8 @@ Se retornar `200`, esta no ar.
 
 ---
 
-
+## 6. Como Clonar e Rodar (Guia para Experientes)
 [![⬆️ Voltar ao Índice](https://img.shields.io/badge/%E2%AC%86%EF%B8%8F-Voltar%20ao%20%C3%8Dndice-0b5fff?style=for-the-badge)](#indice)
-
 ```bash
 git clone https://github.com/brodyandre/growth_equestre_hackathon_2026.git
 cd growth_equestre_hackathon_2026
@@ -173,9 +167,8 @@ docker compose logs -f scoring
 
 ---
 
-
+## 7. Enderecos e Health Checks
 [![⬆️ Voltar ao Índice](https://img.shields.io/badge/%E2%AC%86%EF%B8%8F-Voltar%20ao%20%C3%8Dndice-0b5fff?style=for-the-badge)](#indice)
-
 | Servico | URL | Objetivo |
 |---|---|---|
 | Backend | `http://localhost:3000/health` | Saude da API |
@@ -186,9 +179,8 @@ docker compose logs -f scoring
 
 ---
 
-
+## 8. Como Usar as UIs na Pratica
 [![⬆️ Voltar ao Índice](https://img.shields.io/badge/%E2%AC%86%EF%B8%8F-Voltar%20ao%20%C3%8Dndice-0b5fff?style=for-the-badge)](#indice)
-
 Ambas as UIs seguem a mesma logica de negocio.
 
 ### 8.1 Visao geral
@@ -227,9 +219,8 @@ Ambas as UIs seguem a mesma logica de negocio.
 
 ---
 
-
+## 9. Como a Solucao Apoia a Tomada de Decisao
 [![⬆️ Voltar ao Índice](https://img.shields.io/badge/%E2%AC%86%EF%B8%8F-Voltar%20ao%20%C3%8Dndice-0b5fff?style=for-the-badge)](#indice)
-
 O sistema transforma dados operacionais em decisao comercial:
 
 1. **Priorizacao de atendimento**
@@ -245,9 +236,8 @@ O sistema transforma dados operacionais em decisao comercial:
 
 ---
 
-
+## 10. Motor de Machine Learning (Dual Models)
 [![⬆️ Voltar ao Índice](https://img.shields.io/badge/%E2%AC%86%EF%B8%8F-Voltar%20ao%20%C3%8Dndice-0b5fff?style=for-the-badge)](#indice)
-
 ### 10.1 Notebook principal
 - `tools/ml/lead_scoring_caminho1_dual_models.ipynb`
 
@@ -282,9 +272,8 @@ docker compose up -d --build scoring
 
 ---
 
-
+## 11. Fluxo de Dados e Endpoints Principais
 [![⬆️ Voltar ao Índice](https://img.shields.io/badge/%E2%AC%86%EF%B8%8F-Voltar%20ao%20%C3%8Dndice-0b5fff?style=for-the-badge)](#indice)
-
 | Endpoint | Metodo | Uso |
 |---|---|---|
 | `/leads` | `GET` | Lista leads |
@@ -302,9 +291,8 @@ docker compose up -d --build scoring
 
 ---
 
-
+## 12. Estrutura de Pastas
 [![⬆️ Voltar ao Índice](https://img.shields.io/badge/%E2%AC%86%EF%B8%8F-Voltar%20ao%20%C3%8Dndice-0b5fff?style=for-the-badge)](#indice)
-
 ```text
 .
 |- backend/                    # API Node/Express
@@ -322,9 +310,8 @@ docker compose up -d --build scoring
 
 ---
 
-
+## 13. Troubleshooting
 [![⬆️ Voltar ao Índice](https://img.shields.io/badge/%E2%AC%86%EF%B8%8F-Voltar%20ao%20%C3%8Dndice-0b5fff?style=for-the-badge)](#indice)
-
 ### 13.1 Porta 3100 recusando conexao
 ```powershell
 docker compose ps
@@ -351,9 +338,8 @@ netstat -ano | findstr :8501
 
 ---
 
-
+## 14. Branches e Estrategia de Trabalho
 [![⬆️ Voltar ao Índice](https://img.shields.io/badge/%E2%AC%86%EF%B8%8F-Voltar%20ao%20%C3%8Dndice-0b5fff?style=for-the-badge)](#indice)
-
 Convencao adotada:
 - `feature/fe` -> entregas da UI Node.js
 - `feature/be` -> entregas da UI Streamlit/operacao admin
@@ -366,11 +352,10 @@ Recomendacao:
 
 ---
 
-
+## 15. Documentacao Complementar
 [![⬆️ Voltar ao Índice](https://img.shields.io/badge/%E2%AC%86%EF%B8%8F-Voltar%20ao%20%C3%8Dndice-0b5fff?style=for-the-badge)](#indice)
-
 Materiais completos (PT-BR e Espanhol) em:
-- `docs/resoluÃ§Ã£o_desafio_growth_equestre/`
+- `docs/resolução_desafio_growth_equestre/`
 - `manuais_and_docs/`
 
 Inclui:
