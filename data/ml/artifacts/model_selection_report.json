@@ -1,0 +1,71 @@
+{
+  "winner": "logit_fine",
+  "runner_up": "rf_fine",
+  "selection_reasons": [
+    "Winner by ROC-AUC without technical tie."
+  ],
+  "metrics": [
+    {
+      "model": "logit_fine",
+      "val_roc_auc": 0.9675324675324676,
+      "val_pr_auc": 0.8184322986954566,
+      "val_brier": 0.06949785404828326,
+      "val_f1": 0.6956521739130435,
+      "val_precision": 0.8888888888888888,
+      "val_recall": 0.5714285714285714,
+      "val_latency_ms": 0.05645941996919936,
+      "test_roc_auc": 1.0,
+      "test_pr_auc": 1.0,
+      "test_brier": 0.03814410149282586,
+      "test_f1": 1.0,
+      "test_precision": 1.0,
+      "test_recall": 1.0,
+      "test_latency_ms": 0.046910144442665405
+    },
+    {
+      "model": "rf_fine",
+      "val_roc_auc": 0.9597402597402597,
+      "val_pr_auc": 0.8442407532881879,
+      "val_brier": 0.07361132854773608,
+      "val_f1": 0.6956521739130435,
+      "val_precision": 0.8888888888888888,
+      "val_recall": 0.5714285714285714,
+      "val_latency_ms": 0.4203811598320802,
+      "test_roc_auc": 1.0,
+      "test_pr_auc": 1.0,
+      "test_brier": 0.016229211715637674,
+      "test_f1": 1.0,
+      "test_precision": 1.0,
+      "test_recall": 1.0,
+      "test_latency_ms": 0.43097536241554696
+    }
+  ],
+  "best_params": {
+    "logit_fine": {
+      "model__C": 0.05,
+      "model__class_weight": null,
+      "model__penalty": "l1"
+    },
+    "rf_fine": {
+      "model__class_weight": null,
+      "model__max_depth": null,
+      "model__min_samples_leaf": 1,
+      "model__min_samples_split": 5,
+      "model__n_estimators": 200
+    }
+  },
+  "target_col": "label_qualified",
+  "feature_cols": [
+    "n_events",
+    "n_page_view",
+    "n_hook_complete",
+    "n_cta_click",
+    "recency_last_event_hours",
+    "uf",
+    "cidade",
+    "segmento_interesse",
+    "orcamento_faixa",
+    "prazo_compra"
+  ],
+  "random_state": 42
+}
