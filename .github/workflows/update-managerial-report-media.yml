@@ -36,7 +36,12 @@ jobs:
           python-version: "3.11"
 
       - name: Install UI deps
-        run: npm ci --prefix ui_web
+        run: |
+          if [ -f ui_web/package-lock.json ]; then
+            npm ci --prefix ui_web
+          else
+            npm install --prefix ui_web
+          fi
 
       - name: Install Python deps
         run: |
