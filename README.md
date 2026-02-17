@@ -1,5 +1,5 @@
 <p align="center">
-  <img src="ui_web/public/images/equipepulse_logo.png" alt="EquipePulse - Growth Equestre" width="220" />
+  <img src="logotipo/equipepulse_logo.png" alt="EquipePulse - Growth Equestre" width="220" />
 </p>
 
 <h1 align="center">Growth Equestre - Hackathon 2026</h1>
