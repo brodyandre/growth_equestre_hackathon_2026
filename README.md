@@ -39,6 +39,7 @@
 - [13. Troubleshooting](#13-troubleshooting)
 - [14. Branches e Estratégia de Trabalho](#14-branches-e-estrategia-de-trabalho)
 - [15. Documentação Complementar](#15-documentacao-complementar)
+- [16. Automação das Evidências do Relatório](#16-automacao-das-evidencias-do-relatorio)
 
 ---
 
@@ -249,16 +250,39 @@ Criação manual assistida e atalhos para CURIOSO/AQUECENDO/QUALIFICADO.
 
 #### 8.2.3 Leads (Node.js)
 Consulta rápida, filtros e ações de score, edição, exclusão e handoff.
+Inclui janela com 20 registros visíveis e barra de rolagem vertical para percorrer os demais registros sem perder o contexto da tela.
 
 ![Node.js - Leads](docs/readme_images/ui-leads.png)
 
 #### 8.2.4 CRM (Kanban) (Node.js)
 Gestão por etapas (`CURIOSO`, `AQUECENDO`, `QUALIFICADO`, `ENVIADO`) com detalhes e próxima ação.
+No painel de detalhes existe o botão **Visualizar relatório gerencial**, que abre um relatório completo com:
+- para qual setor o lead foi/será enviado (Marketing, Vendas, Parceiros ou Operações);
+- por que foi enviado (justificativa executiva baseada em score, estágio, eventos e matching);
+- inteligência de qualificação (score, probabilidade e fatores);
+- histórico CRM (eventos e notas);
+- recomendação de plano de ação com riscos e governança.
+
+##### Relatório gerencial (cérebro da aplicação)
+Este é o artefato mais importante da solução para tomada de decisão.
+
+**Print da tela do relatório gerencial**
+
+![Node.js - Relatório gerencial (print)](docs/readme_images/ui-crm-relatorio-gerencial.png)
+
+**Loop curto (visão executiva do relatório)**
+
+![Node.js - Relatório gerencial (loop)](docs/readme_images/ui-crm-relatorio-gerencial-loop.gif)
 
 ![Node.js - CRM (Kanban)](docs/readme_images/ui-crm-kanban.png)
 
 #### 8.2.5 Parceiros (Node.js)
 Busca, filtros e consistência de dados para matching e exportação CSV.
+Também inclui:
+- coluna **Ordem** à esquerda do CNPJ;
+- janela com 20 registros visíveis e rolagem vertical;
+- painel **Detalhes do parceiro** com os mesmos campos principais da UI Streamlit (informações principais, contato e endereço);
+- campo **Selecionar parceiro** com ordem no label e busca direta por número da ordem via botão **Procurar**.
 
 ![Node.js - Parceiros](docs/readme_images/ui-parceiros.png)
 
@@ -286,6 +310,8 @@ O sistema transforma dados operacionais em decisão comercial:
    - KPIs consolidados na visão geral.
 5. **Confiabilidade**
    - deduplicação e exclusão em lote evitam distorção operacional.
+6. **Rastreabilidade gerencial no CRM**
+   - relatório gerencial detalha destino do lead, motivação do encaminhamento, riscos e plano de ação.
 
 ---
 
@@ -338,6 +364,9 @@ docker compose up -d --build scoring
 | `/crm/board` | `GET` | Dados do Kanban |
 | `/crm/move` | `POST` | Move lead no Kanban |
 | `/crm/leads/:id/matches` | `GET` | Matching de parceiros |
+| `/crm/leads/:id/managerial-report` | `GET` | Relatório gerencial completo do lead (setor destino, justificativas, score, histórico, riscos e plano de ação) |
+| `/crm/leads/:id/relatorio-gerencial` | `GET` | Alias em PT-BR para o relatório gerencial |
+| `/leads/:id/managerial-report` | `GET` | Rota de compatibilidade sem prefixo `/crm` |
 | `/partners` | `GET` | Lista parceiros |
 | `/partners/summary` | `GET` | Resumo por segmento/UF |
 | `/ml/model-info` | `GET` | Modelo vencedor e fine tuning |
@@ -426,6 +455,30 @@ Inclui:
 - guia de uso das interfaces;
 - manual de setup no Windows/VS Code;
 - documento técnico da solução de Data Science.
+
+---
+
+<a id="16-automacao-das-evidencias-do-relatorio"></a>
+
+## 16. Automação das Evidências do Relatório
+
+[![⬆️ Voltar ao Índice](https://img.shields.io/badge/%E2%AC%86%EF%B8%8F-Voltar%20ao%20%C3%8Dndice-0b5fff?style=for-the-badge)](#indice)
+Para manter o print e o loop do relatório gerencial sempre atualizados:
+
+1. Script local de captura:
+   - `tools/docs/capture_managerial_report_media.py`
+2. Geração local (inicia a UI automaticamente):
+   ```powershell
+   python tools/docs/capture_managerial_report_media.py --ui-url http://127.0.0.1:3200 --start-server
+   ```
+3. Arquivos gerados/atualizados:
+   - `docs/readme_images/ui-crm-relatorio-gerencial.png`
+   - `docs/readme_images/ui-crm-relatorio-gerencial-loop.gif`
+4. Automação no GitHub:
+   - workflow: `.github/workflows/update-managerial-report-media.yml`
+   - modo recomendado: executar manualmente via `workflow_dispatch` para publicar artefatos e, opcionalmente, commitar os assets.
+
+Melhor ponto da documentação para essa evidência: seção **8.2.4 CRM (Kanban)**, onde o usuário já está no contexto do botão **Visualizar relatório gerencial**.
 
 ---
 
