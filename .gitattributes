@@ -1,0 +1,16 @@
+# Keep GitHub language stats focused on application source code.
+# Exclude generated/raw datasets and manuals from Linguist language percentages.
+data/cnae/raw/** linguist-generated=true
+data/ml/** linguist-generated=true
+tools/ml/data/** linguist-generated=true
+docs/** linguist-documentation
+manuais_and_docs/** linguist-documentation
+*.docx linguist-documentation
+*.pdf linguist-documentation
+tmp_* linguist-generated=true
+tmp_streamlit_shots2/** linguist-generated=true
+
+# Keep template/config files correctly classified.
+*.ejs linguist-language=HTML
+**/Dockerfile linguist-language=Dockerfile
+docker-compose.yml linguist-language=YAML
