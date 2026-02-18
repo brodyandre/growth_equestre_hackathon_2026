@@ -1481,7 +1481,18 @@ elif page == "Leads":
                             else:
                                 st.info("Sem explicação detalhada disponível agora (motivos vazios)." )
 
-                    if st.button("📤 Handoff (marcar como ENVIADO)", key="btn_handoff"):
+                    handoff_status = normalize_commercial_status(
+                        selected.get("status"), selected.get("crm_stage")
+                    )
+                    can_handoff = handoff_status == "QUALIFICADO"
+                    if not can_handoff:
+                        st.caption("Handoff disponivel apenas para leads com status QUALIFICADO.")
+
+                    if st.button(
+                        "📤 Handoff (marcar como ENVIADO)",
+                        key="btn_handoff",
+                        disabled=not can_handoff,
+                    ):
                         resp, perr = safe_post("/handoff", payload={"lead_id": chosen_id, "channel": "admin"}, timeout=15)
                         if perr:
                             show_error("Não foi possível concluir o handoff agora.", perr)

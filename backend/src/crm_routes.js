@@ -11,10 +11,11 @@ const STAGES = ["INBOX", "AQUECENDO", "QUALIFICADO", "ENVIADO"];
 
 // status -> stage (keep this mapping stable; do not delete existing values)
 function mapStatusToStage(status) {
-  const s = String(status || "").toUpperCase();
+  const s = String(status || "").toUpperCase().trim();
   if (s === "ENVIADO") return "ENVIADO";
   if (s === "QUALIFICADO") return "QUALIFICADO";
   if (s === "AQUECENDO") return "AQUECENDO";
+  // "CURIOSO" e outros entram como INBOX (primeiro estágio)
   return "INBOX";
 }
 
@@ -33,6 +34,10 @@ function normalizeHeader(h) {
     .replace(/^_+|_+$/g, "");
 }
 
+function toStageSafe(v) {
+  const s = String(v || "").toUpperCase().trim();
+  return STAGES.includes(s) ? s : "";
+}
 
 /**
  * Handler padrão para evitar crash e responder com erro consistente.
@@ -58,34 +63,75 @@ async function ensureCrmSchema() {
   `);
 }
 
+async function resyncStagesForUntouchedLeads() {
+  // Regras:
+  // - Só ajusta se o lead nunca foi movido no Kanban (crm_updated_at IS NULL)
+  // - Se stage estiver vazio/inválido OU estiver INBOX mas o status indicar outro estágio
+  await query(`
+    UPDATE leads
+       SET crm_stage = CASE
+             WHEN upper(coalesce(status,'')) = 'ENVIADO' THEN 'ENVIADO'
+             WHEN upper(coalesce(status,'')) = 'QUALIFICADO' THEN 'QUALIFICADO'
+             WHEN upper(coalesce(status,'')) = 'AQUECENDO' THEN 'AQUECENDO'
+             ELSE 'INBOX'
+           END
+     WHERE crm_updated_at IS NULL
+       AND (
+            crm_stage IS NULL
+         OR upper(trim(crm_stage)) NOT IN ('INBOX','AQUECENDO','QUALIFICADO','ENVIADO')
+         OR (
+              upper(trim(crm_stage)) = 'INBOX'
+          AND upper(coalesce(status,'')) IN ('ENVIADO','QUALIFICADO','AQUECENDO')
+            )
+       )
+  `);
+}
+
 /**
  * CRM: seed board (sync stages from lead.status)
+ * POST /crm/seed?force=1
+ * - force=1: sobrescreve crm_stage/crm_position de todos os leads (útil para "consertar" bases antigas)
+ * - sem force: só preenche crm_stage/crm_position quando estiverem NULL
  */
 router.post(
   "/seed",
-  asyncHandler(async (_req, res) => {
+  asyncHandler(async (req, res) => {
     await ensureCrmSchema();
 
-    const leadsR = await query("SELECT id, status, updated_at FROM leads ORDER BY created_at DESC");
+    const force = String(req.query.force || "").trim() === "1";
+    const leadsR = await query("SELECT id, status, created_at FROM leads ORDER BY created_at DESC");
     let position = 0;
 
     for (const row of leadsR.rows) {
       const stage = mapStatusToStage(row.status);
       position += 1;
 
-      await query(
-        `
-        UPDATE leads
-           SET crm_stage = COALESCE(crm_stage, $1),
-               crm_position = COALESCE(crm_position, $2),
-               crm_updated_at = now()
-         WHERE id = $3
-        `,
-        [stage, position, row.id]
-      );
+      if (force) {
+        await query(
+          `
+          UPDATE leads
+             SET crm_stage = $1,
+                 crm_position = $2,
+                 crm_updated_at = COALESCE(crm_updated_at, now())
+           WHERE id = $3
+          `,
+          [stage, position, row.id]
+        );
+      } else {
+        await query(
+          `
+          UPDATE leads
+             SET crm_stage = COALESCE(crm_stage, $1),
+                 crm_position = COALESCE(crm_position, $2),
+                 crm_updated_at = COALESCE(crm_updated_at, now())
+           WHERE id = $3
+          `,
+          [stage, position, row.id]
+        );
+      }
     }
 
-    res.json({ ok: true, seeded: leadsR.rows.length });
+    res.json({ ok: true, seeded: leadsR.rows.length, force });
   })
 );
 
@@ -97,6 +143,9 @@ router.get(
   asyncHandler(async (_req, res) => {
     await ensureCrmSchema();
 
+    // mantém o board coerente (sem quebrar movimentos manuais)
+    await resyncStagesForUntouchedLeads();
+
     const r = await query(
       `
       SELECT *
@@ -106,14 +155,27 @@ router.get(
     );
 
     // normalize to a simple list of items
-    const items = (r.rows || []).map((lead) => ({
-      ...lead,
-      lead_id: lead.id,
-      stage: lead.crm_stage || mapStatusToStage(lead.status),
-      position: lead.crm_position ?? null,
-      notes: lead.crm_notes ?? null,
-      updated_at: lead.crm_updated_at ?? lead.updated_at ?? lead.created_at,
-    }));
+    const items = (r.rows || []).map((lead) => {
+      const stored = toStageSafe(lead.crm_stage);
+      const fromStatus = mapStatusToStage(lead.status);
+      const stageFinal =
+        fromStatus === "ENVIADO"
+          ? "ENVIADO"
+          : stored ||
+            fromStatus;
+
+      return {
+        ...lead,
+        lead_id: lead.id,
+        // IMPORTANTE: a UI usa "crm_stage" para agrupar colunas.
+        // Então devolvemos crm_stage já normalizado.
+        crm_stage: stageFinal,
+        stage: stageFinal,
+        position: lead.crm_position ?? null,
+        notes: lead.crm_notes ?? null,
+        updated_at: lead.crm_updated_at ?? lead.updated_at ?? lead.created_at,
+      };
+    });
 
     res.json({ items });
   })
@@ -121,7 +183,7 @@ router.get(
 
 /**
  * CRM: move lead
- * POST /move { lead_id, stage }
+ * POST /crm/move { lead_id, stage }
  */
 router.post(
   "/move",
@@ -159,8 +221,8 @@ router.post(
 
 /**
  * CRM: notes
- * GET  /leads/:id/notes
- * POST /leads/:id/notes { note/notes }
+ * GET  /crm/leads/:id/notes
+ * POST /crm/leads/:id/notes { note/notes }
  */
 router.get(
   "/leads/:id/notes",
@@ -174,8 +236,8 @@ router.get(
     const note = r.rows[0].crm_notes;
     const when = r.rows[0].crm_updated_at;
 
-    if (!note) return res.json([]);
-    res.json([{ note, created_at: when }]);
+    if (!note) return res.json({ notes: [] });
+    res.json({ notes: [{ note, created_at: when }] });
   })
 );
 
@@ -380,6 +442,7 @@ async function loadPartnersFromCsvOrDb() {
         contato,
       };
     });
+
     partnersCsvCache = normalized;
     partnersCsvCacheAt = Date.now();
     return normalized;
@@ -387,11 +450,16 @@ async function loadPartnersFromCsvOrDb() {
 
   // 2) DB fallback
   try {
-    const r = await query("SELECT * FROM partners ORDER BY prioridade ASC NULLS LAST, nome_fantasia ASC NULLS LAST LIMIT 5000");
+    const r = await query(
+      "SELECT * FROM partners ORDER BY prioridade ASC NULLS LAST, nome_fantasia ASC NULLS LAST LIMIT 5000"
+    );
     const rows = (r.rows || []).map((p) => ({
       ...p,
       uf: String(p.uf || "").toUpperCase(),
       segmento: String(p.segmento || "").toUpperCase(),
+      cidade: p.cidade || p.municipio || p.municipio_nome || p.municipioName || null,
+      municipio: p.municipio || p.municipio_nome || p.cidade || null,
+      cnae: p.cnae || p.cnae_principal || null,
     }));
     partnersCsvCache = rows;
     partnersCsvCacheAt = Date.now();
@@ -409,7 +477,7 @@ async function loadPartnersFromCsvOrDb() {
 // -------------------------------------------------------
 
 /**
- * GET /partners
+ * GET /crm/partners
  * Retorna lista simples (array) para compatibilidade com a UI (main.py).
  * Query: uf, segment (ou segmento), q, limit
  */
@@ -454,7 +522,7 @@ router.get(
 );
 
 /**
- * GET /partners/list
+ * GET /crm/partners/list
  * Retorna { count, items } (mantido para compatibilidade com versões antigas).
  * Query: uf, segment (ou segmento), q, limit
  */
@@ -499,7 +567,7 @@ router.get(
 );
 
 /**
- * GET /partners/summary
+ * GET /crm/partners/summary
  * Retorna lista no formato:
  *   [{ segmento: "CAVALOS", total: 12 }, ...]
  * Query: uf
@@ -531,72 +599,109 @@ router.get(
 
 /**
  * -----------------------------------
- * Matching: /leads/:id/matches
+ * Matching: /crm/leads/:id/matches
  * -----------------------------------
  *
  * Retorna ranking simples de parceiros para um lead.
- * Query: limit/top (default 5), use_cnae (1/0)
+ * Query: limit/top (default 8)
+ *
+ * Importante:
+ * - A UI do Streamlit espera receber um JSON com "items" (array) ou um array diretamente.
+ * - Quando o lead existe, a rota retorna 200 com items, mesmo se vazio.
+ * - Quando o lead não existe, retorna 404.
  */
 router.get(
   "/leads/:id/matches",
   asyncHandler(async (req, res) => {
     const leadId = req.params.id;
-    const limitRaw = Number(req.query.limit ?? req.query.top ?? 5);
-    const limit = Number.isFinite(limitRaw) ? Math.max(1, Math.min(50, Math.floor(limitRaw))) : 5;
+    const rawLimit = parseInt(String(req.query.limit || req.query.top || "8"), 10);
+    const limit = Number.isFinite(rawLimit) ? Math.max(1, Math.min(rawLimit, 50)) : 8;
 
-    const useCnae = String(req.query.use_cnae ?? "1") !== "0";
+    // 1) Busca lead (critério de matching)
+    const leadQ = await query(
+      `
+      SELECT id, nome, uf, cidade, segmento_interesse
+      FROM leads
+      WHERE id = $1
+      `,
+      [leadId]
+    );
 
-    // lead
-    const leadR = await query("SELECT * FROM leads WHERE id=$1", [leadId]);
-    if (leadR.rows.length === 0) return res.status(404).json({ error: "Lead não encontrado" });
-    const lead = leadR.rows[0];
+    if (leadQ.rowCount === 0) return res.status(404).json({ error: "Lead não encontrado" });
 
-    const uf = String(lead.uf || "").toUpperCase();
-    const segmento = String(lead.segmento_interesse || lead.segmento || "").toUpperCase();
-    const leadCity = normalizeText(lead.cidade);
+    const lead = leadQ.rows[0];
+    const uf = String(lead.uf || "").trim().toUpperCase();
+    const cidade = String(lead.cidade || "").trim();
+    const segmento = String(lead.segmento_interesse || "").trim().toUpperCase();
 
-    // partners
-    const source = process.env.PARTNERS_CSV_PATH && fs.existsSync(process.env.PARTNERS_CSV_PATH) ? "csv" : "db";
-    const partners = await loadPartnersFromCsvOrDb();
+    // 2) Carrega parceiros (CSV/DB)
+    let partners = await loadPartnersFromCsvOrDb();
+    if (!Array.isArray(partners) || partners.length === 0) {
+      return res.json({
+        lead_id: leadId,
+        criteria: { uf, cidade, segmento },
+        items: [],
+        note: "partners_empty",
+      });
+    }
 
-    // scoring simples
-    const ranked = (partners || [])
+    const cidadeNorm = normalizeText(cidade);
+    const ufNorm = String(uf || "").toUpperCase();
+    const segNorm = String(segmento || "").toUpperCase();
+
+    if (!segNorm) {
+      return res.json({
+        lead_id: leadId,
+        criteria: { uf, cidade, segmento },
+        items: [],
+        note: "lead_without_segmento",
+      });
+    }
+
+    // 3) Matching simples (segmento obrigatório, desempate por UF/cidade/prioridade)
+    const scored = partners
       .map((p) => {
-        let score = 0;
+        const pSeg = String(p.segmento || p.segment || "").trim().toUpperCase();
+        if (pSeg !== segNorm) return null;
 
-        const pUf = String(p.uf || "").toUpperCase();
-        const pSeg = String(p.segmento || p.segment || "").toUpperCase();
-        const pCity = normalizeText(p.cidade || p.municipio_nome);
+        const pUf = String(p.uf || "").trim().toUpperCase();
+        const pCidade = String(p.cidade || p.municipio || p.municipio_nome || "").trim();
 
-        if (uf && pUf === uf) score += 30;
-        if (segmento && pSeg === segmento) score += 35;
+        let tier = 1; // segmento bate
+        if (pUf && ufNorm && pUf === ufNorm) tier = 2;
+        if (tier === 2 && cidadeNorm && normalizeText(pCidade) === cidadeNorm) tier = 3;
 
-        if (leadCity && pCity && leadCity === pCity) score += 25;
+        const pr = Number.isFinite(Number(p.prioridade)) ? Number(p.prioridade) : 999;
 
-        if (useCnae) {
-          const leadCnae = normalizeText(lead.cnae_principal || lead.cnae || "");
-          const pCnae = normalizeText(p.cnae_principal || p.cnae || "");
-          if (leadCnae && pCnae && leadCnae === pCnae) score += 15;
-        }
-
-        return { ...p, score };
+        return {
+          ...p,
+          uf: pUf || p.uf || "",
+          cidade: pCidade || p.cidade || p.municipio || "",
+          segmento: pSeg || p.segmento || "",
+          prioridade: Number.isFinite(Number(p.prioridade)) ? Number(p.prioridade) : null,
+          match_tier: tier,
+          _sort_pr: pr,
+          _sort_name: normalizeText(p.nome_fantasia || p.nome || p.razao_social || ""),
+        };
       })
-      .filter((p) => p.score > 0)
-      .sort((a, b) => {
-        if (b.score !== a.score) return b.score - a.score;
-        const ap = Number.isFinite(Number(a.prioridade)) ? Number(a.prioridade) : 999;
-        const bp = Number.isFinite(Number(b.prioridade)) ? Number(b.prioridade) : 999;
-        if (ap !== bp) return ap - bp;
-        const an = normalizeText(a.nome_fantasia || a.razao_social || "");
-        const bn = normalizeText(b.nome_fantasia || b.razao_social || "");
-        return an.localeCompare(bn);
-      })
-      .slice(0, limit);
+      .filter(Boolean);
 
-    res.json({
-      lead_id: String(lead.id),
-      source,
-      matches: ranked,
+    scored.sort((a, b) => {
+      if (a.match_tier !== b.match_tier) return b.match_tier - a.match_tier;
+      if (a._sort_pr !== b._sort_pr) return a._sort_pr - b._sort_pr;
+      return a._sort_name.localeCompare(b._sort_name);
+    });
+
+    const items = scored.slice(0, limit).map((m) => {
+      // remove campos auxiliares de ordenação
+      const { _sort_pr, _sort_name, ...rest } = m;
+      return rest;
+    });
+
+    return res.json({
+      lead_id: leadId,
+      criteria: { uf, cidade, segmento },
+      items,
     });
   })
 );
