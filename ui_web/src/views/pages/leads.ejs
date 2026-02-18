@@ -1,17 +1,31 @@
 <div class="card">
-  <div class="card-title">Leads</div>
-  <p class="muted mt-8">Visao tabular para consulta rapida e filtros simples.</p>
+  <div class="lead-header-row">
+    <div class="lead-header-copy">
+      <div class="card-title">Leads</div>
+      <p class="muted mt-8">Visao tabular para consulta rapida e filtros simples.</p>
+    </div>
+  </div>
 
-  <div class="toolbar mt-12">
+  <div class="lead-actions-bar mt-12">
+    <div class="toolbar lead-toolbar lead-toolbar-top lead-toolbar-top-main">
+      <button id="btnReload" class="btn btn-ghost">Recarregar</button>
+      <button id="btnExportFilteredCsv" class="btn btn-ghost" type="button" disabled>Baixar CSV (leads filtrados)</button>
+      <a href="/kanban" class="btn">Ir para CRM (Kanban)</a>
+    </div>
+
+    <div class="toolbar lead-toolbar lead-toolbar-top lead-toolbar-top-meta">
+      <span id="leadFilteredCountInfo" class="muted lead-filtered-count">0 lead(s) filtrado(s)</span>
+      <label class="muted lead-confirm-label">
+        <input id="leadDeleteConfirm" type="checkbox" />
+        Confirmar exclusao
+      </label>
+      <button id="btnDeleteSelected" class="btn btn-ghost" type="button" disabled>Excluir selecionados</button>
+      <span id="leadDeleteSelectionInfo" class="muted">0 selecionado(s)</span>
+    </div>
+  </div>
+
+  <div class="lead-search-row mt-12">
     <input id="leadSearch" class="input" placeholder="Buscar por nome, cidade, status ou segmento" />
-    <button id="btnReload" class="btn btn-ghost">Recarregar</button>
-    <label class="muted" style="display:inline-flex; align-items:center; gap:6px;">
-      <input id="leadDeleteConfirm" type="checkbox" />
-      Confirmar exclusao
-    </label>
-    <button id="btnDeleteSelected" class="btn btn-ghost" type="button" disabled>Excluir selecionados</button>
-    <span id="leadDeleteSelectionInfo" class="muted">0 selecionado(s)</span>
-    <a href="/kanban" class="btn">Ir para CRM (Kanban)</a>
   </div>
 
   <div id="leadsTable" class="table mt-12"></div>

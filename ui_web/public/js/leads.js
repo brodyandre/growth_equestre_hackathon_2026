@@ -53,10 +53,15 @@ const TABLE_COLUMNS = [
 ];
 
 const PATH = "/leads";
+const LEADS_WINDOW_ROWS = 20;
+const LEADS_WINDOW_MIN_HEIGHT = 220;
+const LEADS_WINDOW_MAX_HEIGHT = 920;
 
 const $table = document.getElementById("leadsTable");
 const $search = document.getElementById("leadSearch");
 const $reload = document.getElementById("btnReload");
+const $btnExportFilteredCsv = document.getElementById("btnExportFilteredCsv");
+const $filteredCountInfo = document.getElementById("leadFilteredCountInfo");
 const $btnDeleteSelected = document.getElementById("btnDeleteSelected");
 const $btnDeleteLead = document.getElementById("btnDeleteLead");
 const $deleteConfirm = document.getElementById("leadDeleteConfirm");
@@ -136,6 +141,11 @@ function normText(v) {
 
 function normKey(v) {
   return normText(v).replace(/[^a-z0-9]/g, "").toUpperCase();
+}
+
+function canHandoffLead(lead) {
+  const statusKey = normKey(lead?.status_raw || lead?.status);
+  return statusKey === "QUALIFICADO";
 }
 
 function hashString(value) {
@@ -328,6 +338,107 @@ function shortId(idValue) {
   return txt.length <= 8 ? txt : `${txt.slice(0, 8)}...`;
 }
 
+function csvEscape(value) {
+  const text = String(value ?? "").replaceAll("\r\n", "\n").replaceAll("\r", "\n");
+  if (text.includes(",") || text.includes('"') || text.includes("\n")) {
+    return `"${text.replaceAll('"', '""')}"`;
+  }
+  return text;
+}
+
+function buildCsvFileSuffix(date = new Date()) {
+  const yyyy = String(date.getFullYear());
+  const mm = String(date.getMonth() + 1).padStart(2, "0");
+  const dd = String(date.getDate()).padStart(2, "0");
+  const hh = String(date.getHours()).padStart(2, "0");
+  const mi = String(date.getMinutes()).padStart(2, "0");
+  const ss = String(date.getSeconds()).padStart(2, "0");
+  return `${yyyy}${mm}${dd}_${hh}${mi}${ss}`;
+}
+
+function buildFilteredLeadsCsv(rows) {
+  const columns = [
+    { key: "ordem", label: "Ordem" },
+    { key: "id", label: "ID" },
+    { key: "nome", label: "Nome" },
+    { key: "whatsapp", label: "WhatsApp" },
+    { key: "email", label: "Email" },
+    { key: "uf", label: "UF" },
+    { key: "cidade", label: "Cidade" },
+    { key: "segmento", label: "Segmento" },
+    { key: "orcamento", label: "Orcamento" },
+    { key: "prazo", label: "Prazo" },
+    { key: "score", label: "Score" },
+    { key: "status", label: "Status" },
+    { key: "motivos", label: "Motivos_resumo" },
+    { key: "motor", label: "Motor_score" },
+    { key: "modelo", label: "Modelo_score" },
+    { key: "prob", label: "Probabilidade_qualificado" },
+    { key: "scored_at", label: "Score_calculado_em" },
+  ];
+
+  const header = columns.map((c) => csvEscape(c.label)).join(",");
+  const body = rows.map((lead, index) => {
+    const rowData = {
+      ordem: Number(lead?.row_num) || index + 1,
+      id: normalizeTextValue(lead?.id, ""),
+      nome: normalizeTextValue(lead?.nome, ""),
+      whatsapp: normalizeTextValue(lead?.whatsapp, ""),
+      email: normalizeTextValue(lead?.email, ""),
+      uf: normalizeTextValue(lead?.uf, ""),
+      cidade: normalizeTextValue(lead?.cidade, ""),
+      segmento: normalizeTextValue(lead?.segmento_raw, ""),
+      orcamento: normalizeTextValue(lead?.orcamento, ""),
+      prazo: normalizeTextValue(lead?.prazo, ""),
+      score: formatScoreValue(lead?.score),
+      status: normalizeTextValue(lead?.status_raw, ""),
+      motivos: normalizeTextValue(lead?.motivos_resumo, ""),
+      motor: formatScoreEngine(lead?.score_engine),
+      modelo: normalizeTextValue(lead?.score_model_name, ""),
+      prob: formatProbabilityPct(lead?.score_probability),
+      scored_at: normalizeTextValue(lead?.score_scored_at, ""),
+    };
+
+    return columns.map((c) => csvEscape(rowData[c.key] ?? "")).join(",");
+  });
+
+  return [header, ...body].join("\r\n");
+}
+
+function triggerCsvDownload(content, filename) {
+  const bom = "\ufeff";
+  const blob = new Blob([bom + content], { type: "text/csv;charset=utf-8;" });
+  const url = URL.createObjectURL(blob);
+  const link = document.createElement("a");
+  link.href = url;
+  link.download = filename;
+  document.body.appendChild(link);
+  link.click();
+  link.remove();
+  window.setTimeout(() => URL.revokeObjectURL(url), 0);
+}
+
+function updateFilteredExportUi() {
+  const total = Array.isArray(state.filteredRows) ? state.filteredRows.length : 0;
+  if ($btnExportFilteredCsv) $btnExportFilteredCsv.disabled = total <= 0;
+  if ($filteredCountInfo) {
+    $filteredCountInfo.textContent = `${total} lead(s) filtrado(s)`;
+  }
+}
+
+function handleExportFilteredCsv() {
+  const rows = Array.isArray(state.filteredRows) ? state.filteredRows : [];
+  if (!rows.length) {
+    setNotice("Nao ha leads filtrados para exportar.", true);
+    return;
+  }
+
+  const csvContent = buildFilteredLeadsCsv(rows);
+  const filename = `leads_filtrados_${buildCsvFileSuffix()}.csv`;
+  triggerCsvDownload(csvContent, filename);
+  setNotice(`CSV baixado com ${rows.length} lead(s) filtrado(s).`);
+}
+
 function leadOptionLabel(lead) {
   const cityUf = `${lead.cidade}/${lead.uf}`;
   const score = formatScoreValue(lead.score);
@@ -451,8 +562,41 @@ function buildEditPayload() {
   };
 }
 
+function resetLeadsTableWindow() {
+  if (!$table) return;
+  $table.classList.remove("leads-table-window");
+  $table.style.maxHeight = "";
+}
+
+function applyLeadsTableWindow() {
+  if (!$table) return;
+
+  const tableEl = $table.querySelector("table");
+  const headerRow = tableEl?.querySelector("thead tr");
+  const bodyRows = tableEl?.querySelectorAll("tbody tr");
+
+  if (!tableEl || !headerRow || !bodyRows?.length) {
+    resetLeadsTableWindow();
+    return;
+  }
+
+  const visibleRows = Math.min(LEADS_WINDOW_ROWS, bodyRows.length);
+  let bodyHeight = 0;
+  for (let i = 0; i < visibleRows; i += 1) {
+    bodyHeight += bodyRows[i].getBoundingClientRect().height;
+  }
+
+  const headerHeight = headerRow.getBoundingClientRect().height;
+  const rawHeight = Math.round(headerHeight + bodyHeight + 2);
+  const clampedHeight = Math.min(LEADS_WINDOW_MAX_HEIGHT, Math.max(LEADS_WINDOW_MIN_HEIGHT, rawHeight));
+
+  $table.style.maxHeight = `${clampedHeight}px`;
+  $table.classList.add("leads-table-window");
+}
+
 function renderLeadsTable(rows) {
   renderTable($table, TABLE_COLUMNS, rows);
+  applyLeadsTableWindow();
 }
 
 function renderLeadActionSelect(rows) {
@@ -638,9 +782,10 @@ function renderScoreWhy(lead) {
 
 function syncActionButtons(hasSelectedLead) {
   const actionDisabled = !hasSelectedLead || state.actionBusy;
+  const selectedLead = hasSelectedLead ? findLeadById(state.selectedId) : null;
   const hasBatchSelection = selectedDeleteIds().length > 0;
   if ($btnCalcScore) $btnCalcScore.disabled = actionDisabled;
-  if ($btnHandoff) $btnHandoff.disabled = actionDisabled;
+  if ($btnHandoff) $btnHandoff.disabled = actionDisabled || !canHandoffLead(selectedLead);
   if ($btnEditLead) $btnEditLead.disabled = actionDisabled;
   if ($btnDeleteLead) {
     // "Excluir lead selecionado" now supports both:
@@ -689,6 +834,7 @@ function refreshUi() {
   renderLeadsTable(state.filteredRows);
   renderLeadActionSelect(state.filteredRows);
   renderLeadDetails();
+  updateFilteredExportUi();
   updateDeleteSelectionInfo();
 }
 
@@ -830,6 +976,10 @@ async function handleHandoff() {
   const lead = findLeadById(state.selectedId);
   if (!lead) {
     setNotice("Selecione um lead para acoes.", true);
+    return;
+  }
+  if (!canHandoffLead(lead)) {
+    setNotice("Handoff permitido apenas para leads com status QUALIFICADO.", true);
     return;
   }
 
@@ -1184,5 +1334,7 @@ $btnCalcScore?.addEventListener("click", handleCalcScore);
 $btnHandoff?.addEventListener("click", handleHandoff);
 $btnDeleteLead?.addEventListener("click", handleDeleteLead);
 $btnDeleteSelected?.addEventListener("click", handleDeleteSelected);
+$btnExportFilteredCsv?.addEventListener("click", handleExportFilteredCsv);
+window.addEventListener("resize", applyLeadsTableWindow);
 
 load();

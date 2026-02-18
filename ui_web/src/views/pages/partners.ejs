@@ -1,4 +1,4 @@
-﻿<div class="card">
+<div class="card">
   <div class="card-title">Parceiros</div>
   <p class="muted mt-8">Catalogo de parceiros por UF, segmento e prioridade.</p>
 
@@ -9,4 +9,48 @@
   </div>
 
   <div id="partnersTable" class="table mt-12"></div>
+  <p class="muted mt-8">Se precisar, role a tabela para o lado (scroll horizontal) para ver todas as colunas.</p>
+</div>
+
+<div class="card partner-details-card">
+  <div class="card-title">Detalhes do parceiro</div>
+
+  <label class="field mt-12">
+    <span>Selecionar parceiro</span>
+    <select id="partnerDetailSelect" class="input"></select>
+  </label>
+
+  <div class="partner-order-search mt-12">
+    <label class="field">
+      <span>Procurar por ordem</span>
+      <input
+        id="partnerOrderSearch"
+        class="input"
+        type="number"
+        min="1"
+        step="1"
+        placeholder="Digite o numero da ordem"
+      />
+    </label>
+    <div class="partner-order-actions">
+      <button id="btnPartnerOrderSearch" class="btn btn-ghost" type="button">Procurar</button>
+      <button id="btnPartnerOrderClear" class="btn btn-ghost" type="button">Limpar</button>
+    </div>
+  </div>
+  <div id="partnerOrderSearchNotice" class="k-message mt-12" style="display:none;"></div>
+
+  <div class="partner-detail-layout mt-12">
+    <section class="partner-detail-main">
+      <h3 class="h3">Informacoes principais</h3>
+      <div id="partnerInfoWrap" class="table mt-12"></div>
+    </section>
+
+    <aside class="partner-detail-side">
+      <h3 class="h3">Contato</h3>
+      <div id="partnerContactWrap" class="partner-bullets mt-12"></div>
+
+      <h3 class="h3 mt-16">Endereco</h3>
+      <div id="partnerAddressWrap" class="partner-bullets mt-12"></div>
+    </aside>
+  </div>
 </div>
