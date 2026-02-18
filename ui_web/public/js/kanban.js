@@ -23,6 +23,9 @@
   const movePath = paths.kanbanMove || "/crm/move";
   const notesBase = paths.crmNotesBase || "/crm/leads";
   const matchesBase = paths.crmMatchesBase || "/crm/leads";
+  const reportBase = paths.crmReportBase || "/crm/leads";
+  const eventRulesPath = paths.crmEventRules || "/crm/event-rules";
+  const applyRuleBase = paths.crmApplyRuleBase || "/crm/leads";
 
   const state = {
     allItems: [],
@@ -34,6 +37,10 @@
     moveEndpoint: "",
     notesEndpoint: "",
     matchesEndpoint: "",
+    reportEndpoint: "",
+    rulesEndpoint: "",
+    applyRuleEndpoint: "",
+    eventRules: [],
   };
 
   function parseMatchesLimit(rawValue) {
@@ -58,6 +65,29 @@
   const moveCandidates = uniqueNonEmpty([movePath, "/crm/move", "/move"]);
   const notesBaseCandidates = uniqueNonEmpty([notesBase, "/crm/leads", "/leads"]);
   const matchesBaseCandidates = uniqueNonEmpty([matchesBase, "/crm/leads", "/leads"]);
+  const reportBaseCandidates = uniqueNonEmpty([reportBase, "/crm/leads", "/leads"]);
+  const eventRulesCandidates = uniqueNonEmpty([eventRulesPath, "/crm/event-rules", "/event-rules"]);
+  const applyRuleBaseCandidates = uniqueNonEmpty([applyRuleBase, "/crm/leads", "/leads"]);
+  const FALLBACK_EVENT_RULES = [
+    { code: "whatsapp_reply", label: "Respondeu WhatsApp", delta: 8 },
+    { code: "asked_price", label: "Pediu valores", delta: 12 },
+    { code: "proposal_click", label: "Clicou na proposta", delta: 10 },
+    { code: "meeting_scheduled", label: "Agendou reuniao", delta: 15 },
+    { code: "meeting_attended", label: "Compareceu reuniao", delta: 18 },
+    { code: "budget_confirmed", label: "Confirmou orcamento", delta: 15 },
+    { code: "timeline_confirmed", label: "Confirmou prazo", delta: 10 },
+    { code: "need_confirmed", label: "Confirmou necessidade", delta: 10 },
+    { code: "proposal_requested", label: "Solicitou proposta formal", delta: 12 },
+    { code: "sent_documents", label: "Enviou documentos", delta: 9 },
+    { code: "followup_positive", label: "Retorno positivo no follow up", delta: 6 },
+    { code: "no_reply_3d", label: "Sem resposta por 3 dias", delta: -6 },
+    { code: "no_reply_7d", label: "Sem resposta por 7 dias", delta: -12 },
+    { code: "no_reply_14d", label: "Sem resposta por 14 dias", delta: -20 },
+    { code: "postponed_no_date", label: "Adiou sem nova data", delta: -12 },
+    { code: "no_budget_now", label: "Sem orcamento agora", delta: -20 },
+    { code: "lost_interest", label: "Esfriou sem retorno", delta: -18 },
+    { code: "invalid_contact", label: "Contato invalido", delta: -8 },
+  ];
   const CITIES_BY_UF = {
     SP: ["Sao Paulo", "Campinas", "Ribeirao Preto", "Sorocaba", "Sao Jose dos Campos"],
     MG: ["Belo Horizonte", "Uberlandia", "Juiz de Fora", "Contagem", "Montes Claros"],
@@ -673,6 +703,71 @@
     }).join("");
   }
 
+  function normalizeRuleCode(raw) {
+    return String(raw || "")
+      .trim()
+      .toLowerCase()
+      .replace(/[^a-z0-9]+/g, "_")
+      .replace(/^_+|_+$/g, "");
+  }
+
+  function formatRuleDelta(rawDelta) {
+    const delta = Number(rawDelta);
+    if (!Number.isFinite(delta)) return "0";
+    if (delta > 0) return `+${delta}`;
+    return String(delta);
+  }
+
+  function normalizeRule(rawRule) {
+    if (!rawRule || typeof rawRule !== "object") return null;
+    const code = normalizeRuleCode(rawRule.code || rawRule.event_type);
+    if (!code) return null;
+    const label = String(rawRule.label || code).trim() || code;
+    const delta = Number.parseInt(String(rawRule.delta ?? 0), 10);
+    if (!Number.isFinite(delta)) return null;
+    return { code, label, delta };
+  }
+
+  function normalizeRulesPayload(payload) {
+    const items = Array.isArray(payload) ? payload : Array.isArray(payload?.items) ? payload.items : [];
+    return items.map(normalizeRule).filter(Boolean);
+  }
+
+  function getEventRules() {
+    const active = state.eventRules.map(normalizeRule).filter(Boolean);
+    if (active.length) return active;
+    return FALLBACK_EVENT_RULES.map(normalizeRule).filter(Boolean);
+  }
+
+  function eventRuleOptionsHtml(selectedCode = "") {
+    const options = getEventRules()
+      .map((rule) => {
+        const selected = rule.code === selectedCode ? "selected" : "";
+        const label = `${rule.label} (${formatRuleDelta(rule.delta)})`;
+        return `<option value="${escapeHtml(rule.code)}" ${selected}>${escapeHtml(label)}</option>`;
+      })
+      .join("");
+    return `<option value="">- selecione -</option>${options}`;
+  }
+
+  async function loadEventRules() {
+    try {
+      const urls = eventRulesCandidates.map((endpoint) => `/api${endpoint}`);
+      const { url, data } = await requestJsonWithFallback(urls, { cache: "no-store" });
+      const parsed = normalizeRulesPayload(data);
+      if (parsed.length) {
+        state.eventRules = parsed;
+        state.rulesEndpoint = url;
+        return;
+      }
+    } catch (_err) {
+      // fallback local abaixo
+    }
+
+    state.eventRules = FALLBACK_EVENT_RULES.map(normalizeRule).filter(Boolean);
+    if (!state.rulesEndpoint) state.rulesEndpoint = "fallback";
+  }
+
   function nextActionDefaults(lead) {
     return {
       text: lead?.nextText || "",
@@ -707,6 +802,8 @@
 
     const defaults = nextActionDefaults(lead);
     const stageMeta = STAGE_BY_ID[lead.stage] || STAGE_BY_ID.INBOX;
+    const eventRules = getEventRules();
+    const defaultRuleCode = eventRules[0]?.code || "";
     state.matchesLimit = parseMatchesLimit(state.matchesLimit);
 
     DETAILS_ROOT.innerHTML = `
@@ -734,6 +831,21 @@
         <button id="dMoveBtn" class="btn">Atualizar etapa</button>
       </div>
 
+      <h4 class="k-section-title">Automacao por evento</h4>
+      <div class="k-form">
+        <label class="field">
+          <span>Evento objetivo (ajusta score e move o lead)</span>
+          <select id="dEventRule" class="input">
+            ${eventRuleOptionsHtml(defaultRuleCode)}
+          </select>
+        </label>
+        <label class="field">
+          <span>Observacao opcional</span>
+          <input id="dEventNote" class="input" type="text" placeholder="Ex.: confirmou necessidade em ligacao" />
+        </label>
+        <button id="dApplyRuleBtn" class="btn">Aplicar evento</button>
+      </div>
+
       <h4 class="k-section-title">Proxima acao</h4>
       <div class="k-form">
         <label class="field">
@@ -755,6 +867,9 @@
       </div>
 
       <div id="dNotice" class="k-message mt-12" style="display:none;"></div>
+      <div class="k-form mt-12">
+        <button id="dOpenReportBtn" class="btn">Visualizar relatorio gerencial</button>
+      </div>
 
       <h4 class="k-section-title">Matching de parceiros</h4>
       <label class="field">
@@ -781,6 +896,429 @@
     el.textContent = message;
     el.style.borderColor = isError ? "rgba(255,107,129,0.5)" : "rgba(55,214,122,0.45)";
     el.style.color = isError ? "#ff9db0" : "#a5f7c7";
+  }
+
+  function formatDateTimeLocal(value) {
+    const txt = String(value || "").trim();
+    if (!txt) return "-";
+    try {
+      const dt = new Date(txt);
+      if (Number.isNaN(dt.getTime())) return txt;
+      return dt.toLocaleString();
+    } catch (_err) {
+      return txt;
+    }
+  }
+
+  function formatProbabilityPct(value) {
+    const n = Number(value);
+    if (!Number.isFinite(n)) return "-";
+    return `${(n * 100).toFixed(1)}%`;
+  }
+
+  function toSafeArray(value) {
+    return Array.isArray(value) ? value : [];
+  }
+
+  function reportSectorChip(sector) {
+    if (!sector || typeof sector !== "object") return "<span class=\"k-report-chip\">-</span>";
+    const code = escapeHtml(String(sector.code || "-"));
+    const name = escapeHtml(String(sector.name || "-"));
+    return `<span class="k-report-chip"><b>${code}</b> ${name}</span>`;
+  }
+
+  function reportKeyValueRows(rows) {
+    return rows
+      .map(
+        (row) => `
+          <tr>
+            <th>${escapeHtml(String(row.k || "-"))}</th>
+            <td>${escapeHtml(String(row.v ?? "-"))}</td>
+          </tr>
+        `
+      )
+      .join("");
+  }
+
+  function ensureReportModal() {
+    let modal = document.getElementById("kReportModal");
+    if (modal) return modal;
+
+    modal = document.createElement("div");
+    modal.id = "kReportModal";
+    modal.className = "k-report-modal";
+    modal.innerHTML = `
+      <div class="k-report-backdrop" data-action="close"></div>
+      <article class="k-report-dialog" role="dialog" aria-modal="true" aria-label="Relatorio gerencial">
+        <header class="k-report-toolbar">
+          <h3 class="h3">Relatorio Gerencial do Lead</h3>
+          <div class="btn-row">
+            <button id="kReportPrintBtn" class="btn btn-ghost" type="button">Imprimir</button>
+            <button id="kReportCloseBtn" class="btn btn-ghost" type="button">Fechar</button>
+          </div>
+        </header>
+        <div id="kReportBody" class="k-report-body"></div>
+      </article>
+    `;
+
+    modal.addEventListener("click", (event) => {
+      const target = event.target;
+      if (!(target instanceof HTMLElement)) return;
+      if (target.dataset.action === "close" || target.id === "kReportCloseBtn") {
+        closeReportModal();
+      }
+      if (target.id === "kReportPrintBtn") {
+        window.print();
+      }
+    });
+
+    document.addEventListener("keydown", (event) => {
+      if (event.key !== "Escape") return;
+      if (modal.classList.contains("is-open")) closeReportModal();
+    });
+
+    document.body.appendChild(modal);
+    return modal;
+  }
+
+  function closeReportModal() {
+    const modal = document.getElementById("kReportModal");
+    if (!modal) return;
+    modal.classList.remove("is-open");
+    modal.setAttribute("aria-hidden", "true");
+  }
+
+  function openReportModalWithHtml(html) {
+    const modal = ensureReportModal();
+    const body = modal.querySelector("#kReportBody");
+    if (body) body.innerHTML = html;
+    modal.classList.add("is-open");
+    modal.setAttribute("aria-hidden", "false");
+  }
+
+  function buildLocalFallbackReport(lead) {
+    const stage = STAGE_BY_ID[lead?.stage]?.label || lead?.stage || "INBOX";
+    const score = Number(lead?.score);
+    let sector = "Setor de Marketing de Nurture";
+    let reason = "Lead em maturacao e sem consolidacao de sinais fortes de compra.";
+
+    if (stage === "ENVIADO" || (Number.isFinite(score) && score >= 80)) {
+      sector = "Setor de Vendas Consultivas";
+      reason = "Lead com alta intencao (etapa avancada e/ou score elevado).";
+    } else if (stage === "QUALIFICADO") {
+      sector = "Setor de Parcerias Estrategicas";
+      reason = "Lead qualificado com potencial de alavancagem via ecossistema de parceiros.";
+    }
+
+    return {
+      report_id: `LOCAL-${String(lead?.id || "LEAD").slice(0, 8).toUpperCase()}`,
+      generated_at: new Date().toISOString(),
+      lead_snapshot: {
+        id: lead?.id || "-",
+        nome: lead?.nome || "-",
+        uf: lead?.uf || "-",
+        cidade: lead?.cidade || "-",
+        segmento: lead?.segmento || "-",
+        status: lead?.status || "-",
+        stage,
+        score: lead?.score ?? "-",
+      },
+      executive_summary: {
+        headline: `Encaminhamento recomendado para ${sector}.`,
+        sent_to: sector,
+        sent_to_code: "LOCAL",
+        decision_mode: "SUGERIDO",
+        confidence_pct: 65,
+        why_sent: [reason, "Gerado em modo local por indisponibilidade momentanea do backend de relatorios."],
+      },
+      routing: {
+        primary_sector: { code: "LOCAL", name: sector, owner: "Engine local" },
+        secondary_sectors: [],
+        destination_reasoning: [reason],
+      },
+      qualification_intelligence: {
+        score: lead?.score ?? "-",
+        probability_qualified_text: "-",
+        score_engine: "-",
+        score_model_name: "-",
+        scored_at: "-",
+        score_reasons: [],
+      },
+      engagement: {
+        total_events: 0,
+        event_breakdown: {},
+        timeline: [],
+      },
+      crm_context: {
+        notes_count: 0,
+        latest_notes: [],
+        next_action: { text: lead?.nextText || "-", date: lead?.nextDate || "-", time: lead?.nextTime || "-" },
+      },
+      partner_matching: {
+        total_considered: 0,
+        top_matches: [],
+        recommendation: "Atualize o matching para enriquecer o relatorio.",
+      },
+      managerial_risks: ["Relatorio em modo local (dados reduzidos)."],
+      managerial_recommendations: [],
+      governance: {
+        data_sources: ["kanban-local-state"],
+        generated_by: "kanban-local-report-fallback",
+      },
+    };
+  }
+
+  function renderManagerialReportHtml(report) {
+    const lead = report?.lead_snapshot || {};
+    const exec = report?.executive_summary || {};
+    const routing = report?.routing || {};
+    const qual = report?.qualification_intelligence || {};
+    const engagement = report?.engagement || {};
+    const crmCtx = report?.crm_context || {};
+    const partner = report?.partner_matching || {};
+    const governance = report?.governance || {};
+
+    const whySentItems = toSafeArray(exec.why_sent)
+      .map((txt) => `<li>${escapeHtml(String(txt || "-"))}</li>`)
+      .join("");
+    const secSectorsHtml = toSafeArray(routing.secondary_sectors).map(reportSectorChip).join("");
+    const scoreReasonsRows = toSafeArray(qual.score_reasons)
+      .map((m) => {
+        const fator = String(m?.fator || "-");
+        const impacto = Number(m?.impacto);
+        const detalhe = String(m?.detalhe || "-");
+        return `
+          <tr>
+            <td>${escapeHtml(fator)}</td>
+            <td>${escapeHtml(Number.isFinite(impacto) ? (impacto >= 0 ? `+${impacto}` : String(impacto)) : "-")}</td>
+            <td>${escapeHtml(detalhe)}</td>
+          </tr>
+        `;
+      })
+      .join("");
+    const timelineRows = toSafeArray(engagement.timeline)
+      .map((ev) => {
+        const type = String(ev?.event_type || "-");
+        const at = formatDateTimeLocal(ev?.at);
+        const meta = ev?.metadata && typeof ev.metadata === "object" ? ev.metadata : {};
+        const channel = String(
+          meta.channel ||
+            meta.setor ||
+            meta.sector ||
+            meta.rule_label ||
+            meta.rule_code ||
+            meta.note ||
+            (meta.input && typeof meta.input === "object" ? meta.input.note : "") ||
+            "-"
+        );
+        return `
+          <tr>
+            <td>${escapeHtml(type)}</td>
+            <td>${escapeHtml(at)}</td>
+            <td>${escapeHtml(channel)}</td>
+          </tr>
+        `;
+      })
+      .join("");
+    const notesRows = toSafeArray(crmCtx.latest_notes)
+      .map((n) => {
+        const when = formatDateTimeLocal(n?.created_at);
+        return `
+          <tr>
+            <td>${escapeHtml(String(n?.type || "-"))}</td>
+            <td>${escapeHtml(String(n?.text || "-"))}</td>
+            <td>${escapeHtml(when)}</td>
+          </tr>
+        `;
+      })
+      .join("");
+    const matchRows = toSafeArray(partner.top_matches)
+      .map((m) => {
+        return `
+          <tr>
+            <td>${escapeHtml(String(m?.nome_fantasia || "-"))}</td>
+            <td>${escapeHtml(String(m?.uf || "-"))}</td>
+            <td>${escapeHtml(String(m?.municipio_nome || "-"))}</td>
+            <td>${escapeHtml(String(m?.prioridade ?? "-"))}</td>
+            <td>${escapeHtml(String(m?.score ?? "-"))}</td>
+          </tr>
+        `;
+      })
+      .join("");
+    const risksList = toSafeArray(report?.managerial_risks)
+      .map((r) => `<li>${escapeHtml(String(r || "-"))}</li>`)
+      .join("");
+    const recRows = toSafeArray(report?.managerial_recommendations)
+      .map((r) => {
+        return `
+          <tr>
+            <td>${escapeHtml(String(r?.horizon || "-"))}</td>
+            <td>${escapeHtml(String(r?.owner || "-"))}</td>
+            <td>${escapeHtml(String(r?.action || "-"))}</td>
+          </tr>
+        `;
+      })
+      .join("");
+
+    const eventBreakdownTxt = Object.entries(engagement.event_breakdown || {})
+      .map(([k, v]) => `${k}: ${v}`)
+      .join(" | ");
+
+    return `
+      <section class="k-report-header-card">
+        <div class="k-report-title-wrap">
+          <h4 class="h3">${escapeHtml(String(exec.headline || "Relatorio gerencial do lead"))}</h4>
+          <div class="muted mt-8">Relatorio: ${escapeHtml(String(report?.report_id || "-"))}</div>
+          <div class="muted">Gerado em: ${escapeHtml(formatDateTimeLocal(report?.generated_at))}</div>
+        </div>
+        <div class="k-report-sector-wrap">
+          ${reportSectorChip(routing.primary_sector)}
+          <div class="muted mt-8">Modo: ${escapeHtml(String(exec.decision_mode || "-"))} | Confianca: ${escapeHtml(String(exec.confidence_pct ?? "-"))}%</div>
+        </div>
+      </section>
+
+      <section class="k-report-kpi-grid">
+        <article class="k-report-kpi"><div class="k-report-kpi-label">Score</div><div class="k-report-kpi-value">${escapeHtml(String(qual.score ?? lead.score ?? "-"))}</div></article>
+        <article class="k-report-kpi"><div class="k-report-kpi-label">Prob. Qualificacao</div><div class="k-report-kpi-value">${escapeHtml(String(qual.probability_qualified_text || formatProbabilityPct(qual.probability_qualified)))}</div></article>
+        <article class="k-report-kpi"><div class="k-report-kpi-label">Eventos</div><div class="k-report-kpi-value">${escapeHtml(String(engagement.total_events ?? 0))}</div></article>
+        <article class="k-report-kpi"><div class="k-report-kpi-label">Notas CRM</div><div class="k-report-kpi-value">${escapeHtml(String(crmCtx.notes_count ?? 0))}</div></article>
+      </section>
+
+      <section class="k-report-section">
+        <h4 class="k-report-section-title">1) Encaminhamento e justificativa executiva</h4>
+        <div class="k-report-grid-2">
+          <div class="k-report-box">
+            <div class="k-report-subtitle">Destino principal</div>
+            ${reportSectorChip(routing.primary_sector)}
+            <div class="k-report-subtitle mt-12">Destinos secundarios</div>
+            <div class="k-report-chip-row">${secSectorsHtml || "<span class=\"k-report-chip\">-</span>"}</div>
+          </div>
+          <div class="k-report-box">
+            <div class="k-report-subtitle">Porque foi enviado</div>
+            <ul class="k-report-list">${whySentItems || "<li>-</li>"}</ul>
+          </div>
+        </div>
+      </section>
+
+      <section class="k-report-section">
+        <h4 class="k-report-section-title">2) Cadastro do lead (snapshot)</h4>
+        <div class="k-report-table-wrap">
+          <table class="k-report-table">
+            <tbody>
+              ${reportKeyValueRows([
+                { k: "Lead ID", v: lead.id || "-" },
+                { k: "Nome", v: lead.nome || "-" },
+                { k: "Localizacao", v: `${lead.cidade || "-"} / ${lead.uf || "-"}` },
+                { k: "Segmento", v: lead.segmento || "-" },
+                { k: "Status / Etapa", v: `${lead.status || "-"} / ${lead.stage || "-"}` },
+                { k: "Motor / Modelo", v: `${qual.score_engine || "-"} / ${qual.score_model_name || "-"}` },
+              ])}
+            </tbody>
+          </table>
+        </div>
+      </section>
+
+      <section class="k-report-section">
+        <h4 class="k-report-section-title">3) Inteligencia de qualificacao (score)</h4>
+        <div class="k-report-table-wrap">
+          <table class="k-report-table">
+            <thead>
+              <tr>
+                <th>Fator</th>
+                <th>Impacto</th>
+                <th>Detalhe</th>
+              </tr>
+            </thead>
+            <tbody>
+              ${scoreReasonsRows || "<tr><td colspan=\"3\">Sem fatores detalhados.</td></tr>"}
+            </tbody>
+          </table>
+        </div>
+      </section>
+
+      <section class="k-report-section">
+        <h4 class="k-report-section-title">4) Engajamento e historico CRM</h4>
+        <div class="k-report-box">Distribuicao de eventos: ${escapeHtml(eventBreakdownTxt || "-")}</div>
+        <div class="k-report-grid-2 mt-12">
+          <div class="k-report-table-wrap">
+            <table class="k-report-table">
+              <thead><tr><th>Evento</th><th>Data/Hora</th><th>Canal</th></tr></thead>
+              <tbody>${timelineRows || "<tr><td colspan=\"3\">Sem eventos registrados.</td></tr>"}</tbody>
+            </table>
+          </div>
+          <div class="k-report-table-wrap">
+            <table class="k-report-table">
+              <thead><tr><th>Tipo</th><th>Nota</th><th>Data/Hora</th></tr></thead>
+              <tbody>${notesRows || "<tr><td colspan=\"3\">Sem notas CRM registradas.</td></tr>"}</tbody>
+            </table>
+          </div>
+        </div>
+      </section>
+
+      <section class="k-report-section">
+        <h4 class="k-report-section-title">5) Matching de parceiros e plano de acao</h4>
+        <div class="k-report-box">${escapeHtml(String(partner.recommendation || "-"))}</div>
+        <div class="k-report-grid-2 mt-12">
+          <div class="k-report-table-wrap">
+            <table class="k-report-table">
+              <thead><tr><th>Parceiro</th><th>UF</th><th>Municipio</th><th>Prioridade</th><th>Score</th></tr></thead>
+              <tbody>${matchRows || "<tr><td colspan=\"5\">Sem parceiros recomendados.</td></tr>"}</tbody>
+            </table>
+          </div>
+          <div class="k-report-table-wrap">
+            <table class="k-report-table">
+              <thead><tr><th>Janela</th><th>Responsavel</th><th>Acao recomendada</th></tr></thead>
+              <tbody>${recRows || "<tr><td colspan=\"3\">Sem plano recomendado.</td></tr>"}</tbody>
+            </table>
+          </div>
+        </div>
+      </section>
+
+      <section class="k-report-section">
+        <h4 class="k-report-section-title">6) Riscos e governanca</h4>
+        <div class="k-report-grid-2">
+          <div class="k-report-box">
+            <div class="k-report-subtitle">Riscos gerenciais</div>
+            <ul class="k-report-list">${risksList || "<li>Sem riscos relevantes.</li>"}</ul>
+          </div>
+          <div class="k-report-box">
+            <div class="k-report-subtitle">Rastreabilidade</div>
+            <p>Fontes: ${escapeHtml(String((governance.data_sources || []).join(", ") || "-"))}</p>
+            <p>Engine: ${escapeHtml(String(governance.generated_by || "-"))}</p>
+            <p>Endpoint: ${escapeHtml(String(state.reportEndpoint || "-"))}</p>
+          </div>
+        </div>
+      </section>
+    `;
+  }
+
+  async function openManagerialReport() {
+    const lead = findLeadById(state.selectedId);
+    if (!lead) {
+      setNotice("Selecione um lead para visualizar o relatorio gerencial.", true);
+      return;
+    }
+
+    openReportModalWithHtml(`<div class="k-message">Gerando relatorio gerencial...</div>`);
+
+    try {
+      const leadId = String(lead.id || "").trim();
+      const urls = reportBaseCandidates.map(
+        (base) => `/api${base}/${encodeURIComponent(leadId)}/managerial-report`
+      );
+      const { url, data } = await requestJsonWithFallback(urls, { cache: "no-store" });
+      state.reportEndpoint = url;
+
+      const report = data?.report && typeof data.report === "object" ? data.report : data;
+      const html = renderManagerialReportHtml(report || buildLocalFallbackReport(lead));
+      openReportModalWithHtml(html);
+      setNotice("Relatorio gerencial carregado.");
+    } catch (_err) {
+      const fallback = buildLocalFallbackReport(lead);
+      const warningHtml = `<div class="k-message">Nao foi possivel carregar o relatorio completo do backend. Exibindo versao local resumida.</div>`;
+      openReportModalWithHtml(`${warningHtml}${renderManagerialReportHtml(fallback)}`);
+      setNotice("Relatorio exibido em modo local (fallback).", true);
+    }
   }
 
   function extractMatchesItems(payload) {
@@ -940,16 +1478,84 @@
 
     try {
       const urls = moveCandidates.map((endpoint) => `/api${endpoint}`);
-      const { url } = await requestJsonWithFallback(urls, {
+      const { url, data } = await requestJsonWithFallback(urls, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ lead_id: lead.id, stage: nextStage }),
       });
       state.moveEndpoint = url;
-      setNotice("Etapa atualizada com sucesso.");
+      const transition = data?.transition && typeof data.transition === "object" ? data.transition : {};
+      const stageInfo =
+        transition.from_stage && transition.to_stage
+          ? `${transition.from_stage} -> ${transition.to_stage}`
+          : `${lead.stage} -> ${nextStage}`;
+      const scoreInfo =
+        Number.isFinite(Number(transition.from_score)) && Number.isFinite(Number(transition.to_score))
+          ? ` | score ${transition.from_score} -> ${transition.to_score}`
+          : "";
+      const message = `Etapa atualizada com sucesso (${stageInfo}${scoreInfo}).`;
       await refreshBoard({ preserveSelection: true });
+      setNotice(message);
     } catch (err) {
       setNotice("Nao foi possivel atualizar a etapa.", true);
+    }
+  }
+
+  async function applyEventRule() {
+    const lead = findLeadById(state.selectedId);
+    const ruleEl = document.getElementById("dEventRule");
+    const noteEl = document.getElementById("dEventNote");
+    if (!lead || !(ruleEl instanceof HTMLSelectElement)) return;
+
+    const ruleCode = normalizeRuleCode(ruleEl.value);
+    if (!ruleCode) {
+      setNotice("Selecione um evento objetivo para aplicar.", true);
+      return;
+    }
+
+    const note = noteEl instanceof HTMLInputElement ? String(noteEl.value || "").trim() : "";
+    const payload = {
+      rule_code: ruleCode,
+      source: "kanban_ui",
+      metadata: note ? { note } : {},
+    };
+
+    try {
+      const urls = applyRuleBaseCandidates.map(
+        (base) => `/api${base}/${encodeURIComponent(lead.id)}/apply-rule`
+      );
+      const { url, data } = await requestJsonWithFallback(urls, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload),
+      });
+      state.applyRuleEndpoint = url;
+
+      const transition = data?.transition && typeof data.transition === "object" ? data.transition : {};
+      const rule =
+        normalizeRule(data?.rule) ||
+        getEventRules().find((item) => item.code === ruleCode) ||
+        { code: ruleCode, label: ruleCode, delta: 0 };
+      const stageInfo =
+        transition.from_stage && transition.to_stage
+          ? `${transition.from_stage} -> ${transition.to_stage}`
+          : "-";
+      const scoreInfo =
+        Number.isFinite(Number(transition.from_score)) && Number.isFinite(Number(transition.to_score))
+          ? `${transition.from_score} -> ${transition.to_score}`
+          : "-";
+
+      const missingSignals = Array.isArray(data?.qualification_gate?.missing_signals)
+        ? data.qualification_gate.missing_signals.filter(Boolean)
+        : [];
+      const gateInfo = missingSignals.length ? ` | pendencias: ${missingSignals.join(", ")}` : "";
+      const message = `Evento aplicado (${rule.label} ${formatRuleDelta(rule.delta)}). Etapa ${stageInfo} | score ${scoreInfo}${gateInfo}.`;
+
+      if (noteEl instanceof HTMLInputElement) noteEl.value = "";
+      await refreshBoard({ preserveSelection: true });
+      setNotice(message);
+    } catch (_err) {
+      setNotice("Nao foi possivel aplicar o evento agora.", true);
     }
   }
 
@@ -973,8 +1579,8 @@
         body: JSON.stringify({ note }),
       });
       state.notesEndpoint = url;
-      setNotice("Proxima acao salva com sucesso.");
       await refreshBoard({ preserveSelection: true });
+      setNotice("Proxima acao salva com sucesso.");
     } catch (err) {
       setNotice("Nao foi possivel salvar a proxima acao.", true);
     }
@@ -1058,6 +1664,11 @@
         await updateStage();
       }
 
+      if (target.id === "dApplyRuleBtn") {
+        event.preventDefault();
+        await applyEventRule();
+      }
+
       if (target.id === "dSaveNextBtn") {
         event.preventDefault();
         await saveNextAction();
@@ -1070,12 +1681,18 @@
           if (lead) await loadMatches(lead);
         }
       }
+
+      if (target.id === "dOpenReportBtn") {
+        event.preventDefault();
+        await openManagerialReport();
+      }
     });
   }
 
   async function init() {
     if (!ROOT || !KPI_ROOT || !DETAILS_ROOT) return;
     bindEvents();
+    await loadEventRules();
     await refreshBoard({ preserveSelection: false });
 
     if (state.source === "mock") {

@@ -1,49 +1,56 @@
-# Growth Equestre — UI Web (Node.js)
+# Growth Equestre - UI Web (Node.js)
 
-Objetivo: substituir/replicar a UI em Streamlit por uma UI Web em Node.js, mantendo consumo do backend existente via **proxy**.
+UI web em Node.js + EJS para operação comercial do CRM, consumindo o backend via proxy `/api`.
 
 ## Stack
 - Node.js + Express
-- EJS (server-side rendering)
-- Proxy `/api/*` -> `BACKEND_URL` (evita CORS)
-- CSS/JS simples (sem build)
+- EJS (SSR)
+- Proxy `/api/*` -> `BACKEND_URL`
+- CSS/JS sem build frontend
 
 ## Como rodar (local)
-1. Copie as variáveis:
-   - `cp .env.example .env`
+1. Copie variáveis:
+   - `cp .env.example .env` (PowerShell: `Copy-Item .env.example .env`)
 2. Instale dependências:
    - `npm install`
 3. Suba:
    - `npm run dev`
 4. Acesse:
-   - http://localhost:3100
+   - `http://localhost:3100`
 
 ## Como rodar (Docker)
-Se você usa Docker Compose no projeto Growth Equestre, adicione um serviço `ui_web` com `BACKEND_URL=http://backend:3000`.
+No projeto raiz:
 
-Exemplo (trecho):
-
-```yaml
-services:
-  ui_web:
-    build: ./ui_web
-    ports:
-      - "3100:3100"
-    environment:
-      - PORT=3100
-      - BACKEND_URL=http://backend:3000
-    depends_on:
-      - backend
+```powershell
+docker compose up -d --build ui_web backend scoring db
 ```
 
-## Endpoints esperados no backend
-A UI tenta consumir:
+## Variáveis relevantes
+- `PORT` (default `3100`)
+- `BACKEND_URL` (default `http://localhost:3000`)
+- `KANBAN_PATH` (default `/crm/board`)
+- `KANBAN_MOVE_PATH` (default `/crm/move`)
+- `CRM_EVENT_RULES_PATH` (default `/crm/event-rules`)
+- `CRM_APPLY_RULE_BASE_PATH` (default `/crm/leads`)
+
+## Endpoints esperados no backend (atuais)
 - `GET /health`
-- `GET /crm/summary`
-- `GET /crm/kanban`
-- `POST /crm/kanban/move`
+- `GET /crm/board`
+- `POST /crm/move`
+- `GET /crm/event-rules`
+- `POST /crm/leads/:id/apply-rule`
+- `GET /crm/leads/:id/matches`
+- `GET /crm/leads/:id/managerial-report`
+- `POST /crm/leads/:id/notes`
 
-Se alguma rota não existir ainda, a UI **não quebra**: ela usa mocks para manter a demo do hackathon funcionando.
+## Observações operacionais do Kanban
+- Faixas por etapa:
+  - `IN CURIOSO`: `0-39`
+  - `AQ AQUECENDO`: `40-69`
+  - `QL QUALIFICADO`: `70-100`
+- Gate para `QUALIFICADO`: exige `budget_confirmed + timeline_confirmed + need_confirmed`.
+- Score pode subir acima de `70` e permanecer em `AQUECENDO` enquanto faltar gate.
+- Movimento manual de etapa ajusta score para a faixa da coluna.
 
-## Próximos passos
-Veja `docs/github_issues.md` para o backlog em formato de issues/épicos.
+## Backlog
+Veja `ui_web/docs/github_issues.md`.

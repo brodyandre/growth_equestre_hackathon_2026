@@ -1243,6 +1243,90 @@ for (const p of readNextActionPaths) {
  *   GET  /crm/leads/:id/matches
  */
 const CRM_KANBAN_STAGES = ["INBOX", "AQUECENDO", "QUALIFICADO", "ENVIADO"];
+const CRM_RULE_ENGINE_VERSION = 1;
+const CRM_RULE_ENGINE_MODEL = "kanban_event_rules_v1";
+const CRM_STATUS_SCORE_BANDS = {
+  CURIOSO: { min: 0, max: 39, stage: "INBOX" },
+  AQUECENDO: { min: 40, max: 69, stage: "AQUECENDO" },
+  QUALIFICADO: { min: 70, max: 100, stage: "QUALIFICADO" },
+};
+const CRM_QUALIFICATION_SIGNAL_KEYS = ["budget_confirmed", "timeline_confirmed", "need_confirmed"];
+const CRM_EVENT_RULES = [
+  { code: "whatsapp_reply", label: "Respondeu WhatsApp", event_type: "whatsapp_reply", delta: 8 },
+  { code: "asked_price", label: "Pediu valores", event_type: "asked_price", delta: 12 },
+  { code: "proposal_click", label: "Clicou na proposta", event_type: "proposal_click", delta: 10 },
+  { code: "meeting_scheduled", label: "Agendou reuniao", event_type: "meeting_scheduled", delta: 15 },
+  { code: "meeting_attended", label: "Compareceu reuniao", event_type: "meeting_attended", delta: 18 },
+  {
+    code: "budget_confirmed",
+    label: "Confirmou orcamento",
+    event_type: "budget_confirmed",
+    delta: 15,
+    signals: { budget_confirmed: true },
+  },
+  {
+    code: "timeline_confirmed",
+    label: "Confirmou prazo",
+    event_type: "timeline_confirmed",
+    delta: 10,
+    signals: { timeline_confirmed: true },
+  },
+  {
+    code: "need_confirmed",
+    label: "Confirmou necessidade",
+    event_type: "need_confirmed",
+    delta: 10,
+    signals: { need_confirmed: true },
+  },
+  {
+    code: "proposal_requested",
+    label: "Solicitou proposta formal",
+    event_type: "proposal_requested",
+    delta: 12,
+  },
+  {
+    code: "sent_documents",
+    label: "Enviou documentos",
+    event_type: "sent_documents",
+    delta: 9,
+  },
+  {
+    code: "followup_positive",
+    label: "Retorno positivo no follow up",
+    event_type: "followup_positive",
+    delta: 6,
+  },
+  { code: "no_reply_3d", label: "Sem resposta por 3 dias", event_type: "no_reply_3d", delta: -6 },
+  { code: "no_reply_7d", label: "Sem resposta por 7 dias", event_type: "no_reply_7d", delta: -12 },
+  { code: "no_reply_14d", label: "Sem resposta por 14 dias", event_type: "no_reply_14d", delta: -20 },
+  {
+    code: "postponed_no_date",
+    label: "Adiou sem nova data",
+    event_type: "postponed_no_date",
+    delta: -12,
+  },
+  {
+    code: "no_budget_now",
+    label: "Sem orcamento agora",
+    event_type: "no_budget_now",
+    delta: -20,
+    signals: { budget_confirmed: false },
+  },
+  {
+    code: "lost_interest",
+    label: "Esfriou sem retorno",
+    event_type: "lost_interest",
+    delta: -18,
+    signals: { need_confirmed: false, timeline_confirmed: false },
+  },
+  {
+    code: "invalid_contact",
+    label: "Contato invalido",
+    event_type: "invalid_contact",
+    delta: -8,
+  },
+];
+const CRM_EVENT_RULES_BY_CODE = new Map(CRM_EVENT_RULES.map((rule) => [rule.code, rule]));
 
 function normalizeCrmStage(raw) {
   const v = String(raw || "").trim().toUpperCase();
@@ -1253,9 +1337,387 @@ function normalizeCrmStage(raw) {
   return "INBOX";
 }
 
+function normalizeCrmRuleCode(rawCode) {
+  return String(rawCode || "")
+    .trim()
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, "_")
+    .replace(/^_+|_+$/g, "");
+}
+
+function normalizeCrmRule(rule) {
+  if (!rule || typeof rule !== "object") return null;
+  const code = normalizeCrmRuleCode(rule.code);
+  if (!code) return null;
+  const label = String(rule.label || code).trim() || code;
+  const eventType = String(rule.event_type || code).trim() || code;
+  const delta = Number.parseInt(String(rule.delta ?? 0), 10);
+  if (!Number.isFinite(delta)) return null;
+
+  const signalsInput = ensurePlainObject(rule.signals);
+  const signals = {};
+  for (const key of CRM_QUALIFICATION_SIGNAL_KEYS) {
+    if (!Object.prototype.hasOwnProperty.call(signalsInput, key)) continue;
+    signals[key] = Boolean(signalsInput[key]);
+  }
+
+  return {
+    code,
+    label,
+    event_type: eventType,
+    delta,
+    signals,
+  };
+}
+
+function listCrmRules() {
+  return CRM_EVENT_RULES.map(normalizeCrmRule).filter(Boolean);
+}
+
+function crmRulePublic(rule) {
+  const normalizedRule = normalizeCrmRule(rule);
+  if (!normalizedRule) return null;
+  return {
+    code: normalizedRule.code,
+    label: normalizedRule.label,
+    event_type: normalizedRule.event_type,
+    delta: normalizedRule.delta,
+    direction: normalizedRule.delta >= 0 ? "up" : "down",
+    signal_patch: normalizedRule.signals,
+  };
+}
+
+function stageToCommercialStatus(stageRaw, fallbackStatus = "CURIOSO") {
+  const stage = normalizeCrmStage(stageRaw);
+  if (stage === "AQUECENDO") return "AQUECENDO";
+  if (stage === "QUALIFICADO") return "QUALIFICADO";
+  if (stage === "ENVIADO") return "ENVIADO";
+  if (stage === "INBOX") return "CURIOSO";
+  const fallback = String(fallbackStatus || "").trim().toUpperCase();
+  if (fallback === "AQUECENDO" || fallback === "QUALIFICADO" || fallback === "ENVIADO") return fallback;
+  return "CURIOSO";
+}
+
+function clampLeadScore(rawValue, fallback = 0) {
+  const parsed = Number(rawValue);
+  if (!Number.isFinite(parsed)) return fallback;
+  const rounded = Math.round(parsed);
+  return Math.max(0, Math.min(100, rounded));
+}
+
+function scoreBandForStage(stageRaw) {
+  const stage = normalizeCrmStage(stageRaw);
+  if (stage === "AQUECENDO") return CRM_STATUS_SCORE_BANDS.AQUECENDO;
+  if (stage === "QUALIFICADO" || stage === "ENVIADO") return CRM_STATUS_SCORE_BANDS.QUALIFICADO;
+  return CRM_STATUS_SCORE_BANDS.CURIOSO;
+}
+
+function adjustScoreToStageBand(rawScore, stageRaw) {
+  const band = scoreBandForStage(stageRaw);
+  const parsed = Number(rawScore);
+  if (!Number.isFinite(parsed)) return band.min;
+  const rounded = Math.round(parsed);
+  return Math.max(band.min, Math.min(band.max, rounded));
+}
+
+function normalizeCrmSignals(rawSignals = {}) {
+  const safe = ensurePlainObject(rawSignals);
+  const out = {};
+  for (const key of CRM_QUALIFICATION_SIGNAL_KEYS) {
+    out[key] = Boolean(safe[key]);
+  }
+  return out;
+}
+
+function extractCrmSignals(scoreMetaRaw) {
+  const scoreMeta = ensurePlainObject(scoreMetaRaw);
+  const direct = normalizeCrmSignals(scoreMeta.crm_signals);
+  const engineMeta = ensurePlainObject(scoreMeta.crm_rule_engine);
+  const nested = normalizeCrmSignals(engineMeta.signals);
+
+  const merged = {};
+  for (const key of CRM_QUALIFICATION_SIGNAL_KEYS) {
+    merged[key] = Boolean(direct[key] || nested[key]);
+  }
+  return merged;
+}
+
+function applyCrmSignalPatch(baseSignalsRaw, patchRaw) {
+  const baseSignals = normalizeCrmSignals(baseSignalsRaw);
+  const patch = ensurePlainObject(patchRaw);
+  const next = { ...baseSignals };
+
+  for (const key of CRM_QUALIFICATION_SIGNAL_KEYS) {
+    if (!Object.prototype.hasOwnProperty.call(patch, key)) continue;
+    next[key] = Boolean(patch[key]);
+  }
+  return next;
+}
+
+function extractExplicitCrmSignalPatch(rawPatch = {}) {
+  const patch = ensurePlainObject(rawPatch);
+  const out = {};
+  for (const key of CRM_QUALIFICATION_SIGNAL_KEYS) {
+    if (!Object.prototype.hasOwnProperty.call(patch, key)) continue;
+    out[key] = Boolean(patch[key]);
+  }
+  return out;
+}
+
+function qualificationGateMissingSignals(signalsRaw) {
+  const signals = normalizeCrmSignals(signalsRaw);
+  return CRM_QUALIFICATION_SIGNAL_KEYS.filter((key) => !signals[key]);
+}
+
+function deriveStateByScoreAndSignals(rawScore, signalsRaw, options = {}) {
+  const keepSent = Boolean(options.keep_sent);
+  const score = clampLeadScore(rawScore, 0);
+  const signals = normalizeCrmSignals(signalsRaw);
+  const missingSignals = qualificationGateMissingSignals(signals);
+
+  if (keepSent) {
+    return {
+      score: Math.max(score, CRM_STATUS_SCORE_BANDS.QUALIFICADO.min),
+      status: "ENVIADO",
+      stage: "ENVIADO",
+      qualification_gate_open: true,
+      missing_signals: [],
+    };
+  }
+
+  if (score <= CRM_STATUS_SCORE_BANDS.CURIOSO.max) {
+    return {
+      score,
+      status: "CURIOSO",
+      stage: CRM_STATUS_SCORE_BANDS.CURIOSO.stage,
+      qualification_gate_open: false,
+      missing_signals: missingSignals,
+    };
+  }
+
+  if (score <= CRM_STATUS_SCORE_BANDS.AQUECENDO.max) {
+    return {
+      score,
+      status: "AQUECENDO",
+      stage: CRM_STATUS_SCORE_BANDS.AQUECENDO.stage,
+      qualification_gate_open: false,
+      missing_signals: missingSignals,
+    };
+  }
+
+  if (missingSignals.length === 0) {
+    return {
+      score,
+      status: "QUALIFICADO",
+      stage: CRM_STATUS_SCORE_BANDS.QUALIFICADO.stage,
+      qualification_gate_open: true,
+      missing_signals: [],
+    };
+  }
+
+  return {
+    // Mantem o score real (ex.: 69 -> 77), mas bloqueia a promocao de etapa
+    // enquanto os sinais obrigatorios de qualificacao nao estiverem completos.
+    score,
+    status: "AQUECENDO",
+    stage: CRM_STATUS_SCORE_BANDS.AQUECENDO.stage,
+    qualification_gate_open: false,
+    missing_signals: missingSignals,
+  };
+}
+
+function normalizeScoreMotivos(raw) {
+  if (Array.isArray(raw)) return raw.filter((item) => item && typeof item === "object");
+  if (typeof raw === "string") {
+    try {
+      const parsed = JSON.parse(raw);
+      if (Array.isArray(parsed)) return parsed.filter((item) => item && typeof item === "object");
+    } catch {
+      return [];
+    }
+  }
+  return [];
+}
+
+function buildRuleReason(rule, transition) {
+  const fromStage = String(transition?.from_stage || "-").trim();
+  const toStage = String(transition?.to_stage || "-").trim();
+  const missingSignals = Array.isArray(transition?.missing_signals)
+    ? transition.missing_signals
+    : [];
+
+  const gateMessage = missingSignals.length
+    ? `Pendencias para QUALIFICADO: ${missingSignals.join(", ")}.`
+    : "Gate de qualificacao atendido.";
+
+  return {
+    fator: `Evento CRM: ${rule.label}`,
+    impacto: rule.delta,
+    detalhe: `Movimento ${fromStage} -> ${toStage}. ${gateMessage}`,
+  };
+}
+
+function appendRuleReason(existing, ruleReason, maxItems = 14) {
+  const base = normalizeScoreMotivos(existing);
+  const trimmed = base.slice(Math.max(0, base.length - (maxItems - 1)));
+  return [...trimmed, ruleReason];
+}
+
+function normalizeCrmSource(sourceRaw, fallback = "kanban_ui") {
+  const source = String(sourceRaw || "").trim();
+  if (!source) return fallback;
+  return source.slice(0, 80);
+}
+
+function serializeCrmLeadRow(row) {
+  const lead = serializeLead(row);
+  lead.crm_stage = resolveBoardStage(lead);
+  return lead;
+}
+
+async function applyCrmEventRule({ leadId, ruleCode, metadata = {}, source = "kanban_ui" }) {
+  const normalizedCode = normalizeCrmRuleCode(ruleCode);
+  const rule = CRM_EVENT_RULES_BY_CODE.get(normalizedCode);
+  if (!rule) {
+    return {
+      status: 400,
+      body: {
+        error: "rule_code invalido",
+        allowed_rules: listCrmRules().map((item) => item.code),
+      },
+    };
+  }
+
+  const leadR = await query(
+    `SELECT id, nome, uf, cidade, segmento_interesse, status, score, crm_stage, score_motivos, score_meta,
+            next_action_text, next_action_date, next_action_time, created_at, updated_at
+       FROM leads
+      WHERE id = $1`,
+    [leadId]
+  );
+
+  if (!leadR.rows.length) {
+    return { status: 404, body: { error: "Lead nao encontrado" } };
+  }
+
+  const currentLead = leadR.rows[0];
+  const currentStage = resolveBoardStage(currentLead);
+  const currentStatus = stageToCommercialStatus(currentStage, currentLead.status);
+  const currentScore = clampLeadScore(currentLead.score, 0);
+
+  const scoreMeta = ensurePlainObject(currentLead.score_meta);
+  const baseSignals = extractCrmSignals(scoreMeta);
+  const payloadMeta = ensurePlainObject(metadata);
+  const signalPatch = {
+    ...extractExplicitCrmSignalPatch(rule.signals),
+    ...extractExplicitCrmSignalPatch(payloadMeta.signal_patch),
+  };
+  const nextSignals = applyCrmSignalPatch(baseSignals, signalPatch);
+
+  const nextState = deriveStateByScoreAndSignals(currentScore + rule.delta, nextSignals, {
+    keep_sent: currentStatus === "ENVIADO",
+  });
+
+  const nextReason = buildRuleReason(rule, {
+    from_stage: currentStage,
+    to_stage: nextState.stage,
+    missing_signals: nextState.missing_signals,
+  });
+  const nextMotivos = appendRuleReason(currentLead.score_motivos, nextReason);
+
+  const mergedMeta = {
+    ...scoreMeta,
+    crm_signals: nextSignals,
+    crm_rule_engine: {
+      ...ensurePlainObject(scoreMeta.crm_rule_engine),
+      version: CRM_RULE_ENGINE_VERSION,
+      model_name: CRM_RULE_ENGINE_MODEL,
+      signals: nextSignals,
+      last_rule_code: rule.code,
+      last_rule_label: rule.label,
+      last_delta: rule.delta,
+      last_source: normalizeCrmSource(source),
+      last_applied_at: new Date().toISOString(),
+      qualification_gate_open: nextState.qualification_gate_open,
+      missing_signals: nextState.missing_signals,
+    },
+  };
+
+  const updatedLeadR = await query(
+    `UPDATE leads
+        SET score = $2,
+            status = $3,
+            crm_stage = $4,
+            score_motivos = $5,
+            score_engine = $6,
+            score_model_name = $7,
+            score_scored_at = now(),
+            score_meta = $8,
+            updated_at = now()
+      WHERE id = $1
+      RETURNING id, nome, uf, cidade, segmento_interesse, status, score, crm_stage, score_motivos,
+                score_engine, score_model_name, score_probability, score_scored_at, score_meta,
+                next_action_text, next_action_date, next_action_time, created_at, updated_at`,
+    [
+      leadId,
+      nextState.score,
+      nextState.status,
+      nextState.stage,
+      JSON.stringify(nextMotivos),
+      "crm_rule_engine",
+      CRM_RULE_ENGINE_MODEL,
+      JSON.stringify(mergedMeta),
+    ]
+  );
+
+  const eventMetadata = {
+    source: normalizeCrmSource(source),
+    rule_code: rule.code,
+    rule_label: rule.label,
+    score_delta: rule.delta,
+    from_score: currentScore,
+    to_score: nextState.score,
+    from_status: currentStatus,
+    to_status: nextState.status,
+    from_stage: currentStage,
+    to_stage: nextState.stage,
+    qualification_gate_open: nextState.qualification_gate_open,
+    missing_signals: nextState.missing_signals,
+    input: payloadMeta,
+  };
+
+  await query("INSERT INTO events (lead_id, event_type, metadata) VALUES ($1, $2, $3)", [
+    leadId,
+    rule.event_type,
+    JSON.stringify(eventMetadata),
+  ]);
+
+  return {
+    status: 200,
+    body: {
+      ok: true,
+      rule: crmRulePublic(rule),
+      lead: serializeCrmLeadRow(updatedLeadR.rows[0]),
+      transition: {
+        from_stage: currentStage,
+        to_stage: nextState.stage,
+        from_status: currentStatus,
+        to_status: nextState.status,
+        from_score: currentScore,
+        to_score: nextState.score,
+      },
+      qualification_gate: {
+        open: nextState.qualification_gate_open,
+        missing_signals: nextState.missing_signals,
+      },
+    },
+  };
+}
+
 function resolveBoardStage(lead) {
   const stageFromCrm = normalizeCrmStage(lead?.crm_stage);
   const stageFromStatus = normalizeCrmStage(lead?.status);
+  if (stageFromStatus === "ENVIADO") return "ENVIADO";
 
   // Se o CRM ainda está no default INBOX, deixa o status comercial conduzir as colunas.
   if (stageFromCrm === "INBOX" && stageFromStatus !== "INBOX") {
@@ -1298,25 +1760,119 @@ async function handleCrmBoard(req, res) {
 
 async function handleCrmMove(req, res) {
   await ensureCrmSchema();
+  await ensureScoreSchema();
   const leadId = req.body?.lead_id || req.body?.id || null;
   const stage = normalizeCrmStage(req.body?.stage);
   if (!leadId) return res.status(400).json({ error: "lead_id é obrigatório" });
 
+  const leadR = await query(
+    `SELECT id, nome, uf, cidade, segmento_interesse, status, score, crm_stage, score_meta,
+            next_action_text, next_action_date, next_action_time, created_at, updated_at
+       FROM leads
+      WHERE id = $1`,
+    [leadId]
+  );
+  if (!leadR.rows.length) return res.status(404).json({ error: "Lead não encontrado" });
+
+  const currentLead = leadR.rows[0];
+  const currentStage = resolveBoardStage(currentLead);
+  const currentStatus = stageToCommercialStatus(currentStage, currentLead.status);
+  const currentScore = clampLeadScore(currentLead.score, scoreBandForStage(stage).min);
+  const adjustedScore = adjustScoreToStageBand(currentScore, stage);
+  const nextStatus = stageToCommercialStatus(stage, currentStatus);
+
+  const previousMeta = ensurePlainObject(currentLead.score_meta);
+  const previousSignals = extractCrmSignals(previousMeta);
+  const nextSignals =
+    stage === "QUALIFICADO" || stage === "ENVIADO"
+      ? CRM_QUALIFICATION_SIGNAL_KEYS.reduce((acc, key) => ({ ...acc, [key]: true }), {})
+      : stage === "INBOX"
+        ? CRM_QUALIFICATION_SIGNAL_KEYS.reduce((acc, key) => ({ ...acc, [key]: false }), {})
+        : previousSignals;
+
+  const scoreMeta = {
+    ...previousMeta,
+    crm_signals: nextSignals,
+    crm_manual_move: {
+      source: "kanban_move",
+      applied_at: new Date().toISOString(),
+      from_stage: currentStage,
+      to_stage: stage,
+      from_status: currentStatus,
+      to_status: nextStatus,
+      from_score: currentScore,
+      to_score: adjustedScore,
+    },
+  };
+
   const { rows } = await query(
     `UPDATE leads
         SET crm_stage = $2,
+            status = $3,
+            score = $4,
+            score_meta = $5,
+            score_scored_at = now(),
             updated_at = now()
       WHERE id = $1
       RETURNING id, nome, uf, cidade, segmento_interesse, status, score,
                 crm_stage, next_action_text, next_action_date, next_action_time,
                 created_at, updated_at`,
-    [leadId, stage]
+    [leadId, stage, nextStatus, adjustedScore, JSON.stringify(scoreMeta)]
   );
 
-  if (!rows.length) return res.status(404).json({ error: "Lead não encontrado" });
+  await query("INSERT INTO events (lead_id, event_type, metadata) VALUES ($1, 'crm_manual_move', $2)", [
+    leadId,
+    JSON.stringify({
+      source: "kanban_move",
+      from_stage: currentStage,
+      to_stage: stage,
+      from_status: currentStatus,
+      to_status: nextStatus,
+      from_score: currentScore,
+      to_score: adjustedScore,
+    }),
+  ]);
+
   const lead = serializeLead(rows[0]);
   lead.crm_stage = normalizeCrmStage(lead.crm_stage);
-  res.json({ ok: true, lead });
+  res.json({
+    ok: true,
+    lead,
+    transition: {
+      from_stage: currentStage,
+      to_stage: stage,
+      from_status: currentStatus,
+      to_status: nextStatus,
+      from_score: currentScore,
+      to_score: adjustedScore,
+    },
+  });
+}
+
+async function handleCrmEventRules(_req, res) {
+  const items = listCrmRules().map(crmRulePublic).filter(Boolean);
+  res.json({ items });
+}
+
+async function handleCrmApplyRule(req, res) {
+  await ensureCrmSchema();
+  await ensureScoreSchema();
+
+  const leadId = req.params?.id || req.body?.lead_id || req.body?.id || null;
+  if (!leadId) return res.status(400).json({ error: "lead_id é obrigatório" });
+
+  const ruleCode = req.body?.rule_code || req.body?.event_code || req.body?.event_type || "";
+  const metadata = ensurePlainObject(req.body?.metadata);
+  const source = normalizeCrmSource(req.body?.source, "kanban_ui");
+
+  const result = await applyCrmEventRule({
+    leadId,
+    ruleCode,
+    metadata,
+    source,
+  });
+
+  return res.status(result.status).json(result.body);
 }
 
 async function handleCrmAddNote(req, res) {
@@ -1460,18 +2016,439 @@ async function handleCrmMatches(req, res) {
   res.json({ items });
 }
 
+function parseJsonObjectSafe(value, fallback = {}) {
+  if (value && typeof value === "object" && !Array.isArray(value)) return value;
+  const txt = String(value || "").trim();
+  if (!txt) return fallback;
+  if (!(txt.startsWith("{") || txt.startsWith("["))) return fallback;
+  try {
+    const parsed = JSON.parse(txt);
+    if (parsed && typeof parsed === "object" && !Array.isArray(parsed)) return parsed;
+    return fallback;
+  } catch (_err) {
+    return fallback;
+  }
+}
+
+function parseScoreReasons(value) {
+  if (Array.isArray(value)) return value;
+  const txt = String(value || "").trim();
+  if (!txt) return [];
+  if (!(txt.startsWith("[") || txt.startsWith("{"))) return [];
+  try {
+    const parsed = JSON.parse(txt);
+    if (Array.isArray(parsed)) return parsed;
+    if (parsed && typeof parsed === "object") return [parsed];
+    return [];
+  } catch (_err) {
+    return [];
+  }
+}
+
+function isoDateTime(value) {
+  if (!value) return null;
+  const dt = value instanceof Date ? value : new Date(value);
+  if (Number.isNaN(dt.getTime())) return String(value);
+  return dt.toISOString();
+}
+
+function pctText(value) {
+  const n = Number(value);
+  if (!Number.isFinite(n)) return "-";
+  return `${(n * 100).toFixed(1)}%`;
+}
+
+function detectSectorByChannel(channelRaw) {
+  const channel = String(channelRaw || "").trim().toLowerCase();
+  if (!channel) return "";
+  if (channel.includes("venda") || channel.includes("sales") || channel.includes("comercial")) return "VENDAS";
+  if (channel.includes("marketing") || channel.includes("mkt") || channel.includes("nurture")) return "MARKETING";
+  if (channel.includes("parceir") || channel.includes("partner") || channel.includes("ecossistema")) return "PARCEIROS";
+  if (channel.includes("operac") || channel.includes("ops")) return "OPERACOES";
+  return "";
+}
+
+const REPORT_SECTORS = {
+  MARKETING: {
+    key: "MARKETING",
+    code: "MKT-01",
+    name: "Setor de Marketing de Nurture",
+    owner: "Squad Growth",
+  },
+  VENDAS: {
+    key: "VENDAS",
+    code: "VND-01",
+    name: "Setor de Vendas Consultivas",
+    owner: "Squad Comercial",
+  },
+  PARCEIROS: {
+    key: "PARCEIROS",
+    code: "PRC-01",
+    name: "Setor de Parcerias Estrategicas",
+    owner: "Squad Ecossistema",
+  },
+  OPERACOES: {
+    key: "OPERACOES",
+    code: "OPS-01",
+    name: "Setor de Operacoes CRM",
+    owner: "Squad Operacoes",
+  },
+};
+
+async function computeManagerialMatchesForLead(lead, limit = 8) {
+  const safeLimit = Math.max(1, Math.min(parseInt(String(limit || "8"), 10) || 8, 50));
+  const leadUF = normUpper(lead.uf);
+  const leadCity = normUpper(lead.cidade);
+  const leadSeg = normUpper(lead.segmento_interesse);
+
+  const params = [];
+  let sql = `SELECT id, cnpj, razao_social, nome_fantasia, uf, municipio_nome, cnae_principal, segmento, prioridade
+               FROM partners
+              WHERE 1=1`;
+
+  if (leadUF) {
+    params.push(leadUF);
+    sql += ` AND UPPER(uf) = $${params.length}`;
+  }
+  if (leadSeg) {
+    params.push(leadSeg);
+    sql += ` AND UPPER(segmento) = $${params.length}`;
+  }
+
+  sql += ` LIMIT 300`;
+  const pRes = await query(sql, params);
+
+  return (pRes.rows || [])
+    .map((p) => {
+      let score = 0;
+      if (leadUF && normUpper(p.uf) === leadUF) score += 2;
+      if (leadSeg && normUpper(p.segmento) === leadSeg) score += 4;
+      if (leadCity && normUpper(p.municipio_nome) === leadCity) score += 3;
+
+      const pr = normUpper(p.prioridade);
+      if (pr === "ALTA") score += 2;
+      else if (pr === "MEDIA" || pr === "MÉDIA") score += 1;
+
+      return {
+        id: p.id,
+        cnpj: p.cnpj,
+        razao_social: p.razao_social,
+        nome_fantasia: p.nome_fantasia,
+        uf: p.uf,
+        municipio_nome: p.municipio_nome,
+        cnae_principal: p.cnae_principal,
+        segmento: p.segmento,
+        prioridade: p.prioridade,
+        score,
+      };
+    })
+    .sort((a, b) => b.score - a.score)
+    .slice(0, safeLimit);
+}
+
+function inferRoutingDecision({ lead, handoffEvent, matches }) {
+  const score = Number(lead?.score);
+  const probability = Number(lead?.score_probability);
+  const stage = resolveBoardStage(lead);
+  const segment = normUpper(lead?.segmento_interesse);
+  const deadline = normUpper(lead?.prazo_compra);
+  const topMatchScore = Number(matches?.[0]?.score);
+  const hasPartnerStrength =
+    Array.isArray(matches) && matches.length >= 3 && Number.isFinite(topMatchScore) && topMatchScore >= 6;
+  const partnerFriendlySegment = ["EVENTOS", "EQUIPAMENTOS", "CAVALOS"].includes(segment);
+
+  const highIntent =
+    (Number.isFinite(score) && score >= 80) ||
+    (Number.isFinite(probability) && probability >= 0.72) ||
+    stage === "QUALIFICADO" ||
+    stage === "ENVIADO";
+  const mediumIntent =
+    (Number.isFinite(score) && score >= 55) ||
+    (Number.isFinite(probability) && probability >= 0.45) ||
+    stage === "AQUECENDO";
+
+  const evidence = [];
+  if (Number.isFinite(score)) evidence.push(`Score atual ${score}.`);
+  if (Number.isFinite(probability)) evidence.push(`Probabilidade de qualificacao ${pctText(probability)}.`);
+  if (deadline === "7D") evidence.push("Prazo de compra curto (7d), indicando urgencia comercial.");
+  if (partnerFriendlySegment) evidence.push(`Segmento ${segment} com potencial para roteamento de parceiros.`);
+  if (hasPartnerStrength) evidence.push("Matching de parceiros com consistencia alta.");
+
+  let primary = REPORT_SECTORS.MARKETING;
+  let secondaries = [REPORT_SECTORS.VENDAS, REPORT_SECTORS.PARCEIROS];
+  let decisionMode = "SUGERIDO";
+  let confidence = 68;
+
+  if (handoffEvent?.sectorKey && REPORT_SECTORS[handoffEvent.sectorKey]) {
+    primary = REPORT_SECTORS[handoffEvent.sectorKey];
+    decisionMode = "EFETIVO";
+    confidence = 96;
+    evidence.unshift(
+      `Encaminhamento registrado em evento de handoff (canal: ${handoffEvent.channel || "nao informado"}).`
+    );
+  } else if (stage === "ENVIADO" && partnerFriendlySegment && hasPartnerStrength) {
+    primary = REPORT_SECTORS.PARCEIROS;
+    secondaries = [REPORT_SECTORS.VENDAS, REPORT_SECTORS.MARKETING];
+    confidence = 88;
+    evidence.unshift("Lead em etapa ENVIADO com aderencia forte para parceiros.");
+  } else if (stage === "ENVIADO" || highIntent) {
+    primary = REPORT_SECTORS.VENDAS;
+    secondaries = [REPORT_SECTORS.PARCEIROS, REPORT_SECTORS.MARKETING];
+    confidence = stage === "ENVIADO" ? 85 : 81;
+    evidence.unshift("Lead com alta intencao para conversao comercial.");
+  } else if (mediumIntent && partnerFriendlySegment && hasPartnerStrength) {
+    primary = REPORT_SECTORS.PARCEIROS;
+    secondaries = [REPORT_SECTORS.MARKETING, REPORT_SECTORS.VENDAS];
+    confidence = 76;
+    evidence.unshift("Lead em aquecimento com oportunidade de aceleracao via parceiros.");
+  } else {
+    primary = REPORT_SECTORS.MARKETING;
+    secondaries = [REPORT_SECTORS.VENDAS, REPORT_SECTORS.PARCEIROS];
+    confidence = 71;
+    evidence.unshift("Lead ainda em maturacao; recomendada nutricao estruturada.");
+  }
+
+  return {
+    decision_mode: decisionMode,
+    confidence_pct: confidence,
+    primary_sector: primary,
+    secondary_sectors: secondaries,
+    evidence,
+  };
+}
+
+function buildManagerialActionPlan(primarySectorKey) {
+  if (primarySectorKey === "VENDAS") {
+    return [
+      { horizon: "0-24h", owner: "Vendas", action: "Realizar contato consultivo e validar contexto de compra." },
+      { horizon: "24-72h", owner: "Vendas + Parcerias", action: "Preparar proposta com opcoes aderentes ao perfil do lead." },
+      { horizon: "72h+", owner: "Gestao Comercial", action: "Registrar status final da oportunidade no CRM." },
+    ];
+  }
+  if (primarySectorKey === "PARCEIROS") {
+    return [
+      { horizon: "0-24h", owner: "Parcerias", action: "Acionar top parceiros do matching e confirmar disponibilidade." },
+      { horizon: "24-72h", owner: "Parcerias + Vendas", action: "Consolidar proposta conjunta com condicoes comerciais." },
+      { horizon: "72h+", owner: "Gestao de Ecossistema", action: "Mensurar taxa de resposta da rede e ajustar aderencia." },
+    ];
+  }
+  return [
+    { horizon: "0-24h", owner: "Marketing", action: "Iniciar jornada de nutricao com conteudo de alto interesse." },
+    { horizon: "24-72h", owner: "Marketing + SDR", action: "Requalificar lead por engajamento e sinais de conversao." },
+    { horizon: "72h+", owner: "Gestao Growth", action: "Reavaliar roteamento para Vendas ou Parcerias conforme sinais." },
+  ];
+}
+
+async function handleCrmManagerialReport(req, res) {
+  await ensureCrmSchema();
+  await ensureScoreSchema();
+
+  const leadId = req.params.id;
+  if (!leadId) return res.status(400).json({ error: "lead_id e obrigatorio" });
+
+  const leadR = await query(
+    `SELECT id, nome, whatsapp, email, uf, cidade, segmento_interesse, orcamento_faixa, prazo_compra,
+            status, score, crm_stage, next_action_text, next_action_date, next_action_time, next_action_at,
+            score_engine, score_model_name, score_probability, score_scored_at, score_meta, score_motivos,
+            created_at, updated_at
+       FROM leads
+      WHERE id = $1`,
+    [leadId]
+  );
+  if (!leadR.rows.length) return res.status(404).json({ error: "Lead nao encontrado" });
+  const lead = leadR.rows[0];
+
+  const [notesR, eventsR, matches] = await Promise.all([
+    query(
+      `SELECT id, note_type, note_text, action_date, action_time, created_at
+         FROM lead_notes
+        WHERE lead_id = $1
+        ORDER BY created_at DESC
+        LIMIT 40`,
+      [leadId]
+    ),
+    query(
+      `SELECT event_type, metadata, ts
+         FROM events
+        WHERE lead_id = $1
+        ORDER BY ts DESC
+        LIMIT 120`,
+      [leadId]
+    ),
+    computeManagerialMatchesForLead(lead, 8),
+  ]);
+
+  const scoreMeta = parseJsonObjectSafe(lead.score_meta, {});
+  const scoreReasons = parseScoreReasons(lead.score_motivos)
+    .map((item) => ({
+      fator: String(item?.fator || "Fator"),
+      impacto: Number(item?.impacto),
+      detalhe: String(item?.detalhe || "").trim() || null,
+    }))
+    .slice(0, 8);
+
+  const eventRows = (eventsR.rows || []).map((row) => ({
+    event_type: String(row.event_type || "").trim() || "evento",
+    metadata: parseJsonObjectSafe(row.metadata, {}),
+    at: isoDateTime(row.ts),
+  }));
+  const eventBreakdown = {};
+  for (const ev of eventRows) {
+    eventBreakdown[ev.event_type] = Number(eventBreakdown[ev.event_type] || 0) + 1;
+  }
+
+  const handoffEvent = eventRows.find((ev) => ev.event_type.toLowerCase() === "handoff") || null;
+  const handoffChannel =
+    handoffEvent?.metadata?.channel ||
+    handoffEvent?.metadata?.setor ||
+    handoffEvent?.metadata?.sector ||
+    "";
+  const handoffSectorKey = handoffEvent ? detectSectorByChannel(handoffChannel) || "OPERACOES" : "";
+
+  const routing = inferRoutingDecision({
+    lead: {
+      ...lead,
+      score_probability: lead.score_probability ?? scoreMeta.probability_qualified ?? null,
+    },
+    handoffEvent: handoffEvent
+      ? {
+          channel: String(handoffChannel || "").trim() || null,
+          sectorKey: handoffSectorKey || "",
+          at: handoffEvent.at,
+        }
+      : null,
+    matches,
+  });
+
+  const latestNotes = (notesR.rows || []).slice(0, 8).map((row) => ({
+    id: row.id,
+    type: row.note_type,
+    text: String(row.note_text || ""),
+    action_date: row.action_date ? String(row.action_date).slice(0, 10) : null,
+    action_time: row.action_time ? String(row.action_time).slice(0, 5) : null,
+    created_at: isoDateTime(row.created_at),
+  }));
+
+  const managerialRisks = [];
+  if (!lead.whatsapp && !lead.email) managerialRisks.push("Lead sem canal de contato principal (telefone/e-mail).");
+  if (!matches.length) managerialRisks.push("Sem parceiros aderentes no matching atual.");
+  if (Number(lead.score) < 50) managerialRisks.push("Score abaixo de 50; risco elevado de baixa conversao.");
+  if (!lead.next_action_text) managerialRisks.push("Nao ha proxima acao registrada no CRM.");
+
+  const reportId = `REL-${String(lead.id).slice(0, 8).toUpperCase()}-${Date.now()
+    .toString()
+    .slice(-6)}`;
+
+  const report = {
+    report_id: reportId,
+    generated_at: new Date().toISOString(),
+    lead_snapshot: {
+      id: lead.id,
+      nome: lead.nome,
+      uf: lead.uf,
+      cidade: lead.cidade,
+      segmento: lead.segmento_interesse,
+      status: lead.status,
+      stage: resolveBoardStage(lead),
+      score: lead.score,
+      score_probability: lead.score_probability ?? scoreMeta.probability_qualified ?? null,
+      score_engine: lead.score_engine || scoreMeta.engine || null,
+      score_model_name: lead.score_model_name || scoreMeta.model_name || null,
+      orcamento_faixa: lead.orcamento_faixa,
+      prazo_compra: lead.prazo_compra,
+      next_action_text: lead.next_action_text,
+      next_action_date: lead.next_action_date ? String(lead.next_action_date).slice(0, 10) : null,
+      next_action_time: lead.next_action_time ? String(lead.next_action_time).slice(0, 5) : null,
+      next_action_at: isoDateTime(lead.next_action_at),
+      created_at: isoDateTime(lead.created_at),
+      updated_at: isoDateTime(lead.updated_at),
+    },
+    executive_summary: {
+      headline: `Encaminhamento ${routing.decision_mode === "EFETIVO" ? "confirmado" : "recomendado"} para ${routing.primary_sector.name}.`,
+      sent_to: routing.primary_sector.name,
+      sent_to_code: routing.primary_sector.code,
+      decision_mode: routing.decision_mode,
+      confidence_pct: routing.confidence_pct,
+      why_sent: routing.evidence,
+    },
+    routing: {
+      current_stage: resolveBoardStage(lead),
+      primary_sector: routing.primary_sector,
+      secondary_sectors: routing.secondary_sectors,
+      destination_reasoning: routing.evidence,
+      handoff_event: handoffEvent
+        ? {
+            at: handoffEvent.at,
+            channel: String(handoffChannel || "").trim() || null,
+            mapped_sector: handoffSectorKey ? REPORT_SECTORS[handoffSectorKey] : null,
+          }
+        : null,
+    },
+    qualification_intelligence: {
+      score: lead.score,
+      probability_qualified: lead.score_probability ?? scoreMeta.probability_qualified ?? null,
+      probability_qualified_text: pctText(lead.score_probability ?? scoreMeta.probability_qualified ?? null),
+      score_engine: lead.score_engine || scoreMeta.engine || null,
+      score_model_name: lead.score_model_name || scoreMeta.model_name || null,
+      scored_at: isoDateTime(lead.score_scored_at),
+      score_reasons: scoreReasons,
+    },
+    engagement: {
+      total_events: eventRows.length,
+      event_breakdown: eventBreakdown,
+      latest_event_at: eventRows[0]?.at || null,
+      timeline: eventRows.slice(0, 12),
+    },
+    crm_context: {
+      notes_count: (notesR.rows || []).length,
+      latest_notes: latestNotes,
+      next_action: {
+        text: lead.next_action_text || null,
+        date: lead.next_action_date ? String(lead.next_action_date).slice(0, 10) : null,
+        time: lead.next_action_time ? String(lead.next_action_time).slice(0, 5) : null,
+        at: isoDateTime(lead.next_action_at),
+      },
+    },
+    partner_matching: {
+      total_considered: matches.length,
+      top_matches: matches.slice(0, 5),
+      recommendation:
+        matches.length > 0
+          ? "Ha parceiros aderentes para apoiar a estrategia comercial."
+          : "Nao ha parceiros aderentes suficientes para recomendacao imediata.",
+    },
+    managerial_risks: managerialRisks,
+    managerial_recommendations: buildManagerialActionPlan(routing.primary_sector.key),
+    governance: {
+      data_sources: ["leads", "lead_notes", "events", "partners"],
+      generated_by: "growth-equestre-report-engine v1",
+    },
+  };
+
+  return res.json({ ok: true, report });
+}
+
 // Rotas "oficiais" consumidas pela UI Admin
 app.get("/crm/board", asyncHandler(handleCrmBoard));
 app.post("/crm/move", asyncHandler(handleCrmMove));
+app.get("/crm/event-rules", asyncHandler(handleCrmEventRules));
+app.post("/crm/apply-rule", asyncHandler(handleCrmApplyRule));
+app.post("/crm/leads/:id/apply-rule", asyncHandler(handleCrmApplyRule));
 app.post("/crm/leads/:id/notes", asyncHandler(handleCrmAddNote));
 app.get("/crm/leads/:id/notes", asyncHandler(handleCrmGetNotes));
 app.get("/crm/leads/:id/matches", asyncHandler(handleCrmMatches));
+app.get("/crm/leads/:id/managerial-report", asyncHandler(handleCrmManagerialReport));
+app.get("/crm/leads/:id/relatorio-gerencial", asyncHandler(handleCrmManagerialReport));
 
 // Compat: alguns ambientes antigos chamam sem o prefixo /crm
 app.get("/board", asyncHandler(handleCrmBoard));
 app.post("/move", asyncHandler(handleCrmMove));
+app.get("/event-rules", asyncHandler(handleCrmEventRules));
+app.post("/apply-rule", asyncHandler(handleCrmApplyRule));
+app.post("/leads/:id/apply-rule", asyncHandler(handleCrmApplyRule));
 app.post("/leads/:id/notes", asyncHandler(handleCrmAddNote));
 app.get("/leads/:id/matches", asyncHandler(handleCrmMatches));
+app.get("/leads/:id/managerial-report", asyncHandler(handleCrmManagerialReport));
 
 // Rotas adicionais de CRM (ex.: /crm/seed, /crm/partners/*).
 // Mantido após as rotas principais para preservar os contratos já utilizados pela UI.
@@ -1483,7 +2460,23 @@ app.post(
     const { lead_id, channel } = req.body || {};
     if (!lead_id) return res.status(400).json({ error: "lead_id é obrigatório" });
 
-    await query("UPDATE leads SET status='ENVIADO', updated_at=now() WHERE id=$1", [lead_id]);
+    const leadR = await query("SELECT status FROM leads WHERE id=$1", [lead_id]);
+    if (!leadR.rows.length) return res.status(404).json({ error: "Lead nao encontrado" });
+
+    const currentStatus = String(leadR.rows[0]?.status || "")
+      .toUpperCase()
+      .trim();
+    if (currentStatus !== "QUALIFICADO") {
+      return res.status(409).json({
+        error: "Handoff permitido apenas para leads com status QUALIFICADO",
+        current_status: currentStatus || null,
+      });
+    }
+
+    await query(
+      "UPDATE leads SET status='ENVIADO', crm_stage='ENVIADO', updated_at=now() WHERE id=$1",
+      [lead_id]
+    );
     await query(
       "INSERT INTO events (lead_id, event_type, metadata) VALUES ($1,'handoff',$2)",
       [lead_id, JSON.stringify({ channel: channel || "manual" })]
@@ -1671,16 +2664,18 @@ function statusScoreRange(status) {
   const key = String(status || "").toUpperCase().trim();
   if (key === "ENVIADO") return [82, 96];
   if (key === "QUALIFICADO") return [70, 89];
-  if (key === "AQUECENDO") return [45, 69];
-  return [18, 44];
+  // Alinhado ao scoring_service (_score_to_status): AQUECENDO >= 40.
+  if (key === "AQUECENDO") return [40, 69];
+  return [18, 39];
 }
 
 function statusProbabilityRange(status) {
   const key = String(status || "").toUpperCase().trim();
   if (key === "ENVIADO") return [0.82, 0.98];
   if (key === "QUALIFICADO") return [0.7, 0.89];
-  if (key === "AQUECENDO") return [0.35, 0.69];
-  return [0.05, 0.34];
+  // Mantem consistencia aproximada com as faixas de score sintetico.
+  if (key === "AQUECENDO") return [0.4, 0.69];
+  return [0.05, 0.39];
 }
 
 function randomFloat(min, max, digits = 4) {

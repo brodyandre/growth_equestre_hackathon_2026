@@ -17,7 +17,7 @@ const app = express();
 
 const PORT = Number(process.env.PORT || 3100);
 const BACKEND_URL = String(process.env.BACKEND_URL || "http://localhost:3000").trim().replace(/\/$/, "");
-const ASSET_VERSION = String(process.env.ASSET_VERSION || "20260308");
+const ASSET_VERSION = String(process.env.ASSET_VERSION || "20260217-ux-leads-toolbar-v2");
 const HEALTH_PATH = String(process.env.HEALTH_PATH || "/health");
 const SUMMARY_PATH = String(process.env.SUMMARY_PATH || "/partners/summary");
 const ML_MODEL_INFO_PATH = String(process.env.ML_MODEL_INFO_PATH || "/ml/model-info");
@@ -25,6 +25,9 @@ const KANBAN_PATH = String(process.env.KANBAN_PATH || "/crm/board");
 const KANBAN_MOVE_PATH = String(process.env.KANBAN_MOVE_PATH || "/crm/move");
 const CRM_NOTES_BASE_PATH = String(process.env.CRM_NOTES_BASE_PATH || "/crm/leads");
 const CRM_MATCHES_BASE_PATH = String(process.env.CRM_MATCHES_BASE_PATH || "/crm/leads");
+const CRM_REPORT_BASE_PATH = String(process.env.CRM_REPORT_BASE_PATH || "/crm/leads");
+const CRM_EVENT_RULES_PATH = String(process.env.CRM_EVENT_RULES_PATH || "/crm/event-rules");
+const CRM_APPLY_RULE_BASE_PATH = String(process.env.CRM_APPLY_RULE_BASE_PATH || "/crm/leads");
 
 app.set("view engine", "ejs");
 app.set("views", path.join(__dirname, "src", "views"));
@@ -53,6 +56,9 @@ app.use((req, res, next) => {
     kanbanMove: KANBAN_MOVE_PATH,
     crmNotesBase: CRM_NOTES_BASE_PATH,
     crmMatchesBase: CRM_MATCHES_BASE_PATH,
+    crmReportBase: CRM_REPORT_BASE_PATH,
+    crmEventRules: CRM_EVENT_RULES_PATH,
+    crmApplyRuleBase: CRM_APPLY_RULE_BASE_PATH,
   };
   next();
 });
