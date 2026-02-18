@@ -1,0 +1,136 @@
+<div class="card">
+  <div class="lead-header-row">
+    <div class="lead-header-copy">
+      <div class="card-title">Leads</div>
+      <p class="muted mt-8">Visao tabular para consulta rapida e filtros simples.</p>
+    </div>
+  </div>
+
+  <div class="lead-actions-bar mt-12">
+    <div class="toolbar lead-toolbar lead-toolbar-top lead-toolbar-top-main">
+      <button id="btnReload" class="btn btn-ghost">Recarregar</button>
+      <button id="btnExportFilteredCsv" class="btn btn-ghost" type="button" disabled>Baixar CSV (leads filtrados)</button>
+      <a href="/kanban" class="btn">Ir para CRM (Kanban)</a>
+    </div>
+
+    <div class="toolbar lead-toolbar lead-toolbar-top lead-toolbar-top-meta">
+      <span id="leadFilteredCountInfo" class="muted lead-filtered-count">0 lead(s) filtrado(s)</span>
+      <label class="muted lead-confirm-label">
+        <input id="leadDeleteConfirm" type="checkbox" />
+        Confirmar exclusao
+      </label>
+      <button id="btnDeleteSelected" class="btn btn-ghost" type="button" disabled>Excluir selecionados</button>
+      <span id="leadDeleteSelectionInfo" class="muted">0 selecionado(s)</span>
+    </div>
+  </div>
+
+  <div class="lead-search-row mt-12">
+    <input id="leadSearch" class="input" placeholder="Buscar por nome, cidade, status ou segmento" />
+  </div>
+
+  <div id="leadsTable" class="table mt-12"></div>
+</div>
+
+<div class="card lead-actions-card">
+  <label class="field">
+    <span>Selecionar lead para acoes</span>
+    <select id="leadActionSelect" class="input"></select>
+  </label>
+
+  <div class="lead-action-layout mt-12">
+    <section class="lead-detail-panel">
+      <h3 class="h3">Detalhes do lead (sem termos tecnicos)</h3>
+      <div id="leadDetailWrap" class="table mt-12"></div>
+
+      <h3 class="h3 mt-16">Explicacao do score (detalhada)</h3>
+      <div id="leadScoreWhy" class="lead-score-wrap mt-12"></div>
+    </section>
+
+    <aside class="lead-action-panel">
+      <h3 class="h3">Acoes</h3>
+      <p class="muted mt-8">Fluxo tipico: calcular score -&gt; handoff (ENVIADO).</p>
+
+      <div class="lead-action-buttons mt-12">
+        <button id="btnCalcScore" class="btn btn-ghost" type="button">Calcular/Atualizar score</button>
+      </div>
+
+      <div class="lead-action-buttons mt-12">
+        <button id="btnEditLead" class="btn btn-ghost" type="button">Editar lead selecionado</button>
+      </div>
+
+      <div class="lead-action-buttons mt-12">
+        <button id="btnDeleteLead" class="btn btn-ghost" type="button">Excluir marcados (Sel) ou lead selecionado</button>
+      </div>
+
+      <div id="leadEditPanel" class="lead-edit-panel mt-12" style="display:none;">
+        <div class="lead-edit-grid">
+          <label class="field">
+            <span>Nome</span>
+            <input id="editLeadNome" class="input" type="text" maxlength="120" />
+          </label>
+          <label class="field">
+            <span>UF</span>
+            <select id="editLeadUf" class="input">
+              <option value="">-</option>
+              <option value="MG">MG</option>
+              <option value="SP">SP</option>
+              <option value="GO">GO</option>
+            </select>
+          </label>
+          <label class="field">
+            <span>WhatsApp (opcional)</span>
+            <input id="editLeadWhatsapp" class="input" type="text" maxlength="24" />
+          </label>
+          <label class="field">
+            <span>Cidade (opcional)</span>
+            <input id="editLeadCidade" class="input" type="text" maxlength="120" />
+          </label>
+          <label class="field">
+            <span>E-mail (opcional)</span>
+            <input id="editLeadEmail" class="input" type="email" maxlength="160" />
+          </label>
+          <label class="field">
+            <span>Segmento</span>
+            <select id="editLeadSegmento" class="input">
+              <option value="CAVALOS">CAVALOS</option>
+              <option value="SERVICOS">SERVICOS</option>
+              <option value="EVENTOS">EVENTOS</option>
+              <option value="EQUIPAMENTOS">EQUIPAMENTOS</option>
+            </select>
+          </label>
+          <label class="field">
+            <span>Faixa de orcamento</span>
+            <select id="editLeadOrcamento" class="input">
+              <option value="">-</option>
+              <option value="0-5k">0-5k</option>
+              <option value="5k-20k">5k-20k</option>
+              <option value="20k-60k">20k-60k</option>
+              <option value="60k+">60k+</option>
+            </select>
+          </label>
+          <label class="field">
+            <span>Prazo</span>
+            <select id="editLeadPrazo" class="input">
+              <option value="">-</option>
+              <option value="7d">7d</option>
+              <option value="30d">30d</option>
+              <option value="90d">90d</option>
+            </select>
+          </label>
+        </div>
+
+        <div class="btn-row mt-12">
+          <button id="btnSaveLeadEdit" class="btn" type="button">Salvar edicao</button>
+          <button id="btnCancelLeadEdit" class="btn btn-ghost" type="button">Cancelar</button>
+        </div>
+      </div>
+
+      <div id="leadActionNotice" class="k-message mt-12" style="display:none;"></div>
+      <div id="leadActionKpis" class="lead-action-kpis mt-12"></div>
+
+      <div class="lead-action-buttons mt-12">
+        <button id="btnHandoff" class="btn btn-ghost" type="button">Handoff (marcar como ENVIADO)</button>
+      </div>
+    </aside>
+  </div>
+</div>

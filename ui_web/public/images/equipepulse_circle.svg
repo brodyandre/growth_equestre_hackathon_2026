@@ -1,0 +1,33 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="512" height="512" viewBox="0 0 512 512" role="img" aria-label="EquipePulse">
+  <defs>
+    <radialGradient id="bg" cx="38%" cy="28%" r="82%">
+      <stop offset="0%" stop-color="#0f3d69"/>
+      <stop offset="55%" stop-color="#082447"/>
+      <stop offset="100%" stop-color="#03122a"/>
+    </radialGradient>
+    <linearGradient id="glowStroke" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#baf8ff"/>
+      <stop offset="100%" stop-color="#6be9ff"/>
+    </linearGradient>
+    <filter id="softGlow" x="-30%" y="-30%" width="160%" height="160%">
+      <feGaussianBlur stdDeviation="2.2" result="blur"/>
+      <feMerge>
+        <feMergeNode in="blur"/>
+        <feMergeNode in="SourceGraphic"/>
+      </feMerge>
+    </filter>
+  </defs>
+
+  <circle cx="256" cy="256" r="248" fill="url(#bg)"/>
+  <circle cx="256" cy="256" r="248" fill="none" stroke="rgba(163,235,255,0.35)" stroke-width="3"/>
+
+  <g filter="url(#softGlow)" fill="none" stroke="url(#glowStroke)" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M54 250h126l14-27 14 56 16-74 14 45 16-28 17 28h57" stroke-width="6"/>
+    <path d="M210 200c24 20 72 18 98 5 12-6 19-14 30-15 17-1 33 12 33 30 0 25-22 36-40 42-22 7-46 9-64 2" stroke-width="6"/>
+    <path d="M283 181c32-26 68-34 109-31l-22 30 32-14-18 34" stroke-width="6"/>
+    <path d="M233 221c-21 25-38 45-58 57" stroke-width="5"/>
+  </g>
+
+  <text x="256" y="382" text-anchor="middle" font-family="Segoe UI, Arial, sans-serif" font-size="58" font-weight="700" letter-spacing="2" fill="#f5fbff">EQUIPE<tspan fill="#6cefff">PULSE</tspan></text>
+  <text x="256" y="422" text-anchor="middle" font-family="Segoe UI, Arial, sans-serif" font-size="26" letter-spacing="3.2" fill="#d2f6ff">INTELLIGENCE IN MOTION</text>
+</svg>

@@ -1,0 +1,72 @@
+{
+  "columns": [
+    {
+      "id": "novo",
+      "title": "Novo",
+      "cards": [
+        {
+          "id": "L-001",
+          "title": "Patrocínio - Haras Aurora",
+          "subtitle": "CNAE: 9319-1/01",
+          "chips": [
+            "Lead",
+            "Médio"
+          ]
+        },
+        {
+          "id": "L-002",
+          "title": "Parceria - Loja EquiShop",
+          "subtitle": "CNAE: 4789-0/99",
+          "chips": [
+            "Parceiro",
+            "Oportunidade"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "contato",
+      "title": "Em contato",
+      "cards": [
+        {
+          "id": "L-003",
+          "title": "Arena Vale Verde",
+          "subtitle": "Evento em 45 dias",
+          "chips": [
+            "Evento",
+            "Quente"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "proposta",
+      "title": "Proposta",
+      "cards": [
+        {
+          "id": "L-004",
+          "title": "Clínica Veterinária HorseCare",
+          "subtitle": "Serviços",
+          "chips": [
+            "Serviço",
+            "Alto"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "fechado",
+      "title": "Fechado",
+      "cards": [
+        {
+          "id": "L-005",
+          "title": "Patrocínio - Copa Interior",
+          "subtitle": "OK",
+          "chips": [
+            "Fechado"
+          ]
+        }
+      ]
+    }
+  ]
+}

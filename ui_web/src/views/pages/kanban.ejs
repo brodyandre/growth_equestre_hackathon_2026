@@ -1,0 +1,56 @@
+﻿<div class="panel kanban-toolbar">
+  <div class="toolbar-grid">
+    <label class="field">
+      <span>Buscar lead</span>
+      <input id="kSearch" class="input" type="text" placeholder="Nome, cidade, UF ou segmento" />
+    </label>
+
+    <label class="field">
+      <span>Etapa</span>
+      <select id="kStageFilter" class="input">
+        <option value="ALL">Todas</option>
+        <option value="INBOX">Curioso</option>
+        <option value="AQUECENDO">Aquecendo</option>
+        <option value="QUALIFICADO">Qualificado</option>
+        <option value="ENVIADO">Enviado</option>
+      </select>
+    </label>
+
+    <label class="field">
+      <span>Ordenacao</span>
+      <select id="kSort" class="input">
+        <option value="score_desc">Score (maior primeiro)</option>
+        <option value="updated_desc">Atualizacao (recente)</option>
+        <option value="name_asc">Nome (A-Z)</option>
+      </select>
+    </label>
+
+    <label class="field">
+      <span>Cards/coluna</span>
+      <select id="kLimit" class="input">
+        <option value="6">6</option>
+        <option value="10" selected>10</option>
+        <option value="14">14</option>
+        <option value="20">20</option>
+      </select>
+    </label>
+
+    <div class="field field-action">
+      <button id="kRefresh" class="btn btn-ghost">Atualizar board</button>
+    </div>
+  </div>
+</div>
+
+<div class="kanban-layout">
+  <section>
+    <div id="kanbanKpis" class="kpi-row"></div>
+    <div id="kanbanRoot" class="kanban-board mt-12">
+      <div class="k-message">Carregando board...</div>
+    </div>
+  </section>
+
+  <aside id="kanbanDetails" class="panel k-details">
+    <h3 class="h3">Detalhes</h3>
+    <p class="muted mt-8">Selecione um lead para ver detalhes e salvar proxima acao.</p>
+  </aside>
+</div>

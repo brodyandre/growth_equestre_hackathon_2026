@@ -1,0 +1,165 @@
+﻿<div class="card">
+  <div class="card-title">Criar lead (demos)</div>
+  <p class="muted mt-8">Crie um lead de demonstracao e simule acoes do funil para calcular score automaticamente.</p>
+  <div class="card-sub mt-12">Atalhos inteligentes por status (ML)</div>
+  <p class="muted mt-8">
+    Clique em um dos atalhos para preencher automaticamente o perfil, criar o lead e calcular o score com o modelo de ML em producao.
+  </p>
+  <div class="quick-preset-grid mt-12">
+    <button id="clQuickCurioso" class="btn btn-ghost" type="button">Gerar CURIOSO</button>
+    <button id="clQuickAquecendo" class="btn btn-ghost" type="button">Gerar AQUECENDO</button>
+    <button id="clQuickQualificado" class="btn btn-ghost" type="button">Gerar QUALIFICADO</button>
+  </div>
+  <p class="muted mt-8">
+    Cada atalho tenta ate 3 perfis automaticamente para aumentar a chance de atingir o status alvo sem perder a consistencia do ML.
+  </p>
+
+  <form id="createLeadDemoForm" class="mt-12">
+    <div class="lead-demo-form-grid">
+      <label class="field">
+        <span>Nome</span>
+        <input id="clNome" class="input" type="text" value="Visitante Demo" maxlength="120" />
+      </label>
+
+      <label class="field">
+        <span>UF</span>
+        <select id="clUf" class="input">
+          <option value="MG">MG</option>
+          <option value="SP">SP</option>
+          <option value="GO">GO</option>
+        </select>
+      </label>
+
+      <label class="field">
+        <span>WhatsApp (opcional)</span>
+        <input
+          id="clWhatsapp"
+          class="input"
+          type="tel"
+          inputmode="numeric"
+          maxlength="10"
+          placeholder="91234-5678"
+        />
+        <small class="muted">Digite apenas o numero de contato (sem 55 e sem DDD). Ex.: 91234-5678.</small>
+      </label>
+
+      <label class="field">
+        <span>Cidade (opcional)</span>
+        <input id="clCidade" class="input" type="text" maxlength="120" />
+      </label>
+
+      <label class="field">
+        <span>E-mail (opcional)</span>
+        <input id="clEmail" class="input" type="email" maxlength="160" />
+      </label>
+
+      <label class="field">
+        <span>Segmento de interesse</span>
+        <select id="clSegmento" class="input">
+          <option value="CAVALOS">CAVALOS</option>
+          <option value="SERVICOS">SERVICOS</option>
+          <option value="EVENTOS">EVENTOS</option>
+          <option value="EQUIPAMENTOS">EQUIPAMENTOS</option>
+        </select>
+      </label>
+
+      <label class="field">
+        <span>Faixa de orcamento</span>
+        <select id="clOrcamento" class="input">
+          <option value="">-</option>
+          <option value="0-5k">0-5k</option>
+          <option value="5k-20k">5k-20k</option>
+          <option value="20k-60k">20k-60k</option>
+          <option value="60k+">60k+</option>
+        </select>
+      </label>
+
+      <label class="field">
+        <span>Prazo</span>
+        <select id="clPrazo" class="input">
+          <option value="">-</option>
+          <option value="7d">7d</option>
+          <option value="30d">30d</option>
+          <option value="90d">90d</option>
+        </select>
+      </label>
+    </div>
+
+    <h3 class="h3 mt-16">Simular acoes do funil (para o score fazer sentido)</h3>
+    <div class="grid grid-3 mt-12">
+      <label class="field">
+        <span><input id="clEvPageView" type="checkbox" checked /> Visita (page view)</span>
+      </label>
+      <label class="field">
+        <span><input id="clEvHook" type="checkbox" checked /> Completou o quiz/calculadora (hook)</span>
+      </label>
+      <label class="field">
+        <span><input id="clEvCta" type="checkbox" checked /> Clique no CTA/WhatsApp</span>
+      </label>
+    </div>
+
+    <div class="btn-row mt-16">
+      <button id="clSubmitBtn" class="btn" type="submit">Criar lead e simular funil</button>
+      <button id="clResetBtn" class="btn btn-ghost" type="button">Limpar</button>
+    </div>
+  </form>
+
+  <div id="clNotice" class="k-message mt-12" style="display:none;"></div>
+</div>
+
+<div id="clResultCard" class="card mt-16" style="display:none;">
+  <div class="card-title">Resultado</div>
+  <p id="clLeadSummary" class="muted mt-8"></p>
+
+  <div id="clScoreNotice" class="k-message mt-12" style="display:none;"></div>
+  <div id="clMlDiag" class="k-message mt-12" style="display:none;"></div>
+
+  <div id="clScoreKpis" class="kpi-row mt-12"></div>
+
+  <h3 class="h3 mt-16">Motivos principais</h3>
+  <ul id="clReasonsList" class="list mt-12"></ul>
+</div>
+
+<div class="card mt-16">
+  <div class="card-title">Roteiro de demo (pitch)</div>
+  <p class="muted mt-8">
+    Cria automaticamente 3 leads (QUALIFICADO, AQUECENDO e CURIOSO) com tentativa inteligente por status e diagnÃ³stico do modelo de ML.
+  </p>
+
+  <div class="btn-row mt-16">
+    <button id="clPitchScenarioBtn" class="btn" type="button">Criar cenario de demo (3 leads)</button>
+    <a class="btn btn-ghost" href="/leads">Ir para Leads</a>
+  </div>
+
+  <div id="clPitchNotice" class="k-message mt-12" style="display:none;"></div>
+  <div id="clPitchSummary" class="k-matches mt-12" style="display:none;"></div>
+</div>
+
+<div class="card mt-16">
+  <div class="card-title">Gerar massa de leads (treino ML)</div>
+  <p class="muted mt-8">
+    Cria uma base sintetica com distribuicao realista de status (CURIOSO, AQUECENDO, QUALIFICADO, ENVIADO).
+  </p>
+
+  <div class="grid grid-2 mt-12">
+    <label class="field">
+      <span>Quantidade de leads</span>
+      <input id="clBulkN" class="input" type="number" min="1" max="3000" value="450" />
+    </label>
+
+    <label class="field">
+      <span>&nbsp;</span>
+      <span><input id="clBulkReplace" type="checkbox" /> Limpar leads atuais antes de gerar</span>
+    </label>
+  </div>
+
+  <div class="btn-row mt-16">
+    <button id="clBulkSeedBtn" class="btn btn-ghost" type="button">Gerar massa de leads</button>
+    <button id="clBulkResetBtn" class="btn btn-ghost" type="button">Resetar apenas leads sinteticos</button>
+    <a class="btn" href="/leads">Ir para Leads</a>
+  </div>
+
+  <div id="clBulkNotice" class="k-message mt-12" style="display:none;"></div>
+  <p id="clBulkSummary" class="muted mt-8"></p>
+</div>
+
