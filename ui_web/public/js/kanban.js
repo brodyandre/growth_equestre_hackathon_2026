@@ -654,12 +654,15 @@
 
     const followupBoxHtml = `
       <article class="kpi-box kpi-box-followup">
-        <div class="kpi-label">QUALIFICADO EM ACOMPANHAMENTO</div>
+        <div class="kpi-label">ACOMPANHAMENTO DE QUALIFICADOS</div>
         <div class="kpi-value">${trackingCount} lead(s)</div>
       </article>
     `;
 
-    KPI_ROOT.innerHTML = `${stageBoxesHtml}${followupBoxHtml}`;
+    KPI_ROOT.innerHTML = `
+      <div class="kpi-row kpi-row-stage">${stageBoxesHtml}</div>
+      <div class="kpi-row kpi-row-followup">${followupBoxHtml}</div>
+    `;
   }
 
   function renderBoard() {
