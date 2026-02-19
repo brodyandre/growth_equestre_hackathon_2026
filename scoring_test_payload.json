@@ -1,0 +1,20 @@
+{
+  "lead": {
+    "id": "00000000-0000-0000-0000-000000000001",
+    "nome": "Carlos Mendes",
+    "segmento_interesse": "CAVALOS",
+    "uf": "SP",
+    "cidade": "Campinas",
+    "orcamento_faixa": "50K-100K",
+    "prazo_compra": "3_MESES",
+    "whatsapp": "11999990001",
+    "email": "carlos@email.com"
+  },
+  "events": [
+    { "event_type": "page_view", "ts": "2026-02-19T10:00:00Z" },
+    { "event_type": "page_view", "ts": "2026-02-19T10:02:00Z" },
+    { "event_type": "page_view", "ts": "2026-02-19T10:04:00Z" },
+    { "event_type": "hook_complete", "ts": "2026-02-19T10:05:00Z" },
+    { "event_type": "cta_click", "ts": "2026-02-19T10:06:00Z" }
+  ]
+}
