@@ -142,15 +142,6 @@ function buildStatusCountsFromBoard(items) {
   return counts;
 }
 
-function buildStatusCountsFromLeads(leads) {
-  const counts = emptyStatusCounts();
-  for (const lead of Array.isArray(leads) ? leads : []) {
-    const status = normalizeCommercialStatus(lead?.status, lead?.crm_stage);
-    counts[status] = (counts[status] || 0) + 1;
-  }
-  return counts;
-}
-
 function normalizePartnerSummary(payload) {
   return Array.isArray(payload)
     ? payload
@@ -280,23 +271,20 @@ async function loadOverviewPartnerSummary() {
 async function loadDashboard() {
   try {
     const boardPath = window.__GE__?.paths?.kanban || "/crm/board";
-    const [boardResp, leadsResp, summaryResp] = await Promise.all([
+    const [boardResp, summaryResp] = await Promise.all([
       fetch(`/api${boardPath}`, { cache: "no-store" }),
-      fetch("/api/leads", { cache: "no-store" }),
       fetch("/api/partners/summary", { cache: "no-store" }),
     ]);
 
     const boardPayload = boardResp.ok ? await boardResp.json() : [];
     const boardItems = extractBoardItems(boardPayload);
-    const leads = leadsResp.ok ? await leadsResp.json() : [];
     const partnerSummary = summaryResp.ok ? await summaryResp.json() : [];
 
-    const leadsList = Array.isArray(leads) ? leads : [];
     const summaryList = normalizePartnerSummary(partnerSummary);
 
-    const statusCounts = leadsList.length
-      ? buildStatusCountsFromLeads(leadsList)
-      : buildStatusCountsFromBoard(boardItems);
+    // Sincroniza os KPIs da Visao geral com a mesma fonte do CRM Kanban
+    // para refletir fielmente movimentos manuais e por automacao de eventos.
+    const statusCounts = buildStatusCountsFromBoard(boardItems);
     const totalLeads = CRM_STATUS_ORDER.reduce((acc, status) => acc + Number(statusCounts[status] || 0), 0);
     const curious = Number(statusCounts.CURIOSO || 0);
     const warm = Number(statusCounts.AQUECENDO || 0);
