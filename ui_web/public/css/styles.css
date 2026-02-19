@@ -680,7 +680,7 @@ select.input option:checked {
 
 .toolbar-grid {
   display: grid;
-  grid-template-columns: 2.2fr 1.2fr 1.4fr 1fr auto;
+  grid-template-columns: 2.1fr 1.2fr 1.9fr 1.4fr 1fr auto;
   gap: 9px;
   align-items: end;
 }
@@ -706,6 +706,10 @@ select.input option:checked {
   gap: 10px;
 }
 
+#kanbanKpis {
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+}
+
 .overview-kpi-row {
   grid-template-columns: repeat(6, minmax(0, 1fr));
 }
@@ -715,6 +719,15 @@ select.input option:checked {
   border-radius: 12px;
   padding: 11px;
   background: rgba(255, 255, 255, 0.03);
+}
+
+.kpi-box-followup {
+  border-top: 3px solid rgba(55, 214, 122, 0.8);
+  background: linear-gradient(
+    180deg,
+    rgba(55, 214, 122, 0.14),
+    rgba(55, 214, 122, 0.03)
+  );
 }
 
 .kpi-label {
@@ -810,6 +823,12 @@ select.input option:checked {
   background: rgba(255, 255, 255, 0.04);
 }
 
+.k-chip-followup {
+  border-color: rgba(55, 214, 122, 0.68);
+  color: #c0ffd9;
+  background: rgba(55, 214, 122, 0.13);
+}
+
 .k-next {
   margin-top: 8px;
   border: 1px solid var(--line);
@@ -864,6 +883,13 @@ select.input option:checked {
   font-weight: 730;
   font-size: 0.78rem;
   margin: 8px 0;
+}
+
+.k-stage-badge-followup {
+  border-color: rgba(55, 214, 122, 0.68);
+  color: #c0ffd9;
+  background: rgba(55, 214, 122, 0.13);
+  margin-top: 0;
 }
 
 .k-form {

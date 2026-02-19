@@ -14,6 +14,7 @@
 
   const SEARCH = document.getElementById("kSearch");
   const FILTER_STAGE = document.getElementById("kStageFilter");
+  const FILTER_FOLLOWUP = document.getElementById("kFollowupFilter");
   const SORT = document.getElementById("kSort");
   const LIMIT = document.getElementById("kLimit");
   const REFRESH = document.getElementById("kRefresh");
@@ -546,6 +547,7 @@
     return {
       query: String(SEARCH?.value || "").trim().toLowerCase(),
       stage: String(FILTER_STAGE?.value || "ALL"),
+      followup: String(FILTER_FOLLOWUP?.value || "ALL"),
       sort: String(SORT?.value || "score_desc"),
       limit: Math.max(1, Number.parseInt(String(LIMIT?.value || "10"), 10) || 10),
     };
@@ -564,6 +566,12 @@
 
     if (f.stage !== "ALL") {
       list = list.filter((it) => it.stage === f.stage);
+    }
+
+    if (f.followup === "QUALIFIED_TRACKING") {
+      list = list.filter((it) => isQualifiedTracking(it));
+    } else if (f.followup === "QUALIFIED_PENDING") {
+      list = list.filter((it) => isQualifiedPendingTracking(it));
     }
 
     if (f.sort === "score_desc") {
@@ -593,6 +601,26 @@
     return text || when;
   }
 
+  function hasQualifiedFollowup(lead) {
+    const text = String(lead?.nextText || "").trim();
+    const date = String(lead?.nextDate || "").trim();
+    return Boolean(text && date);
+  }
+
+  function isQualifiedTracking(lead) {
+    return lead?.stage === "QUALIFICADO" && hasQualifiedFollowup(lead);
+  }
+
+  function isQualifiedPendingTracking(lead) {
+    return lead?.stage === "QUALIFICADO" && !hasQualifiedFollowup(lead);
+  }
+
+  function buildFollowupHint(lead) {
+    if (lead?.stage !== "QUALIFICADO") return "";
+    if (hasQualifiedFollowup(lead)) return "";
+    return "Qualificado sem acompanhamento: salve proxima acao com texto e data.";
+  }
+
   function groupByStage(items) {
     const grouped = {
       INBOX: [],
@@ -611,8 +639,10 @@
 
   function renderKpis(grouped) {
     if (!KPI_ROOT) return;
+    const qualifiedItems = grouped.QUALIFICADO || [];
+    const trackingCount = qualifiedItems.filter((lead) => isQualifiedTracking(lead)).length;
 
-    KPI_ROOT.innerHTML = STAGES.map((s) => {
+    const stageBoxesHtml = STAGES.map((s) => {
       const count = grouped[s.id]?.length || 0;
       return `
         <article class="kpi-box" style="border-top: 3px solid ${s.color};">
@@ -621,6 +651,15 @@
         </article>
       `;
     }).join("");
+
+    const followupBoxHtml = `
+      <article class="kpi-box kpi-box-followup">
+        <div class="kpi-label">QUALIFICADO EM ACOMPANHAMENTO</div>
+        <div class="kpi-value">${trackingCount} lead(s)</div>
+      </article>
+    `;
+
+    KPI_ROOT.innerHTML = `${stageBoxesHtml}${followupBoxHtml}`;
   }
 
   function renderBoard() {
@@ -640,6 +679,9 @@
           const location = [lead.cidade || "-", lead.uf || "-"].join("/");
           const segment = lead.segmento || "Sem segmento";
           const nextAction = formatNextAction(lead);
+          const followupChip = isQualifiedTracking(lead)
+            ? `<span class="k-chip k-chip-followup">ACOMPANHANDO</span>`
+            : "";
 
           return `
             <article class="k-card">
@@ -648,6 +690,7 @@
               <div class="k-chip-row">
                 <span class="k-chip">${escapeHtml(segment)}</span>
                 <span class="k-chip">score: ${escapeHtml(formatScore(lead.score))}</span>
+                ${followupChip}
               </div>
               <div class="k-next"><b>Proxima acao:</b> ${escapeHtml(nextAction)}</div>
               <div class="k-actions">
@@ -687,7 +730,8 @@
       .map((lead) => {
         const stage = STAGE_BY_ID[lead.stage]?.label || lead.stage;
         const score = formatScore(lead.score);
-        const label = `${lead.nome} - ${stage} - score=${score}`;
+        const trackingTag = isQualifiedTracking(lead) ? " - ACOMPANHANDO" : "";
+        const label = `${lead.nome} - ${stage}${trackingTag} - score=${score}`;
         const selected = selectedId === lead.id ? "selected" : "";
         return `<option value="${escapeHtml(lead.id)}" ${selected}>${escapeHtml(label)}</option>`;
       })
@@ -802,6 +846,8 @@
 
     const defaults = nextActionDefaults(lead);
     const stageMeta = STAGE_BY_ID[lead.stage] || STAGE_BY_ID.INBOX;
+    const qualifiedTracking = isQualifiedTracking(lead);
+    const followupHint = buildFollowupHint(lead);
     const eventRules = getEventRules();
     const defaultRuleCode = eventRules[0]?.code || "";
     state.matchesLimit = parseMatchesLimit(state.matchesLimit);
@@ -820,6 +866,8 @@
       <div class="k-stage-badge" style="border-color:${stageMeta.color}; color:${stageMeta.color};">
         ${stageMeta.label}
       </div>
+      ${qualifiedTracking ? '<div class="k-stage-badge k-stage-badge-followup">ACOMPANHANDO</div>' : ""}
+      ${followupHint ? `<div class="k-message mt-8">${escapeHtml(followupHint)}</div>` : ""}
 
       <div class="k-form">
         <label class="field">
@@ -1493,9 +1541,11 @@
         Number.isFinite(Number(transition.from_score)) && Number.isFinite(Number(transition.to_score))
           ? ` | score ${transition.from_score} -> ${transition.to_score}`
           : "";
-      const message = `Etapa atualizada com sucesso (${stageInfo}${scoreInfo}).`;
       await refreshBoard({ preserveSelection: true });
-      setNotice(message);
+      const refreshedLead = findLeadById(lead.id);
+      const followupHint = buildFollowupHint(refreshedLead);
+      const messageBase = `Etapa atualizada com sucesso (${stageInfo}${scoreInfo}).`;
+      setNotice(followupHint ? `${messageBase} ${followupHint}` : messageBase);
     } catch (err) {
       setNotice("Nao foi possivel atualizar a etapa.", true);
     }
@@ -1549,11 +1599,13 @@
         ? data.qualification_gate.missing_signals.filter(Boolean)
         : [];
       const gateInfo = missingSignals.length ? ` | pendencias: ${missingSignals.join(", ")}` : "";
-      const message = `Evento aplicado (${rule.label} ${formatRuleDelta(rule.delta)}). Etapa ${stageInfo} | score ${scoreInfo}${gateInfo}.`;
+      const messageBase = `Evento aplicado (${rule.label} ${formatRuleDelta(rule.delta)}). Etapa ${stageInfo} | score ${scoreInfo}${gateInfo}.`;
 
       if (noteEl instanceof HTMLInputElement) noteEl.value = "";
       await refreshBoard({ preserveSelection: true });
-      setNotice(message);
+      const refreshedLead = findLeadById(lead.id);
+      const followupHint = buildFollowupHint(refreshedLead);
+      setNotice(followupHint ? `${messageBase} ${followupHint}` : messageBase);
     } catch (_err) {
       setNotice("Nao foi possivel aplicar o evento agora.", true);
     }
@@ -1566,6 +1618,18 @@
     const text = String(document.getElementById("dNextText")?.value || "").trim();
     const date = String(document.getElementById("dNextDate")?.value || "").trim();
     const time = String(document.getElementById("dNextTime")?.value || "").trim();
+    const isQualified = lead.stage === "QUALIFICADO";
+    const hasText = Boolean(text);
+    const hasDate = Boolean(date);
+    const wantsTracking = hasText || hasDate;
+
+    if (isQualified && wantsTracking && (!hasText || !hasDate)) {
+      setNotice(
+        "Para marcar QUALIFICADO como ACOMPANHANDO, preencha texto e data da proxima acao.",
+        true
+      );
+      return;
+    }
 
     const note = `NEXT_ACTION|${date}|${time}|${text}`;
 
@@ -1580,7 +1644,15 @@
       });
       state.notesEndpoint = url;
       await refreshBoard({ preserveSelection: true });
-      setNotice("Proxima acao salva com sucesso.");
+      const refreshedLead = findLeadById(lead.id);
+      const isTracking = isQualifiedTracking(refreshedLead);
+      if (lead.stage === "QUALIFICADO" && isTracking) {
+        setNotice("Proxima acao salva. Lead QUALIFICADO agora esta em ACOMPANHANDO.");
+      } else if (lead.stage === "QUALIFICADO" && !hasText && !hasDate) {
+        setNotice("Acompanhamento removido deste lead QUALIFICADO.");
+      } else {
+        setNotice("Proxima acao salva com sucesso.");
+      }
     } catch (err) {
       setNotice("Nao foi possivel salvar a proxima acao.", true);
     }
@@ -1608,6 +1680,7 @@
   function bindEvents() {
     SEARCH?.addEventListener("input", () => renderBoard());
     FILTER_STAGE?.addEventListener("change", () => renderBoard());
+    FILTER_FOLLOWUP?.addEventListener("change", () => renderBoard());
     SORT?.addEventListener("change", () => renderBoard());
     LIMIT?.addEventListener("change", () => renderBoard());
     REFRESH?.addEventListener("click", () => refreshBoard({ preserveSelection: true }));
