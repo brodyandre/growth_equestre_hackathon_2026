@@ -568,10 +568,10 @@
       list = list.filter((it) => it.stage === f.stage);
     }
 
-    if (f.followup === "QUALIFIED_TRACKING") {
-      list = list.filter((it) => isQualifiedTracking(it));
-    } else if (f.followup === "QUALIFIED_PENDING") {
-      list = list.filter((it) => isQualifiedPendingTracking(it));
+    if (f.followup === "SENT_TRACKING" || f.followup === "QUALIFIED_TRACKING") {
+      list = list.filter((it) => isSentTracking(it));
+    } else if (f.followup === "SENT_PENDING" || f.followup === "QUALIFIED_PENDING") {
+      list = list.filter((it) => isSentPendingTracking(it));
     }
 
     if (f.sort === "score_desc") {
@@ -601,24 +601,24 @@
     return text || when;
   }
 
-  function hasQualifiedFollowup(lead) {
+  function hasScheduledFollowup(lead) {
     const text = String(lead?.nextText || "").trim();
     const date = String(lead?.nextDate || "").trim();
     return Boolean(text && date);
   }
 
-  function isQualifiedTracking(lead) {
-    return lead?.stage === "QUALIFICADO" && hasQualifiedFollowup(lead);
+  function isSentTracking(lead) {
+    return lead?.stage === "ENVIADO" && hasScheduledFollowup(lead);
   }
 
-  function isQualifiedPendingTracking(lead) {
-    return lead?.stage === "QUALIFICADO" && !hasQualifiedFollowup(lead);
+  function isSentPendingTracking(lead) {
+    return lead?.stage === "ENVIADO" && !hasScheduledFollowup(lead);
   }
 
   function buildFollowupHint(lead) {
-    if (lead?.stage !== "QUALIFICADO") return "";
-    if (hasQualifiedFollowup(lead)) return "";
-    return "Qualificado sem acompanhamento: salve proxima acao com texto e data.";
+    if (lead?.stage !== "ENVIADO") return "";
+    if (hasScheduledFollowup(lead)) return "";
+    return "Enviado sem acompanhamento: salve proxima acao com texto e data.";
   }
 
   function groupByStage(items) {
@@ -639,30 +639,26 @@
 
   function renderKpis(grouped) {
     if (!KPI_ROOT) return;
-    const qualifiedItems = grouped.QUALIFICADO || [];
-    const trackingCount = qualifiedItems.filter((lead) => isQualifiedTracking(lead)).length;
+    const sentItems = grouped.ENVIADO || [];
+    const trackingCount = sentItems.filter((lead) => isSentTracking(lead)).length;
 
-    const stageBoxesHtml = STAGES.map((s) => {
-      const count = grouped[s.id]?.length || 0;
-      return `
-        <article class="kpi-box" style="border-top: 3px solid ${s.color};">
-          <div class="kpi-label">${s.label}</div>
+    const kpiCards = [];
+    for (const stage of STAGES) {
+      const count = grouped[stage.id]?.length || 0;
+      const followupLine =
+        stage.id === "ENVIADO"
+          ? `<div class="kpi-followup-line">Acompanhamento: ${trackingCount} lead(s)</div>`
+          : "";
+      kpiCards.push(`
+        <article class="kpi-box" style="border-top: 3px solid ${stage.color};">
+          <div class="kpi-label">${stage.label}</div>
           <div class="kpi-value">${count} lead(s)</div>
+          ${followupLine}
         </article>
-      `;
-    }).join("");
+      `);
+    }
 
-    const followupBoxHtml = `
-      <article class="kpi-box kpi-box-followup">
-        <div class="kpi-label">ACOMPANHAMENTO DE QUALIFICADOS</div>
-        <div class="kpi-value">${trackingCount} lead(s)</div>
-      </article>
-    `;
-
-    KPI_ROOT.innerHTML = `
-      <div class="kpi-row kpi-row-stage">${stageBoxesHtml}</div>
-      <div class="kpi-row kpi-row-followup">${followupBoxHtml}</div>
-    `;
+    KPI_ROOT.innerHTML = `<div class="kpi-row">${kpiCards.join("")}</div>`;
   }
 
   function renderBoard() {
@@ -682,7 +678,7 @@
           const location = [lead.cidade || "-", lead.uf || "-"].join("/");
           const segment = lead.segmento || "Sem segmento";
           const nextAction = formatNextAction(lead);
-          const followupChip = isQualifiedTracking(lead)
+          const followupChip = isSentTracking(lead)
             ? `<span class="k-chip k-chip-followup">ACOMPANHANDO</span>`
             : "";
 
@@ -733,7 +729,7 @@
       .map((lead) => {
         const stage = STAGE_BY_ID[lead.stage]?.label || lead.stage;
         const score = formatScore(lead.score);
-        const trackingTag = isQualifiedTracking(lead) ? " - ACOMPANHANDO" : "";
+        const trackingTag = isSentTracking(lead) ? " - ACOMPANHANDO" : "";
         const label = `${lead.nome} - ${stage}${trackingTag} - score=${score}`;
         const selected = selectedId === lead.id ? "selected" : "";
         return `<option value="${escapeHtml(lead.id)}" ${selected}>${escapeHtml(label)}</option>`;
@@ -849,7 +845,7 @@
 
     const defaults = nextActionDefaults(lead);
     const stageMeta = STAGE_BY_ID[lead.stage] || STAGE_BY_ID.INBOX;
-    const qualifiedTracking = isQualifiedTracking(lead);
+    const sentTracking = isSentTracking(lead);
     const followupHint = buildFollowupHint(lead);
     const eventRules = getEventRules();
     const defaultRuleCode = eventRules[0]?.code || "";
@@ -869,7 +865,7 @@
       <div class="k-stage-badge" style="border-color:${stageMeta.color}; color:${stageMeta.color};">
         ${stageMeta.label}
       </div>
-      ${qualifiedTracking ? '<div class="k-stage-badge k-stage-badge-followup">ACOMPANHANDO</div>' : ""}
+      ${sentTracking ? '<div class="k-stage-badge k-stage-badge-followup">ACOMPANHANDO</div>' : ""}
       ${followupHint ? `<div class="k-message mt-8">${escapeHtml(followupHint)}</div>` : ""}
 
       <div class="k-form">
@@ -1621,14 +1617,14 @@
     const text = String(document.getElementById("dNextText")?.value || "").trim();
     const date = String(document.getElementById("dNextDate")?.value || "").trim();
     const time = String(document.getElementById("dNextTime")?.value || "").trim();
-    const isQualified = lead.stage === "QUALIFICADO";
+    const isSent = lead.stage === "ENVIADO";
     const hasText = Boolean(text);
     const hasDate = Boolean(date);
     const wantsTracking = hasText || hasDate;
 
-    if (isQualified && wantsTracking && (!hasText || !hasDate)) {
+    if (isSent && wantsTracking && (!hasText || !hasDate)) {
       setNotice(
-        "Para marcar QUALIFICADO como ACOMPANHANDO, preencha texto e data da proxima acao.",
+        "Para marcar ENVIADO como ACOMPANHANDO, preencha texto e data da proxima acao.",
         true
       );
       return;
@@ -1648,11 +1644,11 @@
       state.notesEndpoint = url;
       await refreshBoard({ preserveSelection: true });
       const refreshedLead = findLeadById(lead.id);
-      const isTracking = isQualifiedTracking(refreshedLead);
-      if (lead.stage === "QUALIFICADO" && isTracking) {
-        setNotice("Proxima acao salva. Lead QUALIFICADO agora esta em ACOMPANHANDO.");
-      } else if (lead.stage === "QUALIFICADO" && !hasText && !hasDate) {
-        setNotice("Acompanhamento removido deste lead QUALIFICADO.");
+      const isTracking = isSentTracking(refreshedLead);
+      if (lead.stage === "ENVIADO" && isTracking) {
+        setNotice("Proxima acao salva. Lead ENVIADO agora esta em ACOMPANHANDO.");
+      } else if (lead.stage === "ENVIADO" && !hasText && !hasDate) {
+        setNotice("Acompanhamento removido deste lead ENVIADO.");
       } else {
         setNotice("Proxima acao salva com sucesso.");
       }

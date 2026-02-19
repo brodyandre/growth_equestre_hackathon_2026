@@ -15,7 +15,7 @@
   --stage-warm: #ff9f43;
   --stage-qualified: #31d885;
   --stage-sent: #ff6b81;
-  --stage-followup: #b48cff;
+  --stage-followup: #37d67a;
   --shadow: 0 18px 34px rgba(0, 0, 0, 0.28);
   --radius: 16px;
   --radius-sm: 12px;
@@ -713,16 +713,8 @@ select.input option:checked {
   gap: 10px;
 }
 
-#kanbanKpis .kpi-row-stage {
+#kanbanKpis .kpi-row {
   grid-template-columns: repeat(4, minmax(0, 1fr));
-}
-
-#kanbanKpis .kpi-row-followup {
-  grid-template-columns: repeat(4, minmax(0, 1fr));
-}
-
-#kanbanKpis .kpi-row-followup .kpi-box-followup {
-  grid-column: 3 / 4;
 }
 
 .overview-kpi-row {
@@ -734,20 +726,23 @@ select.input option:checked {
   border-radius: 12px;
   padding: 11px;
   background: rgba(255, 255, 255, 0.03);
+  min-height: 96px;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
 }
 
 .kpi-box-followup {
-  border-top: 3px solid var(--stage-followup);
-  border-color: rgba(180, 140, 255, 0.52);
+  border-top: 3px solid rgba(55, 214, 122, 0.8);
   background: linear-gradient(
     180deg,
-    rgba(180, 140, 255, 0.18),
-    rgba(180, 140, 255, 0.05)
+    rgba(55, 214, 122, 0.14),
+    rgba(55, 214, 122, 0.03)
   );
 }
 
 .kpi-box-followup .kpi-label {
-  color: #ddccff;
+  color: #c0ffd9;
   letter-spacing: 0.05em;
 }
 
@@ -764,6 +759,14 @@ select.input option:checked {
   font-weight: 850;
 }
 
+.kpi-followup-line {
+  margin-top: 6px;
+  font-size: 0.73rem;
+  color: #c0ffd9;
+  font-weight: 650;
+  letter-spacing: 0.01em;
+}
+
 .kanban-layout {
   display: grid;
   grid-template-columns: minmax(0, 2.4fr) minmax(320px, 1fr);
@@ -774,6 +777,7 @@ select.input option:checked {
   display: grid;
   grid-template-columns: repeat(4, minmax(0, 1fr));
   gap: 10px;
+  align-items: stretch;
 }
 
 .k-column {
@@ -782,6 +786,8 @@ select.input option:checked {
   background: rgba(0, 0, 0, 0.2);
   padding: 9px;
   min-height: 300px;
+  display: flex;
+  flex-direction: column;
 }
 
 .k-column-head {
@@ -807,6 +813,7 @@ select.input option:checked {
 .k-cards {
   display: grid;
   gap: 8px;
+  align-content: start;
 }
 
 .k-card {
@@ -814,6 +821,9 @@ select.input option:checked {
   border-radius: 12px;
   padding: 9px;
   background: linear-gradient(180deg, rgba(255, 255, 255, 0.05), rgba(255, 255, 255, 0.02));
+  min-height: 168px;
+  display: flex;
+  flex-direction: column;
 }
 
 .k-card-title {
@@ -845,9 +855,9 @@ select.input option:checked {
 }
 
 .k-chip-followup {
-  border-color: rgba(180, 140, 255, 0.76);
-  color: #f1e6ff;
-  background: rgba(180, 140, 255, 0.2);
+  border-color: rgba(55, 214, 122, 0.68);
+  color: #c0ffd9;
+  background: rgba(55, 214, 122, 0.13);
 }
 
 .k-next {
@@ -861,7 +871,8 @@ select.input option:checked {
 }
 
 .k-actions {
-  margin-top: 8px;
+  margin-top: auto;
+  padding-top: 8px;
   display: grid;
 }
 
@@ -907,9 +918,9 @@ select.input option:checked {
 }
 
 .k-stage-badge-followup {
-  border-color: rgba(180, 140, 255, 0.76);
-  color: #f1e6ff;
-  background: rgba(180, 140, 255, 0.2);
+  border-color: rgba(55, 214, 122, 0.68);
+  color: #c0ffd9;
+  background: rgba(55, 214, 122, 0.13);
   margin-top: 0;
 }
 
@@ -1457,8 +1468,8 @@ select.input option:checked {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 
-  #kanbanKpis .kpi-row-followup .kpi-box-followup {
-    grid-column: 1 / -1;
+  #kanbanKpis .kpi-row {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 
   .quick-preset-grid {
@@ -1565,8 +1576,8 @@ select.input option:checked {
     grid-template-columns: 1fr;
   }
 
-  #kanbanKpis .kpi-row-followup .kpi-box-followup {
-    grid-column: auto;
+  #kanbanKpis .kpi-row {
+    grid-template-columns: 1fr;
   }
 
   .k-report-dialog {
