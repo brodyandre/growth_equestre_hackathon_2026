@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Relatórios — Growth Equestre</title>
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <nav class="navbar">
+    <span class="brand">🐴 Growth Equestre</span>
+    <div class="nav-links">
+      <a href="index.html">Dashboard</a>
+      <a href="leads.html">Leads</a>
+      <a href="kanban.html">Kanban CRM</a>
+      <a href="output.html" class="active">Relatórios</a>
+    </div>
+    <div class="api-indicator" id="apiStatus">🔴 API</div>
+  </nav>
+
+  <main class="container">
+    <h1>Relatórios de Output</h1>
+    <p class="subtitle">Exportações estruturadas para uso pelo time de vendas e parcerias.</p>
+
+    <div class="filters">
+      <select id="filterStage" class="input" style="max-width:180px">
+        <option value="">Todos os estágios</option>
+        <option value="INBOX">Inbox</option>
+        <option value="AQUECENDO">Aquecendo</option>
+        <option value="QUALIFICADO">Qualificado</option>
+        <option value="ENVIADO">Enviado</option>
+      </select>
+      <select id="filterSegmento" class="input" style="max-width:180px">
+        <option value="">Todos os segmentos</option>
+        <option value="CAVALOS">Cavalos</option>
+        <option value="EVENTOS">Eventos</option>
+        <option value="EQUIPAMENTOS">Equipamentos</option>
+      </select>
+      <button class="btn btn-primary" id="btnGenerate">Gerar Relatório</button>
+      <button class="btn" id="btnExportCSV">⬇ CSV</button>
+    </div>
+
+    <div id="reportStatus" class="alert" style="display:none"></div>
+
+    <div class="table-wrap">
+      <table id="outputTable">
+        <thead>
+          <tr>
+            <th>#</th><th>Nome</th><th>UF</th><th>Segmento</th>
+            <th>Score</th><th>Status</th><th>Estágio</th>
+            <th>Próxima Ação</th><th>Data</th>
+          </tr>
+        </thead>
+        <tbody><tr><td colspan="9">Clique em "Gerar Relatório" para carregar os dados.</td></tr></tbody>
+      </table>
+    </div>
+
+    <section class="section" id="mlSection">
+      <h2>Informações do Modelo ML</h2>
+      <div id="mlInfo">Carregando...</div>
+    </section>
+  </main>
+
+  <script src="api.js"></script>
+  <script src="output.js"></script>
+</body>
+</html>

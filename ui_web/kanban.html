@@ -1,0 +1,112 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Kanban CRM — Growth Equestre</title>
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <nav class="navbar">
+    <span class="brand">🐴 Growth Equestre</span>
+    <div class="nav-links">
+      <a href="index.html">Dashboard</a>
+      <a href="leads.html">Leads</a>
+      <a href="kanban.html" class="active">Kanban CRM</a>
+      <a href="output.html">Relatórios</a>
+    </div>
+    <div class="api-indicator" id="apiStatus">🔴 API</div>
+  </nav>
+
+  <main class="container-fluid">
+    <div class="page-header">
+      <h1>Kanban CRM</h1>
+      <button class="btn" id="btnRefresh">↻ Atualizar</button>
+    </div>
+
+    <div class="kanban-board" id="kanbanBoard">
+      <div class="kanban-col" id="col-INBOX">
+        <div class="kanban-col-header stage-inbox">📥 Inbox <span class="badge" id="badge-INBOX">0</span></div>
+        <div class="kanban-col-body" data-stage="INBOX"></div>
+      </div>
+      <div class="kanban-col" id="col-AQUECENDO">
+        <div class="kanban-col-header stage-aquecendo">🔥 Aquecendo <span class="badge" id="badge-AQUECENDO">0</span></div>
+        <div class="kanban-col-body" data-stage="AQUECENDO"></div>
+      </div>
+      <div class="kanban-col" id="col-QUALIFICADO">
+        <div class="kanban-col-header stage-qualificado">✅ Qualificado <span class="badge" id="badge-QUALIFICADO">0</span></div>
+        <div class="kanban-col-body" data-stage="QUALIFICADO"></div>
+      </div>
+      <div class="kanban-col" id="col-ENVIADO">
+        <div class="kanban-col-header stage-enviado">🚀 Enviado <span class="badge" id="badge-ENVIADO">0</span></div>
+        <div class="kanban-col-body" data-stage="ENVIADO"></div>
+      </div>
+    </div>
+  </main>
+
+  <div class="modal-overlay" id="modalCard" style="display:none">
+    <div class="modal modal-wide">
+      <div class="modal-lead-header">
+        <div>
+          <h2 id="cardName">—</h2>
+          <span class="badge-stage" id="cardStage">—</span>
+        </div>
+        <button class="btn-icon" id="btnCloseCard">✕</button>
+      </div>
+
+      <div class="modal-grid">
+        <div>
+          <p><strong>UF:</strong> <span id="cardUF">—</span></p>
+          <p><strong>Cidade:</strong> <span id="cardCidade">—</span></p>
+          <p><strong>Segmento:</strong> <span id="cardSegmento">—</span></p>
+          <p><strong>WhatsApp:</strong> <span id="cardWhats">—</span></p>
+          <p><strong>Score:</strong> <span id="cardScore">—</span></p>
+          <p><strong>Status:</strong> <span id="cardStatus">—</span></p>
+        </div>
+        <div>
+          <h3>Próxima Ação</h3>
+          <input id="naText" class="input" placeholder="Descrição da próxima ação" style="margin-bottom:.4rem" />
+          <input id="naDate" class="input" type="date" style="margin-bottom:.4rem" />
+          <input id="naTime" class="input" type="time" style="margin-bottom:.4rem" />
+          <div style="display:flex;gap:.5rem">
+            <button class="btn btn-primary" id="btnSaveNA">Salvar</button>
+            <button class="btn btn-danger" id="btnClearNA">Limpar</button>
+          </div>
+        </div>
+      </div>
+
+      <div class="modal-section">
+        <h3>Aplicar Evento CRM</h3>
+        <div style="display:flex;gap:.5rem;align-items:center">
+          <select id="ruleSelect" class="input"><option value="">Escolha uma regra…</option></select>
+          <button class="btn btn-primary" id="btnApplyRule">Aplicar</button>
+        </div>
+      </div>
+
+      <div class="modal-section">
+        <h3>Mover para Estágio</h3>
+        <div class="stage-btns">
+          <button class="btn stage-btn" data-stage="INBOX">Inbox</button>
+          <button class="btn stage-btn" data-stage="AQUECENDO">Aquecendo</button>
+          <button class="btn stage-btn" data-stage="QUALIFICADO">Qualificado</button>
+          <button class="btn stage-btn" data-stage="ENVIADO">Enviado</button>
+        </div>
+      </div>
+
+      <div class="modal-section">
+        <h3>Notas</h3>
+        <div class="notes-list" id="notesList">—</div>
+        <textarea id="noteInput" class="input" rows="2" placeholder="Nova nota…" style="margin-bottom:.4rem"></textarea>
+        <button class="btn btn-primary" id="btnAddNote">Adicionar Nota</button>
+      </div>
+
+      <div class="modal-actions">
+        <a class="btn" id="btnReport" href="#" target="_blank">📊 Relatório Gerencial</a>
+      </div>
+    </div>
+  </div>
+
+  <script src="api.js"></script>
+  <script src="kanban.js"></script>
+</body>
+</html>

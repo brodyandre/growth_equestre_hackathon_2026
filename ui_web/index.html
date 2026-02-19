@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Growth Equestre — Admin</title>
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <nav class="navbar">
+    <span class="brand">🐴 Growth Equestre</span>
+    <div class="nav-links">
+      <a href="index.html" class="active">Dashboard</a>
+      <a href="leads.html">Leads</a>
+      <a href="kanban.html">Kanban CRM</a>
+      <a href="output.html">Relatórios</a>
+    </div>
+    <div class="api-indicator" id="apiStatus">🔴 API</div>
+  </nav>
+
+  <main class="container">
+    <h1>Dashboard</h1>
+    <p class="subtitle">Visão geral do pipeline de leads equestres.</p>
+
+    <div class="kpi-grid" id="kpiGrid">
+      <div class="kpi-card loading"><span class="kpi-value">...</span><span class="kpi-label">Total de Leads</span></div>
+      <div class="kpi-card loading"><span class="kpi-value">...</span><span class="kpi-label">Qualificados</span></div>
+      <div class="kpi-card loading"><span class="kpi-value">...</span><span class="kpi-label">Score Médio</span></div>
+      <div class="kpi-card loading"><span class="kpi-value">...</span><span class="kpi-label">Enviados</span></div>
+    </div>
+
+    <section class="section">
+      <h2>Distribuição por Estágio</h2>
+      <div class="stage-bars" id="stageBars">Carregando...</div>
+    </section>
+
+    <section class="section">
+      <h2>Últimos Leads</h2>
+      <div class="table-wrap">
+        <table id="recentLeadsTable">
+          <thead><tr><th>Nome</th><th>UF</th><th>Segmento</th><th>Score</th><th>Status</th><th>Estágio</th></tr></thead>
+          <tbody><tr><td colspan="6">Carregando...</td></tr></tbody>
+        </table>
+      </div>
+    </section>
+  </main>
+
+  <script src="api.js"></script>
+  <script src="dashboard.js"></script>
+</body>
+</html>

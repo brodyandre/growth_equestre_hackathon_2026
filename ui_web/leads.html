@@ -1,0 +1,107 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Leads — Growth Equestre</title>
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <nav class="navbar">
+    <span class="brand">🐴 Growth Equestre</span>
+    <div class="nav-links">
+      <a href="index.html">Dashboard</a>
+      <a href="leads.html" class="active">Leads</a>
+      <a href="kanban.html">Kanban CRM</a>
+      <a href="output.html">Relatórios</a>
+    </div>
+    <div class="api-indicator" id="apiStatus">🔴 API</div>
+  </nav>
+
+  <main class="container">
+    <div class="page-header">
+      <h1>Leads</h1>
+      <button class="btn btn-primary" id="btnNewLead">+ Novo Lead</button>
+    </div>
+
+    <div class="filters">
+      <input type="text" id="filterName" placeholder="Buscar por nome..." class="input" style="max-width:200px" />
+      <select id="filterStatus" class="input" style="max-width:180px">
+        <option value="">Todos os status</option>
+        <option value="CURIOSO">Curioso</option>
+        <option value="AQUECENDO">Aquecendo</option>
+        <option value="QUALIFICADO">Qualificado</option>
+        <option value="ENVIADO">Enviado</option>
+      </select>
+      <select id="filterUF" class="input" style="max-width:140px">
+        <option value="">Todos os UFs</option>
+      </select>
+      <button class="btn" id="btnFilter">Filtrar</button>
+    </div>
+
+    <div class="table-wrap">
+      <table id="leadsTable">
+        <thead>
+          <tr>
+            <th><input type="checkbox" id="chkAll" /></th>
+            <th>Nome</th><th>WhatsApp</th><th>Email</th>
+            <th>UF</th><th>Segmento</th><th>Score</th><th>Status</th><th>Ações</th>
+          </tr>
+        </thead>
+        <tbody><tr><td colspan="9">Carregando...</td></tr></tbody>
+      </table>
+    </div>
+    <div class="bulk-actions" id="bulkActions" style="display:none">
+      <button class="btn btn-danger" id="btnBulkDelete">🗑 Excluir Selecionados</button>
+    </div>
+  </main>
+
+  <div class="modal-overlay" id="modalLead" style="display:none">
+    <div class="modal">
+      <h2>Novo Lead</h2>
+      <form id="formLead">
+        <label>Nome *<input name="nome" class="input" required /></label>
+        <label>WhatsApp<input name="whatsapp" class="input" /></label>
+        <label>Email<input name="email" type="email" class="input" /></label>
+        <label>UF<input name="uf" class="input" maxlength="2" /></label>
+        <label>Cidade<input name="cidade" class="input" /></label>
+        <label>Segmento *
+          <select name="segmento_interesse" class="input" required>
+            <option value="">Selecione</option>
+            <option value="CAVALOS">Cavalos</option>
+            <option value="EVENTOS">Eventos</option>
+            <option value="EQUIPAMENTOS">Equipamentos</option>
+            <option value="SERVICOS">Serviços</option>
+            <option value="OUTROS">Outros</option>
+          </select>
+        </label>
+        <label>Orçamento
+          <select name="orcamento_faixa" class="input">
+            <option value="">Selecione</option>
+            <option value="ATE_5K">Até R$5k</option>
+            <option value="5K_20K">R$5k – R$20k</option>
+            <option value="20K_50K">R$20k – R$50k</option>
+            <option value="ACIMA_50K">Acima de R$50k</option>
+          </select>
+        </label>
+        <label>Prazo de Compra
+          <select name="prazo_compra" class="input">
+            <option value="">Selecione</option>
+            <option value="7D">7 dias</option>
+            <option value="30D">30 dias</option>
+            <option value="90D">90 dias</option>
+            <option value="SEM_PRAZO">Sem prazo</option>
+          </select>
+        </label>
+        <div class="modal-actions">
+          <button type="button" class="btn" id="btnCancelLead">Cancelar</button>
+          <button type="submit" class="btn btn-primary">Salvar</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <script src="api.js"></script>
+  <script src="leads.js"></script>
+</body>
+</html>
