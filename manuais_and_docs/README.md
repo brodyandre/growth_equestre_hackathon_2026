@@ -1,6 +1,6 @@
-# Manuais e Documentos (Operação)
+# Manuais e Documentos (Operacao)
 
-Esta pasta contém os manuais finais em PDF e complementos operacionais.
+Esta pasta contem os manuais finais em PDF e complementos operacionais do MVP.
 
 ## PDFs base
 - `Growth_Equestre_Deploy_e_Uso_VSCode_GitHub.pdf`
@@ -10,12 +10,15 @@ Esta pasta contém os manuais finais em PDF e complementos operacionais.
 - `Growth_Equestre_MVP_Guia_Uso_ES.pdf`
 - `Growth_Equestre_MVP_Guia_Uso_PT-BR.pdf`
 
-## Complemento atualizado (CRM Kanban)
+## Complemento de CRM Kanban (UI Node.js)
 - `Growth_Equestre_MVP_Guia_Uso_PT-BR_ATUALIZACAO_CRM_EVENTOS_2026-02-18.md`
 - `Growth_Equestre_MVP_Guia_Uso_PT-BR_ATUALIZACAO_CRM_EVENTOS_2026-02-18.pdf`
 
-Este complemento documenta o comportamento atual da automação por evento no Kanban:
-- regras de delta de score;
-- gate de qualificação;
-- movimentação automática entre colunas;
-- registros no relatório gerencial.
+## Observacao de vigencia
+- O arquivo `.md` acima e a referencia operacional mais atual para CRM Kanban.
+- Atualizacao aplicada em `2026-02-19`: acompanhamento migrado para `ENVIADO` com substatus `ACOMPANHANDO`.
+- Faixas documentadas no complemento:
+  - `IN CURIOSO`: `0-39`
+  - `AQ AQUECENDO`: `40-69`
+  - `QL QUALIFICADO`: `70-100` (com gate de sinais)
+  - `EV ENVIADO`: banda alta (`70-100`) e substatus `ACOMPANHANDO` quando ha proxima acao valida (texto + data).

@@ -1,39 +1,45 @@
-# Growth Equestre - Atualização CRM Kanban (18/02/2026)
+# Growth Equestre - Atualizacao CRM Kanban (base 18/02/2026, revisado em 19/02/2026)
 
 Documento complementar ao `Growth_Equestre_MVP_Guia_Uso_PT-BR.pdf`.
 
-Objetivo: refletir o comportamento atual da automação por evento no CRM (Kanban), com foco em uso prático.
+Objetivo: refletir o comportamento atual da automacao por evento no CRM (Kanban) da UI Node.js, com foco operacional.
 
-## 1) O que mudou
+## 1) O que mudou na operacao
 
-No painel de detalhes do lead (tela CRM Kanban), foi adicionada a seção:
-- `Automacao por evento`
-- campo: `Evento objetivo (ajusta o score e move o lead)`
-- botão: `Aplicar evento`
+No painel de detalhes do lead (CRM Kanban):
+- secao `Automacao por evento`;
+- campo `Evento objetivo (ajusta o score e move o lead)`;
+- botao `Aplicar evento`.
 
 Ao aplicar um evento:
-1. o score é atualizado por delta (`+` ou `-`);
-2. o status comercial é recalculado;
-3. a coluna do Kanban é atualizada automaticamente;
-4. o evento é registrado para rastreabilidade no relatório gerencial.
+1. o score e atualizado por delta (`+` ou `-`);
+2. o status comercial e recalculado;
+3. a coluna do Kanban e atualizada automaticamente;
+4. o evento e registrado para rastreabilidade no relatorio gerencial.
 
-## 2) Faixas de score e colunas
+## 2) Faixas de score e status/colunas
 
-- `IN CURIOSO`: `0-39`
+Regras objetivas vigentes no backend:
+
+- `IN CURIOSO` (`INBOX`): `0-39`
 - `AQ AQUECENDO`: `40-69`
-- `QL QUALIFICADO`: `70-100`
-- `EV ENVIADO`: etapa final de handoff
+- `QL QUALIFICADO`: `70-100` (somente com gate de qualificacao completo)
+- `EV ENVIADO`: coluna final de handoff; usa banda alta (`70-100`) quando ha ajuste por etapa
+
+Importante sobre `ENVIADO ACOMPANHANDO`:
+- `ACOMPANHANDO` nao e uma coluna nova;
+- e um substatus operacional de `ENVIADO`;
+- aparece quando o lead em `ENVIADO` tem proxima acao valida (`texto + data`).
 
 ## 3) Gate para virar QUALIFICADO
 
-Além do score, é obrigatório confirmar os 3 sinais:
-- `budget_confirmed` (orçamento)
+Mesmo com score alto, para virar `QUALIFICADO` e obrigatorio confirmar os 3 sinais:
+- `budget_confirmed` (orcamento)
 - `timeline_confirmed` (prazo)
 - `need_confirmed` (necessidade)
 
-Importante:
-- se faltar algum sinal, o lead pode ter score acima de 70 e continuar em `AQUECENDO`;
-- assim que os sinais forem cumpridos, o lead passa a `QUALIFICADO`.
+Se faltar sinal:
+- o lead pode ficar com score `>= 70` e permanecer em `AQUECENDO`.
 
 ## 4) Regras objetivas (eventos)
 
@@ -59,38 +65,51 @@ Eventos negativos:
 - `Esfriou sem retorno` (`lost_interest`) = `-18`
 - `Contato invalido` (`invalid_contact`) = `-8`
 
-## 5) Movimento manual de coluna
+## 5) Movimento manual de coluna e ajuste de score
 
-Ao mover manualmente (botão `Atualizar etapa`):
-- o score é ajustado para a faixa da coluna destino;
-- evita inconsistência de card/score.
+Ao mover manualmente (`Atualizar etapa`), o score e ajustado para a faixa da coluna destino.
 
-Exemplos:
-- mover para `AQUECENDO` garante score em `40-69`;
-- mover para `QUALIFICADO` garante score em `70-100`;
-- mover para `CURIOSO` garante score em `0-39`.
+Mapeamento de ajuste por etapa:
+- mover para `CURIOSO` (`INBOX`) garante `0-39`;
+- mover para `AQUECENDO` garante `40-69`;
+- mover para `QUALIFICADO` garante `70-100`;
+- mover para `ENVIADO` tambem usa banda alta `70-100`.
 
-## 6) Relatório gerencial e rastreabilidade
+## 6) Regra de acompanhamento na UI Node.js
 
-O botão `Visualizar relatorio gerencial` mostra:
+Acompanhamento valido agora e de `ENVIADO`:
+- filtro: `Enviado em acompanhamento` / `Enviado sem acompanhamento`;
+- badge no card: `ACOMPANHANDO` quando ha `texto + data` em proxima acao;
+- KPI: contador de acompanhamento exibido dentro do card KPI de `ENVIADO`.
+
+Para marcar `ENVIADO` como acompanhando:
+1. selecionar lead em `ENVIADO`;
+2. preencher `Proxima acao` com `Texto` e `Data`;
+3. salvar proxima acao.
+
+## 7) Relatorio gerencial e rastreabilidade
+
+`Visualizar relatorio gerencial` exibe:
 - `event_breakdown` com tipos de evento aplicados;
-- `timeline` com histórico cronológico;
-- inteligência de qualificação (score, fatores e contexto).
+- `timeline` com historico cronologico;
+- contexto de qualificacao (score, fatores e sinais).
 
-As movimentações automáticas e manuais ficam registradas (ex.: `crm_manual_move`, `whatsapp_reply`, etc.).
+Movimentos manuais e automacoes ficam registrados (ex.: `crm_manual_move`, `whatsapp_reply`).
 
-## 7) Endpoints de referência
+## 8) Endpoints de referencia
 
 - `GET /crm/event-rules`
 - `POST /crm/leads/:id/apply-rule`
 - `POST /crm/move`
+- `POST /crm/leads/:id/notes`
 - `GET /crm/leads/:id/managerial-report`
 
-## 8) Checklist rápido de validação
+## 9) Checklist rapido de validacao
 
 1. Escolha um lead em `AQ AQUECENDO`.
-2. Aplique `Respondeu WhatsApp (+8)`.
-3. Verifique aumento de score no card.
-4. Abra `Visualizar relatorio gerencial`.
-5. Confirme presença do evento em `event_breakdown` e `timeline`.
-6. Aplique eventos negativos e valide queda de score/retorno para `IN CURIOSO`.
+2. Aplique `Respondeu WhatsApp (+8)` e valide score/coluna.
+3. Leve o lead para `ENVIADO` (evento ou movimento manual).
+4. Em `Proxima acao`, preencha `Texto` e `Data`.
+5. Salve e confirme badge `ACOMPANHANDO`.
+6. No filtro de acompanhamento, valide `Enviado em acompanhamento`.
+7. Abra `Visualizar relatorio gerencial` e confirme registro na `timeline`.
