@@ -11,7 +11,7 @@ __pycache__/
 .DS_Store
 .vscode/
 .idea/
-agent-skills/
+agent-skills
 
 # Node
 node_modules/
