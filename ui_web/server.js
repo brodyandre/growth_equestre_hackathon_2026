@@ -17,7 +17,7 @@ const app = express();
 
 const PORT = Number(process.env.PORT || 3100);
 const BACKEND_URL = String(process.env.BACKEND_URL || "http://localhost:3000").trim().replace(/\/$/, "");
-const ASSET_VERSION = String(process.env.ASSET_VERSION || "20260217-ux-leads-toolbar-v2");
+const ASSET_VERSION = String(process.env.ASSET_VERSION || "20260219-dashboard-stage-sync-v2");
 const HEALTH_PATH = String(process.env.HEALTH_PATH || "/health");
 const SUMMARY_PATH = String(process.env.SUMMARY_PATH || "/partners/summary");
 const ML_MODEL_INFO_PATH = String(process.env.ML_MODEL_INFO_PATH || "/ml/model-info");
