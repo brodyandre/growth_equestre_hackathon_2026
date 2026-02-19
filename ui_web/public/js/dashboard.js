@@ -136,7 +136,8 @@ function extractBoardItems(payload) {
 function buildStatusCountsFromBoard(items) {
   const counts = emptyStatusCounts();
   for (const item of Array.isArray(items) ? items : []) {
-    const status = normalizeCommercialStatus(item?.status, item?.crm_stage || item?.stage);
+    const stage = normalizeCrmStage(item?.crm_stage || item?.stage, item?.status);
+    const status = stageToStatusLabel(stage);
     counts[status] = (counts[status] || 0) + 1;
   }
   return counts;
@@ -279,11 +280,10 @@ async function loadDashboard() {
     const boardPayload = boardResp.ok ? await boardResp.json() : [];
     const boardItems = extractBoardItems(boardPayload);
     const partnerSummary = summaryResp.ok ? await summaryResp.json() : [];
-
     const summaryList = normalizePartnerSummary(partnerSummary);
 
-    // Sincroniza os KPIs da Visao geral com a mesma fonte do CRM Kanban
-    // para refletir fielmente movimentos manuais e por automacao de eventos.
+    // Mantem os numeros sincronizados com o CRM Kanban:
+    // ambos passam a usar exatamente a mesma fonte (/crm/board).
     const statusCounts = buildStatusCountsFromBoard(boardItems);
     const totalLeads = CRM_STATUS_ORDER.reduce((acc, status) => acc + Number(statusCounts[status] || 0), 0);
     const curious = Number(statusCounts.CURIOSO || 0);
