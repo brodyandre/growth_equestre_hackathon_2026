@@ -511,7 +511,7 @@ Melhor ponto da documentação para essa evidência: seção **8.2.4 CRM (Kanban
 [![Voltar ao Indice](https://img.shields.io/badge/%E2%AC%86%EF%B8%8F-Voltar%20ao%20%C3%8Dndice-0b5fff?style=for-the-badge)](#indice)
 Projeto acadêmico/hackathon com foco demonstrativo.
 
-Se for evoluir para produção, recomenda-se:
+Se for evoluir para produção, :
 - hardening de segurança;
 - observabilidade centralizada;
 - autenticação/autorização;
