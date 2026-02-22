@@ -29,6 +29,7 @@
 - [5. Como Clonar e Rodar (Guia para Leigos)](#5-como-clonar-e-rodar-guia-para-leigos)
 - [6. Como Clonar e Rodar (Guia para Experientes)](#6-como-clonar-e-rodar-guia-para-experientes)
 - [7. Endereços e Health Checks](#7-enderecos-e-health-checks)
+- [7.1 Popular a Aplicacao com Dados Sinteticos (Demo)](#71-popular-a-aplicacao-com-dados-sinteticos-demo)
 - [8. Como Usar as UIs na Prática](#8-como-usar-as-uis-na-pratica)
 - [8.1 Fase 1 - UI Streamlit (MVP funcional)](#81-fase-1---ui-streamlit-mvp-funcional)
 - [8.2 Fase 2 - UI Node.js + EJS (escalabilidade)](#82-fase-2---ui-nodejs--ejs-escalabilidade)
@@ -192,6 +193,40 @@ docker compose logs -f scoring
 | UI Node.js | `http://localhost:3100/health-ui` | Saúde da interface web |
 | UI Node.js app | `http://localhost:3100` | Operação comercial |
 | UI Streamlit app | `http://localhost:8501` | Operação/admin |
+
+---
+
+<a id="71-popular-a-aplicacao-com-dados-sinteticos-demo"></a>
+
+## 7.1 Popular a Aplicacao com Dados Sinteticos (Demo)
+
+[![Voltar ao Indice](https://img.shields.io/badge/Voltar-ao_Indice-0b5fff?style=for-the-badge)](#indice)
+Se voce apenas clonar e subir os containers, a aplicacao pode abrir sem dados de demonstracao.
+
+### 7.1.1 Gerar dados (PowerShell)
+```powershell
+Invoke-RestMethod -Method Post -Uri http://localhost:3000/demo/seed-partners -ContentType "application/json" -Body '{"n":1000,"replace":true}'
+Invoke-RestMethod -Method Post -Uri http://localhost:3000/demo/seed-leads -ContentType "application/json" -Body '{"n":450,"replace":true}'
+```
+
+- `seed-partners`: cria parceiros para as telas de `Parceiros`, `Matching` e `CRM`.
+- `seed-leads`: cria leads sinteticos para `Visao geral`, `Leads` e `CRM (Kanban)`.
+
+### 7.1.2 Validar rapidamente
+```powershell
+(Invoke-RestMethod http://localhost:3000/partners).Count
+Invoke-RestMethod http://localhost:3000/partners/summary | Format-Table
+```
+
+Se a contagem for maior que `0`, os dados ja estao disponiveis nas UIs.
+
+### 7.1.3 Resetar e gerar novamente (opcional)
+```powershell
+Invoke-RestMethod -Method Post -Uri http://localhost:3000/demo/reset-seeded-leads
+Invoke-RestMethod -Method Post -Uri http://localhost:3000/demo/reset-partners
+```
+
+> Observacao importante: montar o arquivo `data/partners_demo.csv` no volume ajuda no ambiente, mas nao substitui a carga de demo na tabela `partners` para uso imediato nas interfaces.
 
 ---
 
@@ -369,9 +404,11 @@ docker compose up -d --build scoring
 | `/leads/:id/managerial-report` | `GET` | Rota de compatibilidade sem prefixo `/crm` |
 | `/partners` | `GET` | Lista parceiros |
 | `/partners/summary` | `GET` | Resumo por segmento/UF |
+| `/demo/seed-partners` | `POST` | Gera parceiros sinteticos (demo) |
 | `/ml/model-info` | `GET` | Modelo vencedor e fine tuning |
 | `/demo/seed-leads` | `POST` | Gera massa sintética (treino/demo) |
 | `/demo/reset-seeded-leads` | `POST` | Remove apenas leads sintéticos |
+| `/demo/reset-partners` | `POST` | Remove parceiros sinteticos (demo) |
 
 ---
 
