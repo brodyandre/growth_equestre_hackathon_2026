@@ -42,6 +42,7 @@
 - [14. Branches e Estratégia de Trabalho](#14-branches-e-estrategia-de-trabalho)
 - [15. Documentação Complementar](#15-documentacao-complementar)
 - [16. Automação das Evidências do Relatório](#16-automacao-das-evidencias-do-relatorio)
+- [17. Licenca e Uso](#17-licenca-e-uso)
 
 ---
 
@@ -256,6 +257,7 @@ Invoke-RestMethod -Method Post -Uri http://localhost:3000/demo/seed-leads -Conte
 [![⬆️ Voltar ao Índice](https://img.shields.io/badge/%E2%AC%86%EF%B8%8F-Voltar%20ao%20%C3%8Dndice-0b5fff?style=for-the-badge)](#indice)
 As duas interfaces usam a mesma regra de negócio e os mesmos endpoints.
 
+<a id="81-fase-1---ui-streamlit-mvp-funcional"></a>
 ### 8.1 Fase 1 - UI Streamlit (MVP funcional)
 Primeiro estruturamos o produto na Streamlit para validar rapidamente fluxo, dados e narrativa de pitch.
 
@@ -289,6 +291,7 @@ Página guiada para pitch: cria cenário completo, mostra ordem recomendada e ch
 
 ![Streamlit - Roteiro de demo](docs/readme_images/streamlit-roteiro-demo.png)
 
+<a id="82-fase-2---ui-nodejs--ejs-escalabilidade"></a>
 ### 8.2 Fase 2 - UI Node.js + EJS (escalabilidade)
 Com a Streamlit validada, migramos para Node.js + EJS para elevar escalabilidade de frontend, roteamento e evolução de produto com maior controle.
 
@@ -540,7 +543,8 @@ Melhor ponto da documentação para essa evidência: seção **8.2.4 CRM (Kanban
 
 ---
 
-## Licença e Uso
+<a id="17-licenca-e-uso"></a>
+## 17. Licenca e Uso
 Projeto acadêmico/hackathon com foco demonstrativo.
 
 Se for evoluir para produção, recomenda-se:
