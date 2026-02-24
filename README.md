@@ -30,6 +30,7 @@
 - [6. Como Clonar e Rodar (Guia para Experientes)](#6-como-clonar-e-rodar-guia-para-experientes)
 - [7. Endereços e Health Checks](#7-enderecos-e-health-checks)
 - [7.1 Popular a Aplicacao com Dados Sinteticos (Demo)](#71-popular-a-aplicacao-com-dados-sinteticos-demo)
+- [7.2 Reproducao Deterministica (Set Seed)](#72-reproducao-deterministica-set-seed)
 - [8. Como Usar as UIs na Prática](#8-como-usar-as-uis-na-pratica)
 - [8.1 Fase 1 - UI Streamlit (MVP funcional)](#81-fase-1---ui-streamlit-mvp-funcional)
 - [8.2 Fase 2 - UI Node.js + EJS (escalabilidade)](#82-fase-2---ui-nodejs--ejs-escalabilidade)
@@ -230,6 +231,24 @@ Invoke-RestMethod -Method Post -Uri http://localhost:3000/demo/reset-partners
 
 ---
 
+<a id="72-reproducao-deterministica-set-seed"></a>
+
+## 7.2 Reproducao Deterministica (Set Seed)
+
+[![Voltar ao Indice](https://img.shields.io/badge/Voltar-ao_Indice-0b5fff?style=for-the-badge)](#indice)
+Use esta etapa quando voce quiser que todo o time gere exatamente o mesmo dataset local.
+
+```powershell
+Invoke-RestMethod -Method Post -Uri http://localhost:3000/demo/seed-partners -ContentType "application/json" -Body '{"n":1000,"replace":true,"seed":"equipepulse-v1"}'
+Invoke-RestMethod -Method Post -Uri http://localhost:3000/demo/seed-leads -ContentType "application/json" -Body '{"n":450,"replace":true,"seed":"equipepulse-v1"}'
+```
+
+- Mesmo `seed` + mesmos `n` + `replace=true` => mesmos registros.
+- `seed` diferente => novo dataset (tambem reproduzivel).
+- Regra de seguranca: no modo deterministico, mantenha `replace=true`.
+
+---
+
 <a id="8-como-usar-as-uis-na-pratica"></a>
 
 ## 8. Como Usar as UIs na Prática
@@ -404,9 +423,9 @@ docker compose up -d --build scoring
 | `/leads/:id/managerial-report` | `GET` | Rota de compatibilidade sem prefixo `/crm` |
 | `/partners` | `GET` | Lista parceiros |
 | `/partners/summary` | `GET` | Resumo por segmento/UF |
-| `/demo/seed-partners` | `POST` | Gera parceiros sinteticos (demo) |
+| `/demo/seed-partners` | `POST` | Gera parceiros sinteticos (demo, suporta seed) |
 | `/ml/model-info` | `GET` | Modelo vencedor e fine tuning |
-| `/demo/seed-leads` | `POST` | Gera massa sintética (treino/demo) |
+| `/demo/seed-leads` | `POST` | Gera massa sintetica (treino/demo, suporta seed) |
 | `/demo/reset-seeded-leads` | `POST` | Remove apenas leads sintéticos |
 | `/demo/reset-partners` | `POST` | Remove parceiros sinteticos (demo) |
 
