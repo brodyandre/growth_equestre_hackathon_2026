@@ -486,9 +486,11 @@ netstat -ano | findstr :8501
 
 [![⬆️ Voltar ao Índice](https://img.shields.io/badge/%E2%AC%86%EF%B8%8F-Voltar%20ao%20%C3%8Dndice-0b5fff?style=for-the-badge)](#indice)
 Convenção adotada:
+- total atual no remoto: `5 branches`
 - `feature/fe` -> entregas da UI Node.js
 - `feature/be` -> entregas da UI Streamlit/operação admin
 - `feature/ds` -> pipeline de dados e ML
+- `release/fullstack-mvp` -> integracao fullstack executavel para demo/execucao ponta a ponta
 - `main` -> consolidação estável
 
 Recomendação:
