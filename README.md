@@ -259,6 +259,8 @@ As duas interfaces usam a mesma regra de negócio e os mesmos endpoints.
 
 <a id="81-fase-1---ui-streamlit-mvp-funcional"></a>
 ### 8.1 Fase 1 - UI Streamlit (MVP funcional)
+
+[![?? Voltar ao ?ndice](https://img.shields.io/badge/%E2%AC%86%EF%B8%8F-Voltar%20ao%20%C3%8Dndice-0b5fff?style=for-the-badge)](#indice)
 Primeiro estruturamos o produto na Streamlit para validar rapidamente fluxo, dados e narrativa de pitch.
 
 #### 8.1.1 Visão geral (Streamlit)
@@ -293,6 +295,8 @@ Página guiada para pitch: cria cenário completo, mostra ordem recomendada e ch
 
 <a id="82-fase-2---ui-nodejs--ejs-escalabilidade"></a>
 ### 8.2 Fase 2 - UI Node.js + EJS (escalabilidade)
+
+[![?? Voltar ao ?ndice](https://img.shields.io/badge/%E2%AC%86%EF%B8%8F-Voltar%20ao%20%C3%8Dndice-0b5fff?style=for-the-badge)](#indice)
 Com a Streamlit validada, migramos para Node.js + EJS para elevar escalabilidade de frontend, roteamento e evolução de produto com maior controle.
 
 #### 8.2.1 Visão geral (Node.js)
@@ -545,6 +549,8 @@ Melhor ponto da documentação para essa evidência: seção **8.2.4 CRM (Kanban
 
 <a id="17-licenca-e-uso"></a>
 ## 17. Licenca e Uso
+
+[![?? Voltar ao ?ndice](https://img.shields.io/badge/%E2%AC%86%EF%B8%8F-Voltar%20ao%20%C3%8Dndice-0b5fff?style=for-the-badge)](#indice)
 Projeto acadêmico/hackathon com foco demonstrativo.
 
 Se for evoluir para produção, recomenda-se:
