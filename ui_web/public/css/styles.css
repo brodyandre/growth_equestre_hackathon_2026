@@ -697,6 +697,19 @@ select.input option:checked {
   letter-spacing: 0.03em;
 }
 
+.field-inline-action {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 8px;
+  align-items: center;
+}
+
+.field-inline-action .btn {
+  height: 42px;
+  white-space: nowrap;
+  padding: 0 12px;
+}
+
 .field-action {
   align-self: end;
 }
@@ -1560,7 +1573,8 @@ select.input option:checked {
   .toolbar,
   .k-form-actions,
   .footer-inner,
-  .partner-order-search {
+  .partner-order-search,
+  .field-inline-action {
     grid-template-columns: 1fr;
     flex-direction: column;
   }

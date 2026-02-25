@@ -819,6 +819,33 @@
     };
   }
 
+  function toDateInputValue(now = new Date()) {
+    const year = now.getFullYear();
+    const month = String(now.getMonth() + 1).padStart(2, "0");
+    const day = String(now.getDate()).padStart(2, "0");
+    return `${year}-${month}-${day}`;
+  }
+
+  function toTimeInputValue(now = new Date()) {
+    const hours = String(now.getHours()).padStart(2, "0");
+    const minutes = String(now.getMinutes()).padStart(2, "0");
+    return `${hours}:${minutes}`;
+  }
+
+  function fillNextActionDateNow() {
+    const dateEl = document.getElementById("dNextDate");
+    if (!(dateEl instanceof HTMLInputElement)) return;
+    dateEl.value = toDateInputValue(new Date());
+    dateEl.dispatchEvent(new Event("input", { bubbles: true }));
+  }
+
+  function fillNextActionTimeNow() {
+    const timeEl = document.getElementById("dNextTime");
+    if (!(timeEl instanceof HTMLInputElement)) return;
+    timeEl.value = toTimeInputValue(new Date());
+    timeEl.dispatchEvent(new Event("input", { bubbles: true }));
+  }
+
   function findLeadById(id) {
     return state.allItems.find((it) => it.id === id) || null;
   }
@@ -901,11 +928,21 @@
         </label>
         <label class="field">
           <span>Data</span>
-          <input id="dNextDate" class="input" type="date" value="${escapeHtml(defaults.date)}" />
+          <div class="field-inline-action">
+            <input id="dNextDate" class="input" type="date" value="${escapeHtml(defaults.date)}" />
+            <button id="dNowDateBtn" class="btn btn-ghost" type="button" title="Preencher com data atual">
+              Hoje
+            </button>
+          </div>
         </label>
         <label class="field">
           <span>Hora</span>
-          <input id="dNextTime" class="input" type="time" value="${escapeHtml(defaults.time)}" />
+          <div class="field-inline-action">
+            <input id="dNextTime" class="input" type="time" value="${escapeHtml(defaults.time)}" />
+            <button id="dNowTimeBtn" class="btn btn-ghost" type="button" title="Preencher com hora atual">
+              Agora
+            </button>
+          </div>
         </label>
         <div class="k-form-actions">
           <button id="dSaveNextBtn" class="btn btn-ghost">Salvar proxima acao</button>
@@ -1730,6 +1767,18 @@
     DETAILS_ROOT?.addEventListener("click", async (event) => {
       const target = event.target;
       if (!(target instanceof HTMLElement)) return;
+
+      if (target.id === "dNowDateBtn") {
+        event.preventDefault();
+        fillNextActionDateNow();
+        return;
+      }
+
+      if (target.id === "dNowTimeBtn") {
+        event.preventDefault();
+        fillNextActionTimeNow();
+        return;
+      }
 
       if (target.id === "dMoveBtn") {
         event.preventDefault();
