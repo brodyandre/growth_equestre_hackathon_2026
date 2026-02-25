@@ -33,6 +33,8 @@
     filteredItems: [],
     selectedId: null,
     matchesLimit: 8,
+    matchesPriorityFilter: "ALL",
+    matchesPriorityOptions: [],
     source: "",
     boardEndpoint: "",
     moveEndpoint: "",
@@ -48,6 +50,120 @@
     const n = Number.parseInt(String(rawValue ?? ""), 10);
     if (!Number.isFinite(n)) return 8;
     return Math.max(1, Math.min(n, 50));
+  }
+
+  function normalizeMatchesPriorityFilter(rawValue) {
+    const value = String(rawValue ?? "").trim();
+    return value || "ALL";
+  }
+
+  function normalizeMatchPriority(rawValue) {
+    const raw = String(rawValue ?? "").trim();
+    if (!raw || raw === "-") {
+      return { value: "NONE", label: "-" };
+    }
+
+    const numeric = Number(raw);
+    if (Number.isFinite(numeric)) {
+      const normalized = String(Math.max(0, Math.round(numeric)));
+      return { value: `NUM:${normalized}`, label: normalized };
+    }
+
+    const folded = foldText(raw);
+    return { value: `TXT:${folded}`, label: raw };
+  }
+
+  function compareMatchPriorityOptions(a, b) {
+    const av = String(a?.value || "");
+    const bv = String(b?.value || "");
+
+    if (av.startsWith("NUM:") && bv.startsWith("NUM:")) {
+      const an = Number(av.slice(4));
+      const bn = Number(bv.slice(4));
+      return an - bn;
+    }
+    if (av.startsWith("NUM:")) return -1;
+    if (bv.startsWith("NUM:")) return 1;
+    if (av === "NONE" && bv !== "NONE") return 1;
+    if (bv === "NONE" && av !== "NONE") return -1;
+
+    return String(a?.label || "").localeCompare(String(b?.label || ""));
+  }
+
+  function buildMatchesPriorityOptions(items) {
+    const source = Array.isArray(items) ? items : [];
+    const seen = new Set();
+    const options = [];
+
+    for (const item of source) {
+      const { value, label } = normalizeMatchPriority(item?.prioridade ?? item?.priority ?? "-");
+      if (seen.has(value)) continue;
+      seen.add(value);
+      options.push({ value, label });
+    }
+
+    options.sort(compareMatchPriorityOptions);
+    return options;
+  }
+
+  function matchesPriorityOptionsHtml() {
+    const selectedValue = normalizeMatchesPriorityFilter(state.matchesPriorityFilter);
+    const options = Array.isArray(state.matchesPriorityOptions) ? state.matchesPriorityOptions : [];
+    const allSelected = selectedValue === "ALL" ? "selected" : "";
+
+    const rows = [
+      `<option value="ALL" ${allSelected}>Todas</option>`,
+      ...options.map((opt) => {
+        const label = opt.label === "-" ? "Sem prioridade" : `Prioridade ${opt.label}`;
+        const selected = selectedValue === opt.value ? "selected" : "";
+        return `<option value="${escapeHtml(opt.value)}" ${selected}>${escapeHtml(label)}</option>`;
+      }),
+    ];
+    return rows.join("");
+  }
+
+  function syncMatchesPrioritySelect() {
+    const select = document.getElementById("dMatchesPriority");
+    if (!(select instanceof HTMLSelectElement)) return;
+    select.innerHTML = matchesPriorityOptionsHtml();
+  }
+
+  function filterMatchesByPriority(items) {
+    const source = Array.isArray(items) ? items : [];
+    const activeFilter = normalizeMatchesPriorityFilter(state.matchesPriorityFilter);
+    if (activeFilter === "ALL") return source;
+
+    return source.filter((item) => {
+      const normalized = normalizeMatchPriority(item?.prioridade ?? item?.priority ?? "-");
+      return normalized.value === activeFilter;
+    });
+  }
+
+  function renderMatchesWithPriorityFilter(wrap, items, isCompatibilityMode = false) {
+    const source = Array.isArray(items) ? items : [];
+    state.matchesPriorityOptions = buildMatchesPriorityOptions(source);
+
+    const validOptions = new Set(["ALL", ...state.matchesPriorityOptions.map((opt) => opt.value)]);
+    if (!validOptions.has(state.matchesPriorityFilter)) {
+      state.matchesPriorityFilter = "ALL";
+    }
+    syncMatchesPrioritySelect();
+
+    const filtered = filterMatchesByPriority(source);
+    if (filtered.length) {
+      renderMatchesTable(wrap, filtered, isCompatibilityMode);
+      return true;
+    }
+
+    if (source.length) {
+      const active = state.matchesPriorityOptions.find((opt) => opt.value === state.matchesPriorityFilter);
+      const label = active ? (active.label === "-" ? "Sem prioridade" : `Prioridade ${active.label}`) : "selecionada";
+      wrap.className = "k-message";
+      wrap.textContent = `Sem parceiros para ${label} neste lead.`;
+      return true;
+    }
+
+    return false;
   }
 
   function uniqueNonEmpty(list) {
@@ -161,6 +277,8 @@
   };
   const PARTNER_LEGAL_TYPES = ["LTDA", "S.A.", "EIRELI", "ME", "EPP"];
   const partnerIdentityCache = new Map();
+  const sentDestinationCache = new Map();
+  const sentDestinationPending = new Set();
 
   function hashString(value) {
     const s = String(value || "");
@@ -548,7 +666,7 @@
       query: String(SEARCH?.value || "").trim().toLowerCase(),
       stage: String(FILTER_STAGE?.value || "ALL"),
       followup: String(FILTER_FOLLOWUP?.value || "ALL"),
-      sort: String(SORT?.value || "score_desc"),
+      sort: String(SORT?.value || "updated_desc"),
       limit: Math.max(1, Number.parseInt(String(LIMIT?.value || "10"), 10) || 10),
     };
   }
@@ -615,6 +733,166 @@
     return lead?.stage === "ENVIADO" && !hasScheduledFollowup(lead);
   }
 
+  function normalizeSentDestinationInfo(report) {
+    const routing = report?.routing && typeof report.routing === "object" ? report.routing : {};
+    const exec =
+      report?.executive_summary && typeof report.executive_summary === "object"
+        ? report.executive_summary
+        : {};
+    const partner =
+      report?.partner_matching && typeof report.partner_matching === "object"
+        ? report.partner_matching
+        : {};
+    const primary =
+      routing?.primary_sector && typeof routing.primary_sector === "object" ? routing.primary_sector : {};
+    const topMatch = Array.isArray(partner.top_matches) && partner.top_matches.length ? partner.top_matches[0] : null;
+
+    const sectorCode = String(primary.code || exec.sent_to_code || "").trim().toUpperCase();
+    const sectorName = String(primary.name || exec.sent_to || "").trim();
+    const topPartnerName = String(topMatch?.nome_fantasia || topMatch?.razao_social || "").trim();
+    const decisionMode = String(exec.decision_mode || "").trim().toUpperCase();
+    const confidenceRaw = Number(exec.confidence_pct);
+    const confidencePct = Number.isFinite(confidenceRaw) ? Math.round(confidenceRaw) : null;
+
+    if (!sectorCode && !sectorName && !topPartnerName) return null;
+
+    let detailLabel = sectorName || sectorCode || "Destino nao definido";
+    if (topPartnerName) detailLabel = `${detailLabel} | Top parceiro: ${topPartnerName}`;
+
+    const shortLabel = sectorCode || sectorName || "DESTINO";
+    return {
+      sectorCode: sectorCode || null,
+      sectorName: sectorName || null,
+      topPartnerName: topPartnerName || null,
+      decisionMode: decisionMode || null,
+      confidencePct,
+      shortLabel,
+      detailLabel,
+    };
+  }
+
+  function inferSentDestinationFallback(lead) {
+    const text = foldText(lead?.nextText || "");
+    if (!text) return null;
+    if (text.includes("PARCEIR")) {
+      return {
+        sectorCode: "PARCEIROS",
+        sectorName: "Parcerias",
+        topPartnerName: null,
+        decisionMode: "MANUAL",
+        confidencePct: null,
+        shortLabel: "PARCEIROS",
+        detailLabel: "Parcerias (inferido do texto da proxima acao)",
+      };
+    }
+    if (text.includes("VEND")) {
+      return {
+        sectorCode: "VENDAS",
+        sectorName: "Vendas",
+        topPartnerName: null,
+        decisionMode: "MANUAL",
+        confidencePct: null,
+        shortLabel: "VENDAS",
+        detailLabel: "Vendas (inferido do texto da proxima acao)",
+      };
+    }
+    return null;
+  }
+
+  function getSentDestinationInfo(lead) {
+    const leadId = String(lead?.id || "").trim();
+    if (!leadId) return null;
+    const entry = sentDestinationCache.get(leadId);
+    if (!entry) return null;
+    const updatedAt = String(lead?.updatedAt || "");
+    if (updatedAt && entry.updatedAt !== updatedAt) return null;
+    return entry.info || null;
+  }
+
+  function setSentDestinationInfo(lead, info) {
+    const leadId = String(lead?.id || "").trim();
+    const updatedAt = String(lead?.updatedAt || "").trim() || "__na__";
+    if (!leadId || !info) return false;
+    const signature = [
+      info.sectorCode || "",
+      info.sectorName || "",
+      info.topPartnerName || "",
+      info.decisionMode || "",
+      info.confidencePct ?? "",
+      info.shortLabel || "",
+      info.detailLabel || "",
+    ].join("|");
+    const current = sentDestinationCache.get(leadId);
+    if (current && current.updatedAt === updatedAt && current.signature === signature) return false;
+    sentDestinationCache.set(leadId, { updatedAt, info, signature });
+    return true;
+  }
+
+  function buildSentDestinationDisplay(info) {
+    if (!info || typeof info !== "object") return null;
+
+    const shortRaw = String(info.shortLabel || info.sectorCode || info.sectorName || "").trim();
+    const shortLabel = shortRaw || "DESTINO";
+    const detailRaw = String(info.detailLabel || info.sectorName || info.sectorCode || "").trim();
+    const detailLabel = detailRaw || "Destino nao definido";
+
+    const mode = String(info.decisionMode || "").trim().toUpperCase();
+    const confidence = Number(info.confidencePct);
+    const meta = [];
+    if (mode) meta.push(`modo ${mode}`);
+    if (Number.isFinite(confidence)) meta.push(`confianca ${Math.round(confidence)}%`);
+    const metaText = meta.join(" | ");
+
+    return {
+      shortLabel,
+      detailLabel,
+      title: metaText ? `${detailLabel} | ${metaText}` : detailLabel,
+    };
+  }
+
+  async function hydrateSentDestinationForLead(lead) {
+    if (!lead || !isSentTracking(lead)) return false;
+    if (getSentDestinationInfo(lead)) return false;
+
+    const leadId = String(lead.id || "").trim();
+    if (!leadId || sentDestinationPending.has(leadId)) return false;
+
+    sentDestinationPending.add(leadId);
+    try {
+      const urls = reportBaseCandidates.map(
+        (base) => `/api${base}/${encodeURIComponent(leadId)}/managerial-report`
+      );
+      const { data } = await requestJsonWithFallback(urls, { cache: "no-store" });
+      const report = data?.report && typeof data.report === "object" ? data.report : data;
+      const info = normalizeSentDestinationInfo(report) || inferSentDestinationFallback(lead);
+      if (!info) return false;
+      return setSentDestinationInfo(lead, info);
+    } catch (_err) {
+      const fallback = inferSentDestinationFallback(lead);
+      if (!fallback) return false;
+      return setSentDestinationInfo(lead, fallback);
+    } finally {
+      sentDestinationPending.delete(leadId);
+    }
+  }
+
+  async function hydrateSentDestinations(leads, limit) {
+    const scope = Array.isArray(leads) ? leads : [];
+    const previewCount = Math.max(8, Math.min(30, Number(limit || 10) * 2));
+    const trackingLeads = scope
+      .filter((lead) => lead?.stage === "ENVIADO" && isSentTracking(lead))
+      .slice(0, previewCount);
+
+    if (!trackingLeads.length) return;
+
+    let changed = false;
+    for (const lead of trackingLeads) {
+      const updated = await hydrateSentDestinationForLead(lead);
+      if (updated) changed = true;
+    }
+    if (changed) renderBoard();
+  }
+
   function buildFollowupHint(lead) {
     if (lead?.stage !== "ENVIADO") return "";
     if (hasScheduledFollowup(lead)) return "";
@@ -661,6 +939,28 @@
     KPI_ROOT.innerHTML = `<div class="kpi-row">${kpiCards.join("")}</div>`;
   }
 
+  function applyColumnScrollHeights(limit) {
+    if (!ROOT) return;
+    const safeLimit = Math.max(1, Number.parseInt(String(limit || "10"), 10) || 10);
+    const GAP_PX = 8;
+    const FALLBACK_CARD_HEIGHT = 176;
+    const allCards = [...ROOT.querySelectorAll(".k-cards .k-card")];
+    const sample = allCards.slice(0, Math.min(allCards.length, 12));
+    const sampleHeights = sample.map((el) => Number(el.offsetHeight) || 0).filter((h) => h > 0);
+    const avgCardHeight = sampleHeights.length
+      ? sampleHeights.reduce((sum, n) => sum + n, 0) / sampleHeights.length
+      : FALLBACK_CARD_HEIGHT;
+
+    const maxHeight = Math.round(
+      avgCardHeight * safeLimit + GAP_PX * Math.max(0, safeLimit - 1)
+    );
+    const safeMaxHeight = `${Math.max(220, maxHeight)}px`;
+
+    ROOT.querySelectorAll(".k-cards").forEach((cardsWrap) => {
+      cardsWrap.style.maxHeight = safeMaxHeight;
+    });
+  }
+
   function renderBoard() {
     if (!ROOT) return;
 
@@ -670,17 +970,28 @@
 
     ROOT.innerHTML = STAGES.map((stage) => {
       const allCards = grouped[stage.id] || [];
-      const cards = allCards.slice(0, limit);
-      const hidden = Math.max(0, allCards.length - cards.length);
 
-      const cardsHtml = cards
+      const cardsHtml = allCards
         .map((lead) => {
           const location = [lead.cidade || "-", lead.uf || "-"].join("/");
           const segment = lead.segmento || "Sem segmento";
           const nextAction = formatNextAction(lead);
-          const followupChip = isSentTracking(lead)
-            ? `<span class="k-chip k-chip-followup">ACOMPANHANDO</span>`
+          const sentTracking = isSentTracking(lead);
+          const sentDestination = sentTracking
+            ? buildSentDestinationDisplay(getSentDestinationInfo(lead))
+            : null;
+          const followupChip = sentTracking ? `<span class="k-chip k-chip-followup">ACOMPANHANDO</span>` : "";
+          const destinationChip = sentTracking
+            ? `<span class="k-chip k-chip-route ${sentDestination ? "" : "k-chip-route-loading"}" title="${escapeHtml(
+                sentDestination?.title || "Mapeando destino no relatorio gerencial..."
+              )}">DESTINO: ${escapeHtml(sentDestination?.shortLabel || "mapeando...")}</span>`
             : "";
+          const destinationLine =
+            sentTracking && sentDestination
+              ? `<div class="k-route-line" title="${escapeHtml(sentDestination.title)}">${escapeHtml(
+                  sentDestination.detailLabel
+                )}</div>`
+              : "";
 
           return `
             <article class="k-card">
@@ -689,9 +1000,10 @@
               <div class="k-chip-row">
                 <span class="k-chip">${escapeHtml(segment)}</span>
                 <span class="k-chip">score: ${escapeHtml(formatScore(lead.score))}</span>
-                ${followupChip}
+                ${followupChip}${destinationChip}
               </div>
               <div class="k-next"><b>Proxima acao:</b> ${escapeHtml(nextAction)}</div>
+              ${destinationLine}
               <div class="k-actions">
                 <button class="btn btn-ghost" data-action="open-details" data-id="${escapeHtml(lead.id)}">Abrir detalhes</button>
               </div>
@@ -700,11 +1012,9 @@
         })
         .join("");
 
-      const bodyHtml = cards.length
+      const bodyHtml = allCards.length
         ? cardsHtml
         : `<div class="k-empty">Sem leads nesta etapa</div>`;
-
-      const hiddenHtml = hidden > 0 ? `<div class="k-hidden-note">+ ${hidden} lead(s) ocultos nesta coluna.</div>` : "";
 
       return `
         <section class="k-column" style="border-top: 3px solid ${stage.color};">
@@ -713,10 +1023,12 @@
             <div class="k-column-count">${allCards.length}</div>
           </div>
           <div class="k-cards">${bodyHtml}</div>
-          ${hiddenHtml}
         </section>
       `;
     }).join("");
+
+    requestAnimationFrame(() => applyColumnScrollHeights(limit));
+    void hydrateSentDestinations(list, limit);
 
     const selectedStillExists = state.allItems.some((it) => it.id === state.selectedId);
     if (!selectedStillExists) state.selectedId = null;
@@ -839,11 +1151,26 @@
     dateEl.dispatchEvent(new Event("input", { bubbles: true }));
   }
 
+  function openInputPicker(inputEl) {
+    if (!(inputEl instanceof HTMLInputElement)) return;
+    if (typeof inputEl.showPicker === "function") {
+      try {
+        inputEl.showPicker();
+        return;
+      } catch (_err) {
+        // fallback abaixo para browsers sem permissao/suporte pleno
+      }
+    }
+    inputEl.focus();
+    inputEl.click();
+  }
+
   function fillNextActionTimeNow() {
     const timeEl = document.getElementById("dNextTime");
     if (!(timeEl instanceof HTMLInputElement)) return;
     timeEl.value = toTimeInputValue(new Date());
     timeEl.dispatchEvent(new Event("input", { bubbles: true }));
+    openInputPicker(timeEl);
   }
 
   function findLeadById(id) {
@@ -873,6 +1200,9 @@
     const defaults = nextActionDefaults(lead);
     const stageMeta = STAGE_BY_ID[lead.stage] || STAGE_BY_ID.INBOX;
     const sentTracking = isSentTracking(lead);
+    const sentDestination = sentTracking
+      ? buildSentDestinationDisplay(getSentDestinationInfo(lead))
+      : null;
     const followupHint = buildFollowupHint(lead);
     const eventRules = getEventRules();
     const defaultRuleCode = eventRules[0]?.code || "";
@@ -893,6 +1223,15 @@
         ${stageMeta.label}
       </div>
       ${sentTracking ? '<div class="k-stage-badge k-stage-badge-followup">ACOMPANHANDO</div>' : ""}
+      ${
+        sentTracking
+          ? `<div class="k-stage-badge k-stage-badge-route ${
+              sentDestination ? "" : "k-stage-badge-route-loading"
+            }" title="${escapeHtml(
+              sentDestination?.title || "Mapeando destino no relatorio gerencial..."
+            )}">DESTINO: ${escapeHtml(sentDestination?.shortLabel || "mapeando...")}</div>`
+          : ""
+      }
       ${followupHint ? `<div class="k-message mt-8">${escapeHtml(followupHint)}</div>` : ""}
 
       <div class="k-form">
@@ -930,7 +1269,7 @@
           <span>Data</span>
           <div class="field-inline-action">
             <input id="dNextDate" class="input" type="date" value="${escapeHtml(defaults.date)}" />
-            <button id="dNowDateBtn" class="btn btn-ghost" type="button" title="Preencher com data atual">
+            <button id="dNowDateBtn" class="btn btn-capture-now" type="button" title="Preencher com data atual">
               Hoje
             </button>
           </div>
@@ -939,7 +1278,7 @@
           <span>Hora</span>
           <div class="field-inline-action">
             <input id="dNextTime" class="input" type="time" value="${escapeHtml(defaults.time)}" />
-            <button id="dNowTimeBtn" class="btn btn-ghost" type="button" title="Preencher com hora atual">
+            <button id="dNowTimeBtn" class="btn btn-capture-now" type="button" title="Preencher com hora atual">
               Agora
             </button>
           </div>
@@ -956,14 +1295,27 @@
       </div>
 
       <h4 class="k-section-title">Matching de parceiros</h4>
-      <label class="field">
-        <span>Quantidade de matches exibidos: <b id="dMatchesLimitValue">${state.matchesLimit}</b></span>
-        <input id="dMatchesLimit" class="k-range" type="range" min="1" max="50" step="1" value="${state.matchesLimit}" />
-      </label>
+      <div class="k-matches-filters">
+        <label class="field">
+          <span>Quantidade de matches exibidos: <b id="dMatchesLimitValue">${state.matchesLimit}</b></span>
+          <input id="dMatchesLimit" class="k-range" type="range" min="1" max="50" step="1" value="${state.matchesLimit}" />
+        </label>
+        <label class="field">
+          <span>Filtrar por prioridade</span>
+          <select id="dMatchesPriority" class="input">
+            ${matchesPriorityOptionsHtml()}
+          </select>
+        </label>
+      </div>
       <div id="dMatchesWrap" class="k-message">Carregando matching...</div>
     `;
 
     loadMatches(lead);
+    if (sentTracking && !sentDestination) {
+      void hydrateSentDestinationForLead(lead).then((changed) => {
+        if (changed) renderBoard();
+      });
+    }
   }
 
   function setNotice(message, isError = false) {
@@ -1394,6 +1746,12 @@
       state.reportEndpoint = url;
 
       const report = data?.report && typeof data.report === "object" ? data.report : data;
+      const liveLead = findLeadById(lead.id) || lead;
+      const mappedDestination = normalizeSentDestinationInfo(report) || inferSentDestinationFallback(liveLead);
+      if (mappedDestination) {
+        const changed = setSentDestinationInfo(liveLead, mappedDestination);
+        if (changed) renderBoard();
+      }
       const html = renderManagerialReportHtml(report || buildLocalFallbackReport(lead));
       openReportModalWithHtml(html);
       setNotice("Relatorio gerencial carregado.");
@@ -1528,25 +1886,29 @@
       const items = extractMatchesItems(data);
       const alignedItems = await alignMatchesPartnerNames(items, lead);
       if (alignedItems.length) {
-        renderMatchesTable(wrap, alignedItems, false);
+        renderMatchesWithPriorityFilter(wrap, alignedItems, false);
         return;
       }
 
       const compatibilityItems = await buildMatchesByPartnersFallback(lead, limit);
       if (compatibilityItems.length) {
-        renderMatchesTable(wrap, compatibilityItems, true);
+        renderMatchesWithPriorityFilter(wrap, compatibilityItems, true);
         return;
       }
 
+      state.matchesPriorityOptions = [];
+      syncMatchesPrioritySelect();
       wrap.className = "k-message";
       wrap.textContent = "Sem matches para este lead no momento.";
     } catch (err) {
       const compatibilityItems = await buildMatchesByPartnersFallback(lead, limit).catch(() => []);
       if (compatibilityItems.length) {
-        renderMatchesTable(wrap, compatibilityItems, true);
+        renderMatchesWithPriorityFilter(wrap, compatibilityItems, true);
         return;
       }
 
+      state.matchesPriorityOptions = [];
+      syncMatchesPrioritySelect();
       wrap.className = "k-message";
       wrap.textContent = "Matching indisponivel agora.";
     }
@@ -1748,6 +2110,16 @@
       }
 
       if (!(target instanceof HTMLSelectElement)) return;
+
+      if (target.id === "dMatchesPriority") {
+        state.matchesPriorityFilter = normalizeMatchesPriorityFilter(target.value);
+        target.value = state.matchesPriorityFilter;
+        if (state.selectedId) {
+          const lead = findLeadById(state.selectedId);
+          if (lead) loadMatches(lead);
+        }
+        return;
+      }
 
       if (target.id === "dLeadSelect") {
         const leadId = String(target.value || "");

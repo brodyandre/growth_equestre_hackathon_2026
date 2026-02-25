@@ -96,8 +96,16 @@ const state = {
   deleteSelectedIds: new Set(),
   selectedId: null,
   actionBusy: false,
+  loadBusy: false,
   editOpen: false,
 };
+
+function setReloadBusy(isBusy) {
+  state.loadBusy = Boolean(isBusy);
+  if (!$reload) return;
+  $reload.disabled = state.loadBusy;
+  $reload.textContent = state.loadBusy ? "Recarregando..." : "Recarregar";
+}
 
 const CITIES_BY_UF = {
   SP: ["Sao Paulo", "Campinas", "Ribeirao Preto", "Sorocaba", "Sao Jose dos Campos"],
@@ -1336,6 +1344,8 @@ async function fetchAllLeadsDynamic(expectedTotal) {
 }
 
 async function load() {
+  if (state.loadBusy) return;
+  setReloadBusy(true);
   const selectedBefore = state.selectedId;
   try {
     const expectedTotal = await fetchLeadsCount();
@@ -1360,11 +1370,16 @@ async function load() {
     rebuildViewRows();
     refreshUi();
     setNotice("Modo demo: backend indisponivel para leads. Exibindo dados locais.", true);
+  } finally {
+    setReloadBusy(false);
   }
 }
 
 $search?.addEventListener("input", () => refreshUi());
-$reload?.addEventListener("click", load);
+$reload?.addEventListener("click", (event) => {
+  event.preventDefault();
+  void load();
+});
 $deleteConfirm?.addEventListener("change", () => updateDeleteSelectionInfo());
 
 $table?.addEventListener("change", (event) => {
