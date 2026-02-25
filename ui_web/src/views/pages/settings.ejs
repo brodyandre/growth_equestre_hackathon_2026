@@ -1,0 +1,56 @@
+<div class="card">
+  <div class="card-title">Configuracoes</div>
+
+  <div class="grid grid-2 mt-12">
+    <div class="kv">
+      <div class="kv-k">BACKEND_URL</div>
+      <div class="kv-v mono"><%= BACKEND_URL %></div>
+    </div>
+    <div class="kv">
+      <div class="kv-k">Proxy</div>
+      <div class="kv-v mono">/api -> <%= BACKEND_URL %></div>
+    </div>
+  </div>
+
+  <div class="divider mt-16"></div>
+
+  <h3 class="h3 mt-16">Como ajustar</h3>
+  <ol class="list mt-8">
+    <li>Edite o arquivo <span class="mono">.env</span> (copie de <span class="mono">.env.example</span>).</li>
+    <li>Reinicie o servidor (<span class="mono">npm run dev</span> ou Docker Compose).</li>
+  </ol>
+
+  <div class="divider mt-16"></div>
+
+  <h3 class="h3 mt-16">Manutencao de leads (deduplicacao)</h3>
+  <p class="muted mt-8">
+    Executa limpeza fisica de duplicados usando a mesma regra da API (mantem o registro mais recente).
+  </p>
+
+  <div class="grid grid-2 mt-12">
+    <label class="field">
+      <span>Janela de deduplicacao (minutos)</span>
+      <input
+        id="dedupWindowMinutes"
+        class="input"
+        type="number"
+        min="1"
+        max="1440"
+        step="1"
+        value="60"
+      />
+    </label>
+    <label class="field">
+      <span>Confirmacao para execucao</span>
+      <span><input id="dedupConfirmRun" type="checkbox" /> Confirmo limpeza fisica (remove duplicados)</span>
+    </label>
+  </div>
+
+  <div class="btn-row mt-12">
+    <button id="btnDedupDryRun" class="btn btn-ghost" type="button">Dry-run (somente analise)</button>
+    <button id="btnDedupRun" class="btn" type="button" disabled>Executar limpeza agora</button>
+  </div>
+
+  <div id="dedupNotice" class="k-message mt-12" style="display:none;"></div>
+  <div id="dedupResult" class="table mt-12" style="display:none;"></div>
+</div>

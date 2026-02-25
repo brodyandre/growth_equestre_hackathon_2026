@@ -52,5 +52,15 @@ services:
     depends_on:
       - backend
 
+  ui_web:
+    build: ./ui_web
+    environment:
+      PORT: 3100
+      BACKEND_URL: http://backend:3000
+    ports:
+      - "${UI_WEB_PORT:-3100}:3100"
+    depends_on:
+      - backend
+
 volumes:
   pgdata:

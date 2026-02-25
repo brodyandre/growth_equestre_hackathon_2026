@@ -3,35 +3,21 @@ import cors from "cors";
 import fetch from "node-fetch";
 import fs from "node:fs/promises";
 import path from "node:path";
+import { createHash, randomUUID } from "node:crypto";
 import { pool, query } from "./db.js";
 import crmRoutes from "./crm_routes.js";
 
 const app = express();
 app.use(cors());
 app.use(express.json({ limit: "2mb" }));
-app.use(express.static(path.resolve(process.cwd(), "..", "ui_web")));
-app.use(express.static(path.resolve(process.cwd(), "ui_web"))); // fallback para se rodar da raiz
 
 const PORT = process.env.PORT || 3000;
 const SCORING_URL = process.env.SCORING_URL || "http://scoring:8000";
 const ML_REPORT_PATHS = [
   process.env.ML_REPORT_PATH,
   "/app/data/ml/artifacts/model_selection_report.json",
-  path.resolve(
-    process.cwd(),
-    "data",
-    "ml",
-    "artifacts",
-    "model_selection_report.json",
-  ),
-  path.resolve(
-    process.cwd(),
-    "..",
-    "data",
-    "ml",
-    "artifacts",
-    "model_selection_report.json",
-  ),
+  path.resolve(process.cwd(), "data", "ml", "artifacts", "model_selection_report.json"),
+  path.resolve(process.cwd(), "..", "data", "ml", "artifacts", "model_selection_report.json"),
 ].filter(Boolean);
 
 /**
@@ -41,22 +27,16 @@ function asyncHandler(fn) {
   return (req, res) =>
     Promise.resolve(fn(req, res)).catch((e) => {
       console.error(e);
-      res
-        .status(500)
-        .json({ error: "Erro interno no servidor", details: String(e) });
+      res.status(500).json({ error: "Erro interno no servidor", details: String(e) });
     });
 }
 
 function ensurePlainObject(value) {
-  return value && typeof value === "object" && !Array.isArray(value)
-    ? value
-    : {};
+  return value && typeof value === "object" && !Array.isArray(value) ? value : {};
 }
 
 function formatMlModelLabel(modelId) {
-  const key = String(modelId || "")
-    .trim()
-    .toLowerCase();
+  const key = String(modelId || "").trim().toLowerCase();
   if (!key) return null;
   if (key === "logit_fine") return "Regressao Logistica (fine tuning)";
   if (key === "rf_fine") return "Random Forest (fine tuning)";
@@ -97,7 +77,7 @@ async function readMlModelInfo() {
 
       const allBestParams = ensurePlainObject(payload.best_params);
       const winnerBestParams = ensurePlainObject(
-        winnerId ? allBestParams[winnerId] : allBestParams.winner,
+        winnerId ? allBestParams[winnerId] : allBestParams.winner
       );
 
       let reportUpdatedAt = null;
@@ -187,12 +167,8 @@ function serializeLead(row) {
   if (!row) return row;
 
   const nextActionText = row.next_action_text ?? row.proxima_acao_texto ?? null;
-  const nextActionDate = dateToISO(
-    row.next_action_date ?? row.proxima_acao_data,
-  );
-  const nextActionTime = timeToHHMM(
-    row.next_action_time ?? row.proxima_acao_hora,
-  );
+  const nextActionDate = dateToISO(row.next_action_date ?? row.proxima_acao_data);
+  const nextActionTime = timeToHHMM(row.next_action_time ?? row.proxima_acao_hora);
   const nextActionAt = row.next_action_at ?? null;
 
   return {
@@ -216,16 +192,12 @@ function toFiniteNumberOrNull(value) {
 function serializeScoreDiagnostics(row) {
   if (!row) return null;
   const meta =
-    row.score_meta &&
-    typeof row.score_meta === "object" &&
-    !Array.isArray(row.score_meta)
+    row.score_meta && typeof row.score_meta === "object" && !Array.isArray(row.score_meta)
       ? row.score_meta
       : {};
 
   const probabilityFromMeta = toFiniteNumberOrNull(meta.probability_qualified);
-  const probability = toFiniteNumberOrNull(
-    row.score_probability ?? probabilityFromMeta,
-  );
+  const probability = toFiniteNumberOrNull(row.score_probability ?? probabilityFromMeta);
 
   return {
     engine: row.score_engine || meta.engine || null,
@@ -246,7 +218,7 @@ function normalizeOptionalText(value, maxLen = 255) {
 
 const LEAD_DUPLICATE_WINDOW_MINUTES = Math.max(
   1,
-  Number.parseInt(process.env.LEAD_DUPLICATE_WINDOW_MINUTES || "60", 10) || 60,
+  Number.parseInt(process.env.LEAD_DUPLICATE_WINDOW_MINUTES || "60", 10) || 60
 );
 
 function normalizeIdentityToken(value, maxLen = 255) {
@@ -260,9 +232,7 @@ function normalizeIdentityToken(value, maxLen = 255) {
 }
 
 function normalizeEmailForIdentity(value) {
-  const email = String(value ?? "")
-    .trim()
-    .toLowerCase();
+  const email = String(value ?? "").trim().toLowerCase();
   if (!email || !email.includes("@")) return "";
 
   const atIndex = email.indexOf("@");
@@ -301,23 +271,13 @@ function buildLeadDedupeKey(lead = {}) {
   const nome = normalizeIdentityToken(lead.nome, 120);
   const uf = normalizeIdentityToken(lead.uf, 2);
   const cidade = normalizeIdentityToken(lead.cidade, 120);
-  const segmento = normalizeIdentityToken(
-    lead.segmento_interesse || lead.segmento,
-    40,
-  );
-  const orcamento = normalizeIdentityToken(
-    lead.orcamento_faixa || lead.orcamento,
-    40,
-  );
+  const segmento = normalizeIdentityToken(lead.segmento_interesse || lead.segmento, 40);
+  const orcamento = normalizeIdentityToken(lead.orcamento_faixa || lead.orcamento, 40);
   const prazo = normalizeIdentityToken(lead.prazo_compra || lead.prazo, 20);
   const email = normalizeEmailForIdentity(lead.email);
   const whatsapp = normalizePhoneDigits(lead.whatsapp);
 
-  const contactToken = email
-    ? `email:${email}`
-    : whatsapp
-      ? `whatsapp:${whatsapp}`
-      : "nocontact";
+  const contactToken = email ? `email:${email}` : whatsapp ? `whatsapp:${whatsapp}` : "nocontact";
   if (contactToken !== "nocontact") {
     return [nome, uf, segmento, contactToken].join("|");
   }
@@ -329,31 +289,21 @@ function parseBooleanFlag(value, fallback = false) {
   if (typeof value === "boolean") return value;
   const raw = String(value).trim().toLowerCase();
   if (["1", "true", "yes", "sim", "y", "on"].includes(raw)) return true;
-  if (["0", "false", "no", "nao", "não", "n", "off"].includes(raw))
-    return false;
+  if (["0", "false", "no", "nao", "não", "n", "off"].includes(raw)) return false;
   return fallback;
 }
 
-function normalizeWindowMinutesInput(
-  value,
-  fallback = LEAD_DUPLICATE_WINDOW_MINUTES,
-) {
+function normalizeWindowMinutesInput(value, fallback = LEAD_DUPLICATE_WINDOW_MINUTES) {
   const n = Number.parseInt(String(value ?? ""), 10);
   if (!Number.isFinite(n)) return fallback;
   return Math.max(1, Math.min(24 * 60, n));
 }
 
-function buildDuplicateLeadPairs(
-  rows,
-  windowMinutes = LEAD_DUPLICATE_WINDOW_MINUTES,
-) {
+function buildDuplicateLeadPairs(rows, windowMinutes = LEAD_DUPLICATE_WINDOW_MINUTES) {
   const list = Array.isArray(rows) ? rows.filter(Boolean) : [];
   if (!list.length) return [];
 
-  const winMinutes = Math.max(
-    1,
-    Number.parseInt(String(windowMinutes), 10) || 1,
-  );
+  const winMinutes = Math.max(1, Number.parseInt(String(windowMinutes), 10) || 1);
   const windowMs = winMinutes * 60 * 1000;
 
   const sorted = [...list].sort(compareLeadRecencyDesc);
@@ -378,10 +328,7 @@ function buildDuplicateLeadPairs(
   return pairs;
 }
 
-function deduplicateLeadRows(
-  rows,
-  windowMinutes = LEAD_DUPLICATE_WINDOW_MINUTES,
-) {
+function deduplicateLeadRows(rows, windowMinutes = LEAD_DUPLICATE_WINDOW_MINUTES) {
   const list = Array.isArray(rows) ? rows.filter(Boolean) : [];
   if (!list.length) return [];
   const duplicatePairs = buildDuplicateLeadPairs(list, windowMinutes);
@@ -393,16 +340,11 @@ function deduplicateLeadRows(
 }
 
 function parseLeadIds(raw) {
-  const list = Array.isArray(raw)
-    ? raw
-    : raw === undefined || raw === null
-      ? []
-      : [raw];
+  const list = Array.isArray(raw) ? raw : raw === undefined || raw === null ? [] : [raw];
   const unique = [];
   const seen = new Set();
   const invalid = [];
-  const uuidRe =
-    /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+  const uuidRe = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 
   for (const item of list) {
     const id = String(item || "").trim();
@@ -432,20 +374,14 @@ async function deleteLeadsByIds(rawIds) {
     };
   }
 
-  const existingR = await query(
-    "SELECT id FROM leads WHERE id = ANY($1::uuid[])",
-    [ids],
-  );
+  const existingR = await query("SELECT id FROM leads WHERE id = ANY($1::uuid[])", [ids]);
   const existingIds = (existingR.rows || []).map((row) => String(row.id));
   const existingSet = new Set(existingIds);
   const notFoundIds = ids.filter((id) => !existingSet.has(id));
 
   let deletedIds = [];
   if (existingIds.length) {
-    const deletedR = await query(
-      "DELETE FROM leads WHERE id = ANY($1::uuid[]) RETURNING id",
-      [existingIds],
-    );
+    const deletedR = await query("DELETE FROM leads WHERE id = ANY($1::uuid[]) RETURNING id", [existingIds]);
     deletedIds = (deletedR.rows || []).map((row) => String(row.id));
   }
 
@@ -460,9 +396,7 @@ async function deleteLeadsByIds(rawIds) {
 }
 
 async function tableExists(client, qualifiedTableName) {
-  const r = await client.query("SELECT to_regclass($1) AS regclass", [
-    qualifiedTableName,
-  ]);
+  const r = await client.query("SELECT to_regclass($1) AS regclass", [qualifiedTableName]);
   return Boolean(r.rows?.[0]?.regclass);
 }
 
@@ -470,14 +404,11 @@ async function cleanupLeadDuplicates({
   dryRun = false,
   windowMinutes = LEAD_DUPLICATE_WINDOW_MINUTES,
 } = {}) {
-  const normalizedWindow = normalizeWindowMinutesInput(
-    windowMinutes,
-    LEAD_DUPLICATE_WINDOW_MINUTES,
-  );
+  const normalizedWindow = normalizeWindowMinutesInput(windowMinutes, LEAD_DUPLICATE_WINDOW_MINUTES);
   const leadRowsR = await query(
     `SELECT id, nome, whatsapp, email, uf, cidade, segmento_interesse,
             orcamento_faixa, prazo_compra, created_at, updated_at
-       FROM leads`,
+       FROM leads`
   );
   const allLeads = leadRowsR.rows || [];
 
@@ -486,11 +417,7 @@ async function cleanupLeadDuplicates({
   const groupKeys = new Set();
   for (const row of pairs) {
     if (byDupId.has(row.dup_id)) continue;
-    byDupId.set(row.dup_id, {
-      dup_id: row.dup_id,
-      keep_id: row.keep_id,
-      key: row.key,
-    });
+    byDupId.set(row.dup_id, { dup_id: row.dup_id, keep_id: row.keep_id, key: row.key });
     groupKeys.add(row.key);
   }
   const uniquePairs = [...byDupId.values()];
@@ -512,9 +439,7 @@ async function cleanupLeadDuplicates({
       crm_lead_state_promoted: 0,
       crm_lead_state_removed: 0,
     },
-    sample: uniquePairs
-      .slice(0, 5)
-      .map((x) => ({ dup_id: x.dup_id, keep_id: x.keep_id })),
+    sample: uniquePairs.slice(0, 5).map((x) => ({ dup_id: x.dup_id, keep_id: x.keep_id })),
   };
 
   if (dryRun || uniquePairs.length === 0) {
@@ -526,7 +451,7 @@ async function cleanupLeadDuplicates({
     await client.query("BEGIN");
 
     await client.query(
-      "CREATE TEMP TABLE tmp_lead_dedup_map (dup_id uuid PRIMARY KEY, keep_id uuid NOT NULL) ON COMMIT DROP",
+      "CREATE TEMP TABLE tmp_lead_dedup_map (dup_id uuid PRIMARY KEY, keep_id uuid NOT NULL) ON COMMIT DROP"
     );
 
     const params = [];
@@ -541,14 +466,14 @@ async function cleanupLeadDuplicates({
     await client.query(
       `INSERT INTO tmp_lead_dedup_map (dup_id, keep_id)
        VALUES ${tuples}`,
-      params,
+      params
     );
 
     const migratedEventsR = await client.query(
       `UPDATE events e
           SET lead_id = m.keep_id
          FROM tmp_lead_dedup_map m
-        WHERE e.lead_id = m.dup_id`,
+        WHERE e.lead_id = m.dup_id`
     );
 
     let migratedLeadNotes = 0;
@@ -557,7 +482,7 @@ async function cleanupLeadDuplicates({
         `UPDATE lead_notes n
             SET lead_id = m.keep_id
            FROM tmp_lead_dedup_map m
-          WHERE n.lead_id = m.dup_id`,
+          WHERE n.lead_id = m.dup_id`
       );
       migratedLeadNotes = r.rowCount || 0;
     }
@@ -568,7 +493,7 @@ async function cleanupLeadDuplicates({
         `UPDATE crm_lead_notes n
             SET lead_id = m.keep_id
            FROM tmp_lead_dedup_map m
-          WHERE n.lead_id = m.dup_id`,
+          WHERE n.lead_id = m.dup_id`
       );
       migratedCrmLeadNotes = r.rowCount || 0;
     }
@@ -586,20 +511,20 @@ async function cleanupLeadDuplicates({
               FROM crm_lead_state k
              WHERE k.lead_id = m.keep_id
           )
-         ON CONFLICT (lead_id) DO NOTHING`,
+         ON CONFLICT (lead_id) DO NOTHING`
       );
       promotedCrmState = promoteR.rowCount || 0;
 
       const deleteStateR = await client.query(
         `DELETE FROM crm_lead_state
-          WHERE lead_id IN (SELECT dup_id FROM tmp_lead_dedup_map)`,
+          WHERE lead_id IN (SELECT dup_id FROM tmp_lead_dedup_map)`
       );
       removedCrmState = deleteStateR.rowCount || 0;
     }
 
     const deleteLeadsR = await client.query(
       `DELETE FROM leads
-        WHERE id IN (SELECT dup_id FROM tmp_lead_dedup_map)`,
+        WHERE id IN (SELECT dup_id FROM tmp_lead_dedup_map)`
     );
 
     await client.query("COMMIT");
@@ -644,9 +569,7 @@ function normalizeLeadUpdatePayload(body = {}) {
   }
 
   if (Object.prototype.hasOwnProperty.call(body, "uf")) {
-    const uf = String(body.uf ?? "")
-      .trim()
-      .toUpperCase();
+    const uf = String(body.uf ?? "").trim().toUpperCase();
     patch.uf = uf ? uf.slice(0, 2) : null;
   }
 
@@ -659,9 +582,7 @@ function normalizeLeadUpdatePayload(body = {}) {
     Object.prototype.hasOwnProperty.call(body, "segmento")
   ) {
     const rawSeg = body.segmento_interesse ?? body.segmento;
-    const seg = String(rawSeg ?? "")
-      .trim()
-      .toUpperCase();
+    const seg = String(rawSeg ?? "").trim().toUpperCase();
     if (!seg) errors.push("segmento_interesse nao pode ser vazio");
     else patch.segmento_interesse = seg.slice(0, 40);
   }
@@ -670,20 +591,14 @@ function normalizeLeadUpdatePayload(body = {}) {
     Object.prototype.hasOwnProperty.call(body, "orcamento_faixa") ||
     Object.prototype.hasOwnProperty.call(body, "orcamento")
   ) {
-    patch.orcamento_faixa = normalizeOptionalText(
-      body.orcamento_faixa ?? body.orcamento,
-      40,
-    );
+    patch.orcamento_faixa = normalizeOptionalText(body.orcamento_faixa ?? body.orcamento, 40);
   }
 
   if (
     Object.prototype.hasOwnProperty.call(body, "prazo_compra") ||
     Object.prototype.hasOwnProperty.call(body, "prazo")
   ) {
-    patch.prazo_compra = normalizeOptionalText(
-      body.prazo_compra ?? body.prazo,
-      20,
-    );
+    patch.prazo_compra = normalizeOptionalText(body.prazo_compra ?? body.prazo, 20);
   }
 
   return { patch, errors };
@@ -691,17 +606,14 @@ function normalizeLeadUpdatePayload(body = {}) {
 
 async function handleLeadUpdate(req, res) {
   const leadId = req.params.id || req.body?.id || req.body?.lead_id;
-  if (!leadId)
-    return res.status(400).json({ error: "id do lead e obrigatorio" });
+  if (!leadId) return res.status(400).json({ error: "id do lead e obrigatorio" });
 
   const { patch, errors } = normalizeLeadUpdatePayload(req.body || {});
   if (errors.length) return res.status(400).json({ error: errors.join("; ") });
 
   const keys = Object.keys(patch);
   if (!keys.length) {
-    return res
-      .status(400)
-      .json({ error: "nenhum campo valido enviado para atualizacao" });
+    return res.status(400).json({ error: "nenhum campo valido enviado para atualizacao" });
   }
 
   const sets = [];
@@ -722,21 +634,16 @@ async function handleLeadUpdate(req, res) {
   `;
 
   const r = await query(sql, values);
-  if (!r.rows.length)
-    return res.status(404).json({ error: "Lead nao encontrado" });
+  if (!r.rows.length) return res.status(404).json({ error: "Lead nao encontrado" });
 
   return res.json({ ok: true, lead: serializeLead(r.rows[0]) });
 }
 
 function extractNextActionPayload(body = {}) {
   const nestedNextAction =
-    body.next_action && typeof body.next_action === "object"
-      ? body.next_action
-      : {};
+    body.next_action && typeof body.next_action === "object" ? body.next_action : {};
   const nestedProximaAcao =
-    body.proxima_acao && typeof body.proxima_acao === "object"
-      ? body.proxima_acao
-      : {};
+    body.proxima_acao && typeof body.proxima_acao === "object" ? body.proxima_acao : {};
 
   return {
     text:
@@ -780,9 +687,7 @@ async function updateLeadNextAction(leadId, payload) {
 
   const textRaw = payload.clear ? null : payload.text;
   const text =
-    textRaw === null || textRaw === undefined
-      ? null
-      : String(textRaw).trim().slice(0, 500);
+    textRaw === null || textRaw === undefined ? null : String(textRaw).trim().slice(0, 500);
 
   const date = payload.clear ? null : normalizeDateInput(payload.date);
   if (date === undefined) {
@@ -831,7 +736,7 @@ async function updateLeadNextAction(leadId, payload) {
            updated_at=now()
      WHERE id=$4
      RETURNING *`,
-    [text, date, time, leadId],
+    [text, date, time, leadId]
   );
 
   const eventType = payload.clear ? "next_action_cleared" : "next_action_saved";
@@ -846,7 +751,7 @@ async function updateLeadNextAction(leadId, payload) {
         next_action_date: date,
         next_action_time: time ? time.slice(0, 5) : null,
       }),
-    ],
+    ]
   );
 
   const lead = serializeLead(updateR.rows[0]);
@@ -880,9 +785,7 @@ async function ensureCrmSchema() {
   `);
 
   // Backfill stage for older rows
-  await query(
-    `UPDATE leads SET crm_stage = 'INBOX' WHERE crm_stage IS NULL OR crm_stage = ''`,
-  );
+  await query(`UPDATE leads SET crm_stage = 'INBOX' WHERE crm_stage IS NULL OR crm_stage = ''`);
 
   // Notes/audit trail for CRM actions (optional, but used by the UI for "Próxima ação")
   await query(`
@@ -896,9 +799,7 @@ async function ensureCrmSchema() {
       created_at timestamptz NOT NULL DEFAULT now()
     )
   `);
-  await query(
-    `CREATE INDEX IF NOT EXISTS idx_lead_notes_lead_id ON lead_notes(lead_id)`,
-  );
+  await query(`CREATE INDEX IF NOT EXISTS idx_lead_notes_lead_id ON lead_notes(lead_id)`);
 }
 
 async function ensureScoreSchema() {
@@ -912,6 +813,7 @@ async function ensureScoreSchema() {
   `);
 }
 
+
 app.get(
   "/health",
   asyncHandler(async (_req, res) => {
@@ -919,16 +821,12 @@ app.get(
       await query("SELECT 1");
       res.json({
         status: "UP",
-        features: {
-          crm_next_action: true,
-          score_diagnostics: true,
-          ml_model_info: true,
-        },
+        features: { crm_next_action: true, score_diagnostics: true, ml_model_info: true },
       });
     } catch (e) {
       res.status(500).json({ status: "DOWN", error: String(e) });
     }
-  }),
+  })
 );
 
 app.get(
@@ -936,7 +834,7 @@ app.get(
   asyncHandler(async (_req, res) => {
     const info = await readMlModelInfo();
     res.json(info);
-  }),
+  })
 );
 
 // -----------------------------
@@ -952,10 +850,7 @@ app.post(
     const email = normalizeOptionalText(body.email, 180);
     const ufRaw = normalizeOptionalText(body.uf, 2);
     const cidade = normalizeOptionalText(body.cidade, 120);
-    const segmento_interesse = normalizeOptionalText(
-      body.segmento_interesse,
-      40,
-    );
+    const segmento_interesse = normalizeOptionalText(body.segmento_interesse, 40);
     const orcamento_faixa = normalizeOptionalText(body.orcamento_faixa, 40);
     const prazo_compra = normalizeOptionalText(body.prazo_compra, 20);
     const uf = ufRaw ? ufRaw.toUpperCase() : null;
@@ -980,7 +875,12 @@ app.post(
           AND created_at >= now() - ($4::int * interval '1 minute')
         ORDER BY created_at DESC
         LIMIT 20`,
-      [nome, uf || "", normalizedSegment, LEAD_DUPLICATE_WINDOW_MINUTES],
+      [
+        nome,
+        uf || "",
+        normalizedSegment,
+        LEAD_DUPLICATE_WINDOW_MINUTES,
+      ]
     );
 
     const normalizedCity = normalizeIdentityToken(cidade, 120);
@@ -992,29 +892,20 @@ app.post(
       const rowBudget = normalizeIdentityToken(row.orcamento_faixa, 40);
       const rowDeadline = normalizeIdentityToken(row.prazo_compra, 20);
 
-      const cityCompatible =
-        !normalizedCity || !rowCity || normalizedCity === rowCity;
-      const budgetCompatible =
-        !normalizedBudget || !rowBudget || normalizedBudget === rowBudget;
+      const cityCompatible = !normalizedCity || !rowCity || normalizedCity === rowCity;
+      const budgetCompatible = !normalizedBudget || !rowBudget || normalizedBudget === rowBudget;
       const deadlineCompatible =
-        !normalizedDeadline ||
-        !rowDeadline ||
-        normalizedDeadline === rowDeadline;
+        !normalizedDeadline || !rowDeadline || normalizedDeadline === rowDeadline;
 
-      const optionalFieldsCompatible =
-        cityCompatible && budgetCompatible && deadlineCompatible;
+      const optionalFieldsCompatible = cityCompatible && budgetCompatible && deadlineCompatible;
       if (!optionalFieldsCompatible) return false;
 
       if (!hasContact) return true;
 
       const rowEmail = normalizeEmailForIdentity(row.email);
       const rowPhone = normalizePhoneDigits(row.whatsapp);
-      const byEmail = Boolean(
-        normalizedEmail && rowEmail && normalizedEmail === rowEmail,
-      );
-      const byPhone = Boolean(
-        normalizedPhone && rowPhone && normalizedPhone === rowPhone,
-      );
+      const byEmail = Boolean(normalizedEmail && rowEmail && normalizedEmail === rowEmail);
+      const byPhone = Boolean(normalizedPhone && rowPhone && normalizedPhone === rowPhone);
       const missingContactOnExisting = !rowEmail && !rowPhone;
       return byEmail || byPhone || missingContactOnExisting;
     });
@@ -1039,11 +930,11 @@ app.post(
         normalizedSegment,
         orcamento_faixa || null,
         prazo_compra || null,
-      ],
+      ]
     );
 
     res.json({ ...serializeLead(r.rows[0]), deduplicated: false });
-  }),
+  })
 );
 
 app.post(
@@ -1059,11 +950,11 @@ app.post(
     const r = await query(
       `INSERT INTO events (lead_id, event_type, metadata)
        VALUES ($1,$2,$3) RETURNING *`,
-      [lead_id, event_type, metadata ? JSON.stringify(metadata) : null],
+      [lead_id, event_type, metadata ? JSON.stringify(metadata) : null]
     );
 
     res.json(r.rows[0]);
-  }),
+  })
 );
 
 app.post(
@@ -1073,12 +964,11 @@ app.post(
     const leadId = req.params.id;
 
     const leadR = await query("SELECT * FROM leads WHERE id=$1", [leadId]);
-    if (leadR.rows.length === 0)
-      return res.status(404).json({ error: "Lead não encontrado" });
+    if (leadR.rows.length === 0) return res.status(404).json({ error: "Lead não encontrado" });
 
     const eventsR = await query(
       "SELECT event_type, ts, metadata FROM events WHERE lead_id=$1 ORDER BY ts ASC",
-      [leadId],
+      [leadId]
     );
 
     const payload = { lead: leadR.rows[0], events: eventsR.rows };
@@ -1098,19 +988,13 @@ app.post(
 
     const scored = await resp.json();
     const meta =
-      scored &&
-      typeof scored === "object" &&
-      scored.meta &&
-      typeof scored.meta === "object"
+      scored && typeof scored === "object" && scored.meta && typeof scored.meta === "object"
         ? scored.meta
         : {};
 
-    const scoreEngine =
-      typeof meta.engine === "string" ? meta.engine.trim() || null : null;
+    const scoreEngine = typeof meta.engine === "string" ? meta.engine.trim() || null : null;
     const scoreModelName =
-      typeof meta.model_name === "string"
-        ? meta.model_name.trim() || null
-        : null;
+      typeof meta.model_name === "string" ? meta.model_name.trim() || null : null;
     const scoreProbability = toFiniteNumberOrNull(meta.probability_qualified);
 
     await query(
@@ -1134,7 +1018,7 @@ app.post(
         scoreProbability,
         Object.keys(meta).length ? JSON.stringify(meta) : null,
         leadId,
-      ],
+      ]
     );
 
     const { rows: leadRows } = await query(
@@ -1142,7 +1026,7 @@ app.post(
               score_scored_at, score_meta, updated_at
          FROM leads
         WHERE id=$1`,
-      [leadId],
+      [leadId]
     );
 
     const diagnostics = serializeScoreDiagnostics(leadRows[0] || {});
@@ -1158,11 +1042,11 @@ app.post(
           }
         : meta,
     });
-  }),
+  })
 );
 
 app.get(
-  "/leads",
+  "/leads/count",
   asyncHandler(async (req, res) => {
     const { status, minScore, uf, segment } = req.query;
 
@@ -1187,19 +1071,64 @@ app.get(
       params.push(Number(minScore));
     }
 
+    const sql = `SELECT COUNT(*)::int AS total
+                 FROM leads
+                 ${where.length ? "WHERE " + where.join(" AND ") : ""}`;
+
+    const r = await query(sql, params);
+    const total = Number(r.rows?.[0]?.total ?? 0);
+    res.json({ total: Number.isFinite(total) ? total : 0 });
+  })
+);
+
+app.get(
+  "/leads",
+  asyncHandler(async (req, res) => {
+    const { status, minScore, uf, segment } = req.query;
+    const requestedLimit = parseInt(String(req.query?.limit ?? "5000"), 10);
+    const limit = Number.isFinite(requestedLimit)
+      ? Math.max(1, Math.min(requestedLimit, 5000))
+      : 5000;
+    const requestedOffset = parseInt(String(req.query?.offset ?? "0"), 10);
+    const offset = Number.isFinite(requestedOffset) ? Math.max(0, requestedOffset) : 0;
+
+    const where = [];
+    const params = [];
+    let i = 1;
+
+    if (status) {
+      where.push(`status=$${i++}`);
+      params.push(status);
+    }
+    if (uf) {
+      where.push(`uf=$${i++}`);
+      params.push(uf);
+    }
+    if (segment) {
+      where.push(`segmento_interesse=$${i++}`);
+      params.push(segment);
+    }
+    if (minScore) {
+      where.push(`score >= $${i++}`);
+      params.push(Number(minScore));
+    }
+
+    const limitParamIndex = i++;
+    params.push(limit);
+    const offsetParamIndex = i++;
+    params.push(offset);
+
     const sql = `SELECT *
                  FROM leads
                  ${where.length ? "WHERE " + where.join(" AND ") : ""}
                  ORDER BY created_at DESC
-                 LIMIT 500`;
+                 LIMIT $${limitParamIndex}
+                 OFFSET $${offsetParamIndex}`;
 
     const r = await query(sql, params);
-    const dedupedRows = deduplicateLeadRows(
-      r.rows,
-      LEAD_DUPLICATE_WINDOW_MINUTES,
-    );
+    const dedupedRows = deduplicateLeadRows(r.rows, LEAD_DUPLICATE_WINDOW_MINUTES);
     res.json(dedupedRows.map(serializeLead));
-  }),
+  })
 );
 
 app.post(
@@ -1210,9 +1139,7 @@ app.post(
     const result = await deleteLeadsByIds(ids);
 
     if (!result.requested && !result.invalid_ids.length) {
-      return res
-        .status(400)
-        .json({ error: "Informe ao menos um id valido em ids[]" });
+      return res.status(400).json({ error: "Informe ao menos um id valido em ids[]" });
     }
 
     return res.json({
@@ -1222,7 +1149,7 @@ app.post(
           ? `${result.deleted} lead(s) removido(s).`
           : "Nenhum lead removido para os ids informados.",
     });
-  }),
+  })
 );
 
 app.get(
@@ -1230,10 +1157,9 @@ app.get(
   asyncHandler(async (req, res) => {
     const leadId = req.params.id;
     const r = await query("SELECT * FROM leads WHERE id=$1", [leadId]);
-    if (r.rows.length === 0)
-      return res.status(404).json({ error: "Lead nao encontrado" });
+    if (r.rows.length === 0) return res.status(404).json({ error: "Lead nao encontrado" });
     res.json(serializeLead(r.rows[0]));
-  }),
+  })
 );
 
 app.delete(
@@ -1243,15 +1169,10 @@ app.delete(
     const result = await deleteLeadsByIds([leadId]);
 
     if (result.invalid_ids.length) {
-      return res
-        .status(400)
-        .json({ error: "id invalido", invalid_ids: result.invalid_ids });
+      return res.status(400).json({ error: "id invalido", invalid_ids: result.invalid_ids });
     }
     if (result.deleted === 0) {
-      return res.status(404).json({
-        error: "Lead nao encontrado",
-        not_found_ids: result.not_found_ids,
-      });
+      return res.status(404).json({ error: "Lead nao encontrado", not_found_ids: result.not_found_ids });
     }
 
     return res.json({
@@ -1260,7 +1181,7 @@ app.delete(
       deleted_ids: result.deleted_ids,
       message: "Lead removido com sucesso.",
     });
-  }),
+  })
 );
 
 app.get(
@@ -1273,10 +1194,9 @@ app.get(
               score_scored_at, score_meta, updated_at
          FROM leads
         WHERE id=$1`,
-      [leadId],
+      [leadId]
     );
-    if (r.rows.length === 0)
-      return res.status(404).json({ error: "Lead nao encontrado" });
+    if (r.rows.length === 0) return res.status(404).json({ error: "Lead nao encontrado" });
 
     const row = r.rows[0];
     return res.json({
@@ -1285,7 +1205,7 @@ app.get(
       status: row.status,
       diagnostics: serializeScoreDiagnostics(row),
     });
-  }),
+  })
 );
 
 app.post("/leads/:id/update", asyncHandler(handleLeadUpdate));
@@ -1293,8 +1213,7 @@ app.patch("/leads/:id", asyncHandler(handleLeadUpdate));
 app.put("/leads/:id", asyncHandler(handleLeadUpdate));
 
 async function handleSaveNextAction(req, res) {
-  const leadId =
-    req.params.id || req.body?.lead_id || req.body?.leadId || req.body?.id;
+  const leadId = req.params.id || req.body?.lead_id || req.body?.leadId || req.body?.id;
   const payload = extractNextActionPayload(req.body || {});
   const result = await updateLeadNextAction(leadId, payload);
   return res.status(result.status).json(result.body);
@@ -1307,13 +1226,11 @@ async function handleClearNextAction(req, res) {
 }
 
 async function handleGetNextAction(req, res) {
-  const leadId =
-    req.params.id || req.query?.lead_id || req.query?.leadId || req.query?.id;
+  const leadId = req.params.id || req.query?.lead_id || req.query?.leadId || req.query?.id;
   if (!leadId) return res.status(400).json({ error: "lead_id obrigatorio" });
 
   const r = await query("SELECT * FROM leads WHERE id=$1", [leadId]);
-  if (r.rows.length === 0)
-    return res.status(404).json({ error: "Lead nao encontrado" });
+  if (r.rows.length === 0) return res.status(404).json({ error: "Lead nao encontrado" });
 
   const lead = serializeLead(r.rows[0]);
   const nextAction = {
@@ -1365,6 +1282,7 @@ for (const p of readNextActionPaths) {
   app.get(p, asyncHandler(handleGetNextAction));
 }
 
+
 /**
  * CRM (Kanban): board + mover estágio + próxima ação + matching de parceiros
  * A UI (Streamlit) consome estes endpoints:
@@ -1381,42 +1299,13 @@ const CRM_STATUS_SCORE_BANDS = {
   AQUECENDO: { min: 40, max: 69, stage: "AQUECENDO" },
   QUALIFICADO: { min: 70, max: 100, stage: "QUALIFICADO" },
 };
-const CRM_QUALIFICATION_SIGNAL_KEYS = [
-  "budget_confirmed",
-  "timeline_confirmed",
-  "need_confirmed",
-];
+const CRM_QUALIFICATION_SIGNAL_KEYS = ["budget_confirmed", "timeline_confirmed", "need_confirmed"];
 const CRM_EVENT_RULES = [
-  {
-    code: "whatsapp_reply",
-    label: "Respondeu WhatsApp",
-    event_type: "whatsapp_reply",
-    delta: 8,
-  },
-  {
-    code: "asked_price",
-    label: "Pediu valores",
-    event_type: "asked_price",
-    delta: 12,
-  },
-  {
-    code: "proposal_click",
-    label: "Clicou na proposta",
-    event_type: "proposal_click",
-    delta: 10,
-  },
-  {
-    code: "meeting_scheduled",
-    label: "Agendou reuniao",
-    event_type: "meeting_scheduled",
-    delta: 15,
-  },
-  {
-    code: "meeting_attended",
-    label: "Compareceu reuniao",
-    event_type: "meeting_attended",
-    delta: 18,
-  },
+  { code: "whatsapp_reply", label: "Respondeu WhatsApp", event_type: "whatsapp_reply", delta: 8 },
+  { code: "asked_price", label: "Pediu valores", event_type: "asked_price", delta: 12 },
+  { code: "proposal_click", label: "Clicou na proposta", event_type: "proposal_click", delta: 10 },
+  { code: "meeting_scheduled", label: "Agendou reuniao", event_type: "meeting_scheduled", delta: 15 },
+  { code: "meeting_attended", label: "Compareceu reuniao", event_type: "meeting_attended", delta: 18 },
   {
     code: "budget_confirmed",
     label: "Confirmou orcamento",
@@ -1456,24 +1345,9 @@ const CRM_EVENT_RULES = [
     event_type: "followup_positive",
     delta: 6,
   },
-  {
-    code: "no_reply_3d",
-    label: "Sem resposta por 3 dias",
-    event_type: "no_reply_3d",
-    delta: -6,
-  },
-  {
-    code: "no_reply_7d",
-    label: "Sem resposta por 7 dias",
-    event_type: "no_reply_7d",
-    delta: -12,
-  },
-  {
-    code: "no_reply_14d",
-    label: "Sem resposta por 14 dias",
-    event_type: "no_reply_14d",
-    delta: -20,
-  },
+  { code: "no_reply_3d", label: "Sem resposta por 3 dias", event_type: "no_reply_3d", delta: -6 },
+  { code: "no_reply_7d", label: "Sem resposta por 7 dias", event_type: "no_reply_7d", delta: -12 },
+  { code: "no_reply_14d", label: "Sem resposta por 14 dias", event_type: "no_reply_14d", delta: -20 },
   {
     code: "postponed_no_date",
     label: "Adiou sem nova data",
@@ -1501,14 +1375,10 @@ const CRM_EVENT_RULES = [
     delta: -8,
   },
 ];
-const CRM_EVENT_RULES_BY_CODE = new Map(
-  CRM_EVENT_RULES.map((rule) => [rule.code, rule]),
-);
+const CRM_EVENT_RULES_BY_CODE = new Map(CRM_EVENT_RULES.map((rule) => [rule.code, rule]));
 
 function normalizeCrmStage(raw) {
-  const v = String(raw || "")
-    .trim()
-    .toUpperCase();
+  const v = String(raw || "").trim().toUpperCase();
   if (!v) return "INBOX";
   if (CRM_KANBAN_STAGES.includes(v)) return v;
   // Compat: alguns fluxos antigos usam o status "CURIOSO" como etapa inicial
@@ -1572,15 +1442,8 @@ function stageToCommercialStatus(stageRaw, fallbackStatus = "CURIOSO") {
   if (stage === "QUALIFICADO") return "QUALIFICADO";
   if (stage === "ENVIADO") return "ENVIADO";
   if (stage === "INBOX") return "CURIOSO";
-  const fallback = String(fallbackStatus || "")
-    .trim()
-    .toUpperCase();
-  if (
-    fallback === "AQUECENDO" ||
-    fallback === "QUALIFICADO" ||
-    fallback === "ENVIADO"
-  )
-    return fallback;
+  const fallback = String(fallbackStatus || "").trim().toUpperCase();
+  if (fallback === "AQUECENDO" || fallback === "QUALIFICADO" || fallback === "ENVIADO") return fallback;
   return "CURIOSO";
 }
 
@@ -1594,8 +1457,7 @@ function clampLeadScore(rawValue, fallback = 0) {
 function scoreBandForStage(stageRaw) {
   const stage = normalizeCrmStage(stageRaw);
   if (stage === "AQUECENDO") return CRM_STATUS_SCORE_BANDS.AQUECENDO;
-  if (stage === "QUALIFICADO" || stage === "ENVIADO")
-    return CRM_STATUS_SCORE_BANDS.QUALIFICADO;
+  if (stage === "QUALIFICADO" || stage === "ENVIADO") return CRM_STATUS_SCORE_BANDS.QUALIFICADO;
   return CRM_STATUS_SCORE_BANDS.CURIOSO;
 }
 
@@ -1714,13 +1576,11 @@ function deriveStateByScoreAndSignals(rawScore, signalsRaw, options = {}) {
 }
 
 function normalizeScoreMotivos(raw) {
-  if (Array.isArray(raw))
-    return raw.filter((item) => item && typeof item === "object");
+  if (Array.isArray(raw)) return raw.filter((item) => item && typeof item === "object");
   if (typeof raw === "string") {
     try {
       const parsed = JSON.parse(raw);
-      if (Array.isArray(parsed))
-        return parsed.filter((item) => item && typeof item === "object");
+      if (Array.isArray(parsed)) return parsed.filter((item) => item && typeof item === "object");
     } catch {
       return [];
     }
@@ -1764,12 +1624,7 @@ function serializeCrmLeadRow(row) {
   return lead;
 }
 
-async function applyCrmEventRule({
-  leadId,
-  ruleCode,
-  metadata = {},
-  source = "kanban_ui",
-}) {
+async function applyCrmEventRule({ leadId, ruleCode, metadata = {}, source = "kanban_ui" }) {
   const normalizedCode = normalizeCrmRuleCode(ruleCode);
   const rule = CRM_EVENT_RULES_BY_CODE.get(normalizedCode);
   if (!rule) {
@@ -1787,7 +1642,7 @@ async function applyCrmEventRule({
             next_action_text, next_action_date, next_action_time, created_at, updated_at
        FROM leads
       WHERE id = $1`,
-    [leadId],
+    [leadId]
   );
 
   if (!leadR.rows.length) {
@@ -1796,10 +1651,7 @@ async function applyCrmEventRule({
 
   const currentLead = leadR.rows[0];
   const currentStage = resolveBoardStage(currentLead);
-  const currentStatus = stageToCommercialStatus(
-    currentStage,
-    currentLead.status,
-  );
+  const currentStatus = stageToCommercialStatus(currentStage, currentLead.status);
   const currentScore = clampLeadScore(currentLead.score, 0);
 
   const scoreMeta = ensurePlainObject(currentLead.score_meta);
@@ -1811,13 +1663,9 @@ async function applyCrmEventRule({
   };
   const nextSignals = applyCrmSignalPatch(baseSignals, signalPatch);
 
-  const nextState = deriveStateByScoreAndSignals(
-    currentScore + rule.delta,
-    nextSignals,
-    {
-      keep_sent: currentStatus === "ENVIADO",
-    },
-  );
+  const nextState = deriveStateByScoreAndSignals(currentScore + rule.delta, nextSignals, {
+    keep_sent: currentStatus === "ENVIADO",
+  });
 
   const nextReason = buildRuleReason(rule, {
     from_stage: currentStage,
@@ -1868,7 +1716,7 @@ async function applyCrmEventRule({
       "crm_rule_engine",
       CRM_RULE_ENGINE_MODEL,
       JSON.stringify(mergedMeta),
-    ],
+    ]
   );
 
   const eventMetadata = {
@@ -1887,10 +1735,11 @@ async function applyCrmEventRule({
     input: payloadMeta,
   };
 
-  await query(
-    "INSERT INTO events (lead_id, event_type, metadata) VALUES ($1, $2, $3)",
-    [leadId, rule.event_type, JSON.stringify(eventMetadata)],
-  );
+  await query("INSERT INTO events (lead_id, event_type, metadata) VALUES ($1, $2, $3)", [
+    leadId,
+    rule.event_type,
+    JSON.stringify(eventMetadata),
+  ]);
 
   return {
     status: 200,
@@ -1945,7 +1794,7 @@ async function handleCrmBoard(req, res) {
             crm_stage, next_action_text, next_action_date, next_action_time,
             created_at, updated_at
        FROM leads
-      ORDER BY updated_at DESC NULLS LAST, created_at DESC NULLS LAST`,
+      ORDER BY updated_at DESC NULLS LAST, created_at DESC NULLS LAST`
   );
 
   const dedupedRows = deduplicateLeadRows(rows, LEAD_DUPLICATE_WINDOW_MINUTES);
@@ -1970,21 +1819,14 @@ async function handleCrmMove(req, res) {
             next_action_text, next_action_date, next_action_time, created_at, updated_at
        FROM leads
       WHERE id = $1`,
-    [leadId],
+    [leadId]
   );
-  if (!leadR.rows.length)
-    return res.status(404).json({ error: "Lead não encontrado" });
+  if (!leadR.rows.length) return res.status(404).json({ error: "Lead não encontrado" });
 
   const currentLead = leadR.rows[0];
   const currentStage = resolveBoardStage(currentLead);
-  const currentStatus = stageToCommercialStatus(
-    currentStage,
-    currentLead.status,
-  );
-  const currentScore = clampLeadScore(
-    currentLead.score,
-    scoreBandForStage(stage).min,
-  );
+  const currentStatus = stageToCommercialStatus(currentStage, currentLead.status);
+  const currentScore = clampLeadScore(currentLead.score, scoreBandForStage(stage).min);
   const adjustedScore = adjustScoreToStageBand(currentScore, stage);
   const nextStatus = stageToCommercialStatus(stage, currentStatus);
 
@@ -1992,15 +1834,9 @@ async function handleCrmMove(req, res) {
   const previousSignals = extractCrmSignals(previousMeta);
   const nextSignals =
     stage === "QUALIFICADO" || stage === "ENVIADO"
-      ? CRM_QUALIFICATION_SIGNAL_KEYS.reduce(
-          (acc, key) => ({ ...acc, [key]: true }),
-          {},
-        )
+      ? CRM_QUALIFICATION_SIGNAL_KEYS.reduce((acc, key) => ({ ...acc, [key]: true }), {})
       : stage === "INBOX"
-        ? CRM_QUALIFICATION_SIGNAL_KEYS.reduce(
-            (acc, key) => ({ ...acc, [key]: false }),
-            {},
-          )
+        ? CRM_QUALIFICATION_SIGNAL_KEYS.reduce((acc, key) => ({ ...acc, [key]: false }), {})
         : previousSignals;
 
   const scoreMeta = {
@@ -2030,24 +1866,21 @@ async function handleCrmMove(req, res) {
       RETURNING id, nome, uf, cidade, segmento_interesse, status, score,
                 crm_stage, next_action_text, next_action_date, next_action_time,
                 created_at, updated_at`,
-    [leadId, stage, nextStatus, adjustedScore, JSON.stringify(scoreMeta)],
+    [leadId, stage, nextStatus, adjustedScore, JSON.stringify(scoreMeta)]
   );
 
-  await query(
-    "INSERT INTO events (lead_id, event_type, metadata) VALUES ($1, 'crm_manual_move', $2)",
-    [
-      leadId,
-      JSON.stringify({
-        source: "kanban_move",
-        from_stage: currentStage,
-        to_stage: stage,
-        from_status: currentStatus,
-        to_status: nextStatus,
-        from_score: currentScore,
-        to_score: adjustedScore,
-      }),
-    ],
-  );
+  await query("INSERT INTO events (lead_id, event_type, metadata) VALUES ($1, 'crm_manual_move', $2)", [
+    leadId,
+    JSON.stringify({
+      source: "kanban_move",
+      from_stage: currentStage,
+      to_stage: stage,
+      from_status: currentStatus,
+      to_status: nextStatus,
+      from_score: currentScore,
+      to_score: adjustedScore,
+    }),
+  ]);
 
   const lead = serializeLead(rows[0]);
   lead.crm_stage = normalizeCrmStage(lead.crm_stage);
@@ -2077,8 +1910,7 @@ async function handleCrmApplyRule(req, res) {
   const leadId = req.params?.id || req.body?.lead_id || req.body?.id || null;
   if (!leadId) return res.status(400).json({ error: "lead_id é obrigatório" });
 
-  const ruleCode =
-    req.body?.rule_code || req.body?.event_code || req.body?.event_type || "";
+  const ruleCode = req.body?.rule_code || req.body?.event_code || req.body?.event_type || "";
   const metadata = ensurePlainObject(req.body?.metadata);
   const source = normalizeCrmSource(req.body?.source, "kanban_ui");
 
@@ -2107,7 +1939,7 @@ async function handleCrmAddNote(req, res) {
   await query(
     `INSERT INTO lead_notes (lead_id, note_type, note_text, action_date, action_time)
      VALUES ($1, $2, $3, $4, $5)`,
-    [leadId, noteType, note, actionDate, actionTime],
+    [leadId, noteType, note, actionDate, actionTime]
   );
 
   // Se for uma próxima ação, também atualiza o snapshot no lead (usado no card do Kanban)
@@ -2124,7 +1956,7 @@ async function handleCrmAddNote(req, res) {
                                 END,
               updated_at = now()
         WHERE id = $1`,
-      [leadId, next.text, next.date, next.hour],
+      [leadId, next.text, next.date, next.hour]
     );
   }
 
@@ -2140,7 +1972,7 @@ async function handleCrmGetNotes(req, res) {
       WHERE lead_id = $1
       ORDER BY created_at DESC
       LIMIT 50`,
-    [leadId],
+    [leadId]
   );
 
   const notes = rows.map((r) => ({
@@ -2156,9 +1988,7 @@ async function handleCrmGetNotes(req, res) {
 }
 
 function normUpper(v) {
-  return String(v || "")
-    .trim()
-    .toUpperCase();
+  return String(v || "").trim().toUpperCase();
 }
 
 function normDigits(v) {
@@ -2168,19 +1998,15 @@ function normDigits(v) {
 async function handleCrmMatches(req, res) {
   await ensureCrmSchema();
   const leadId = req.params.id;
-  const limit = Math.max(
-    1,
-    Math.min(parseInt(req.query?.limit || "10", 10) || 10, 50),
-  );
+  const limit = Math.max(1, Math.min(parseInt(req.query?.limit || "10", 10) || 10, 50));
 
   const leadRes = await query(
     `SELECT id, uf, cidade, segmento_interesse
        FROM leads
       WHERE id = $1`,
-    [leadId],
+    [leadId]
   );
-  if (!leadRes.rows.length)
-    return res.status(404).json({ error: "Lead não encontrado" });
+  if (!leadRes.rows.length) return res.status(404).json({ error: "Lead não encontrado" });
 
   const lead = leadRes.rows[0];
   const leadUF = normUpper(lead.uf);
@@ -2246,8 +2072,7 @@ function parseJsonObjectSafe(value, fallback = {}) {
   if (!(txt.startsWith("{") || txt.startsWith("["))) return fallback;
   try {
     const parsed = JSON.parse(txt);
-    if (parsed && typeof parsed === "object" && !Array.isArray(parsed))
-      return parsed;
+    if (parsed && typeof parsed === "object" && !Array.isArray(parsed)) return parsed;
     return fallback;
   } catch (_err) {
     return fallback;
@@ -2283,28 +2108,11 @@ function pctText(value) {
 }
 
 function detectSectorByChannel(channelRaw) {
-  const channel = String(channelRaw || "")
-    .trim()
-    .toLowerCase();
+  const channel = String(channelRaw || "").trim().toLowerCase();
   if (!channel) return "";
-  if (
-    channel.includes("venda") ||
-    channel.includes("sales") ||
-    channel.includes("comercial")
-  )
-    return "VENDAS";
-  if (
-    channel.includes("marketing") ||
-    channel.includes("mkt") ||
-    channel.includes("nurture")
-  )
-    return "MARKETING";
-  if (
-    channel.includes("parceir") ||
-    channel.includes("partner") ||
-    channel.includes("ecossistema")
-  )
-    return "PARCEIROS";
+  if (channel.includes("venda") || channel.includes("sales") || channel.includes("comercial")) return "VENDAS";
+  if (channel.includes("marketing") || channel.includes("mkt") || channel.includes("nurture")) return "MARKETING";
+  if (channel.includes("parceir") || channel.includes("partner") || channel.includes("ecossistema")) return "PARCEIROS";
   if (channel.includes("operac") || channel.includes("ops")) return "OPERACOES";
   return "";
 }
@@ -2337,10 +2145,7 @@ const REPORT_SECTORS = {
 };
 
 async function computeManagerialMatchesForLead(lead, limit = 8) {
-  const safeLimit = Math.max(
-    1,
-    Math.min(parseInt(String(limit || "8"), 10) || 8, 50),
-  );
+  const safeLimit = Math.max(1, Math.min(parseInt(String(limit || "8"), 10) || 8, 50));
   const leadUF = normUpper(lead.uf);
   const leadCity = normUpper(lead.cidade);
   const leadSeg = normUpper(lead.segmento_interesse);
@@ -2398,15 +2203,8 @@ function inferRoutingDecision({ lead, handoffEvent, matches }) {
   const deadline = normUpper(lead?.prazo_compra);
   const topMatchScore = Number(matches?.[0]?.score);
   const hasPartnerStrength =
-    Array.isArray(matches) &&
-    matches.length >= 3 &&
-    Number.isFinite(topMatchScore) &&
-    topMatchScore >= 6;
-  const partnerFriendlySegment = [
-    "EVENTOS",
-    "EQUIPAMENTOS",
-    "CAVALOS",
-  ].includes(segment);
+    Array.isArray(matches) && matches.length >= 3 && Number.isFinite(topMatchScore) && topMatchScore >= 6;
+  const partnerFriendlySegment = ["EVENTOS", "EQUIPAMENTOS", "CAVALOS"].includes(segment);
 
   const highIntent =
     (Number.isFinite(score) && score >= 80) ||
@@ -2420,16 +2218,10 @@ function inferRoutingDecision({ lead, handoffEvent, matches }) {
 
   const evidence = [];
   if (Number.isFinite(score)) evidence.push(`Score atual ${score}.`);
-  if (Number.isFinite(probability))
-    evidence.push(`Probabilidade de qualificacao ${pctText(probability)}.`);
-  if (deadline === "7D")
-    evidence.push("Prazo de compra curto (7d), indicando urgencia comercial.");
-  if (partnerFriendlySegment)
-    evidence.push(
-      `Segmento ${segment} com potencial para roteamento de parceiros.`,
-    );
-  if (hasPartnerStrength)
-    evidence.push("Matching de parceiros com consistencia alta.");
+  if (Number.isFinite(probability)) evidence.push(`Probabilidade de qualificacao ${pctText(probability)}.`);
+  if (deadline === "7D") evidence.push("Prazo de compra curto (7d), indicando urgencia comercial.");
+  if (partnerFriendlySegment) evidence.push(`Segmento ${segment} com potencial para roteamento de parceiros.`);
+  if (hasPartnerStrength) evidence.push("Matching de parceiros com consistencia alta.");
 
   let primary = REPORT_SECTORS.MARKETING;
   let secondaries = [REPORT_SECTORS.VENDAS, REPORT_SECTORS.PARCEIROS];
@@ -2441,19 +2233,13 @@ function inferRoutingDecision({ lead, handoffEvent, matches }) {
     decisionMode = "EFETIVO";
     confidence = 96;
     evidence.unshift(
-      `Encaminhamento registrado em evento de handoff (canal: ${handoffEvent.channel || "nao informado"}).`,
+      `Encaminhamento registrado em evento de handoff (canal: ${handoffEvent.channel || "nao informado"}).`
     );
-  } else if (
-    stage === "ENVIADO" &&
-    partnerFriendlySegment &&
-    hasPartnerStrength
-  ) {
+  } else if (stage === "ENVIADO" && partnerFriendlySegment && hasPartnerStrength) {
     primary = REPORT_SECTORS.PARCEIROS;
     secondaries = [REPORT_SECTORS.VENDAS, REPORT_SECTORS.MARKETING];
     confidence = 88;
-    evidence.unshift(
-      "Lead em etapa ENVIADO com aderencia forte para parceiros.",
-    );
+    evidence.unshift("Lead em etapa ENVIADO com aderencia forte para parceiros.");
   } else if (stage === "ENVIADO" || highIntent) {
     primary = REPORT_SECTORS.VENDAS;
     secondaries = [REPORT_SECTORS.PARCEIROS, REPORT_SECTORS.MARKETING];
@@ -2463,16 +2249,12 @@ function inferRoutingDecision({ lead, handoffEvent, matches }) {
     primary = REPORT_SECTORS.PARCEIROS;
     secondaries = [REPORT_SECTORS.MARKETING, REPORT_SECTORS.VENDAS];
     confidence = 76;
-    evidence.unshift(
-      "Lead em aquecimento com oportunidade de aceleracao via parceiros.",
-    );
+    evidence.unshift("Lead em aquecimento com oportunidade de aceleracao via parceiros.");
   } else {
     primary = REPORT_SECTORS.MARKETING;
     secondaries = [REPORT_SECTORS.VENDAS, REPORT_SECTORS.PARCEIROS];
     confidence = 71;
-    evidence.unshift(
-      "Lead ainda em maturacao; recomendada nutricao estruturada.",
-    );
+    evidence.unshift("Lead ainda em maturacao; recomendada nutricao estruturada.");
   }
 
   return {
@@ -2487,59 +2269,22 @@ function inferRoutingDecision({ lead, handoffEvent, matches }) {
 function buildManagerialActionPlan(primarySectorKey) {
   if (primarySectorKey === "VENDAS") {
     return [
-      {
-        horizon: "0-24h",
-        owner: "Vendas",
-        action: "Realizar contato consultivo e validar contexto de compra.",
-      },
-      {
-        horizon: "24-72h",
-        owner: "Vendas + Parcerias",
-        action: "Preparar proposta com opcoes aderentes ao perfil do lead.",
-      },
-      {
-        horizon: "72h+",
-        owner: "Gestao Comercial",
-        action: "Registrar status final da oportunidade no CRM.",
-      },
+      { horizon: "0-24h", owner: "Vendas", action: "Realizar contato consultivo e validar contexto de compra." },
+      { horizon: "24-72h", owner: "Vendas + Parcerias", action: "Preparar proposta com opcoes aderentes ao perfil do lead." },
+      { horizon: "72h+", owner: "Gestao Comercial", action: "Registrar status final da oportunidade no CRM." },
     ];
   }
   if (primarySectorKey === "PARCEIROS") {
     return [
-      {
-        horizon: "0-24h",
-        owner: "Parcerias",
-        action:
-          "Acionar top parceiros do matching e confirmar disponibilidade.",
-      },
-      {
-        horizon: "24-72h",
-        owner: "Parcerias + Vendas",
-        action: "Consolidar proposta conjunta com condicoes comerciais.",
-      },
-      {
-        horizon: "72h+",
-        owner: "Gestao de Ecossistema",
-        action: "Mensurar taxa de resposta da rede e ajustar aderencia.",
-      },
+      { horizon: "0-24h", owner: "Parcerias", action: "Acionar top parceiros do matching e confirmar disponibilidade." },
+      { horizon: "24-72h", owner: "Parcerias + Vendas", action: "Consolidar proposta conjunta com condicoes comerciais." },
+      { horizon: "72h+", owner: "Gestao de Ecossistema", action: "Mensurar taxa de resposta da rede e ajustar aderencia." },
     ];
   }
   return [
-    {
-      horizon: "0-24h",
-      owner: "Marketing",
-      action: "Iniciar jornada de nutricao com conteudo de alto interesse.",
-    },
-    {
-      horizon: "24-72h",
-      owner: "Marketing + SDR",
-      action: "Requalificar lead por engajamento e sinais de conversao.",
-    },
-    {
-      horizon: "72h+",
-      owner: "Gestao Growth",
-      action: "Reavaliar roteamento para Vendas ou Parcerias conforme sinais.",
-    },
+    { horizon: "0-24h", owner: "Marketing", action: "Iniciar jornada de nutricao com conteudo de alto interesse." },
+    { horizon: "24-72h", owner: "Marketing + SDR", action: "Requalificar lead por engajamento e sinais de conversao." },
+    { horizon: "72h+", owner: "Gestao Growth", action: "Reavaliar roteamento para Vendas ou Parcerias conforme sinais." },
   ];
 }
 
@@ -2557,10 +2302,9 @@ async function handleCrmManagerialReport(req, res) {
             created_at, updated_at
        FROM leads
       WHERE id = $1`,
-    [leadId],
+    [leadId]
   );
-  if (!leadR.rows.length)
-    return res.status(404).json({ error: "Lead nao encontrado" });
+  if (!leadR.rows.length) return res.status(404).json({ error: "Lead nao encontrado" });
   const lead = leadR.rows[0];
 
   const [notesR, eventsR, matches] = await Promise.all([
@@ -2570,7 +2314,7 @@ async function handleCrmManagerialReport(req, res) {
         WHERE lead_id = $1
         ORDER BY created_at DESC
         LIMIT 40`,
-      [leadId],
+      [leadId]
     ),
     query(
       `SELECT event_type, metadata, ts
@@ -2578,7 +2322,7 @@ async function handleCrmManagerialReport(req, res) {
         WHERE lead_id = $1
         ORDER BY ts DESC
         LIMIT 120`,
-      [leadId],
+      [leadId]
     ),
     computeManagerialMatchesForLead(lead, 8),
   ]);
@@ -2599,26 +2343,21 @@ async function handleCrmManagerialReport(req, res) {
   }));
   const eventBreakdown = {};
   for (const ev of eventRows) {
-    eventBreakdown[ev.event_type] =
-      Number(eventBreakdown[ev.event_type] || 0) + 1;
+    eventBreakdown[ev.event_type] = Number(eventBreakdown[ev.event_type] || 0) + 1;
   }
 
-  const handoffEvent =
-    eventRows.find((ev) => ev.event_type.toLowerCase() === "handoff") || null;
+  const handoffEvent = eventRows.find((ev) => ev.event_type.toLowerCase() === "handoff") || null;
   const handoffChannel =
     handoffEvent?.metadata?.channel ||
     handoffEvent?.metadata?.setor ||
     handoffEvent?.metadata?.sector ||
     "";
-  const handoffSectorKey = handoffEvent
-    ? detectSectorByChannel(handoffChannel) || "OPERACOES"
-    : "";
+  const handoffSectorKey = handoffEvent ? detectSectorByChannel(handoffChannel) || "OPERACOES" : "";
 
   const routing = inferRoutingDecision({
     lead: {
       ...lead,
-      score_probability:
-        lead.score_probability ?? scoreMeta.probability_qualified ?? null,
+      score_probability: lead.score_probability ?? scoreMeta.probability_qualified ?? null,
     },
     handoffEvent: handoffEvent
       ? {
@@ -2640,18 +2379,10 @@ async function handleCrmManagerialReport(req, res) {
   }));
 
   const managerialRisks = [];
-  if (!lead.whatsapp && !lead.email)
-    managerialRisks.push(
-      "Lead sem canal de contato principal (telefone/e-mail).",
-    );
-  if (!matches.length)
-    managerialRisks.push("Sem parceiros aderentes no matching atual.");
-  if (Number(lead.score) < 50)
-    managerialRisks.push(
-      "Score abaixo de 50; risco elevado de baixa conversao.",
-    );
-  if (!lead.next_action_text)
-    managerialRisks.push("Nao ha proxima acao registrada no CRM.");
+  if (!lead.whatsapp && !lead.email) managerialRisks.push("Lead sem canal de contato principal (telefone/e-mail).");
+  if (!matches.length) managerialRisks.push("Sem parceiros aderentes no matching atual.");
+  if (Number(lead.score) < 50) managerialRisks.push("Score abaixo de 50; risco elevado de baixa conversao.");
+  if (!lead.next_action_text) managerialRisks.push("Nao ha proxima acao registrada no CRM.");
 
   const reportId = `REL-${String(lead.id).slice(0, 8).toUpperCase()}-${Date.now()
     .toString()
@@ -2669,19 +2400,14 @@ async function handleCrmManagerialReport(req, res) {
       status: lead.status,
       stage: resolveBoardStage(lead),
       score: lead.score,
-      score_probability:
-        lead.score_probability ?? scoreMeta.probability_qualified ?? null,
+      score_probability: lead.score_probability ?? scoreMeta.probability_qualified ?? null,
       score_engine: lead.score_engine || scoreMeta.engine || null,
       score_model_name: lead.score_model_name || scoreMeta.model_name || null,
       orcamento_faixa: lead.orcamento_faixa,
       prazo_compra: lead.prazo_compra,
       next_action_text: lead.next_action_text,
-      next_action_date: lead.next_action_date
-        ? String(lead.next_action_date).slice(0, 10)
-        : null,
-      next_action_time: lead.next_action_time
-        ? String(lead.next_action_time).slice(0, 5)
-        : null,
+      next_action_date: lead.next_action_date ? String(lead.next_action_date).slice(0, 10) : null,
+      next_action_time: lead.next_action_time ? String(lead.next_action_time).slice(0, 5) : null,
       next_action_at: isoDateTime(lead.next_action_at),
       created_at: isoDateTime(lead.created_at),
       updated_at: isoDateTime(lead.updated_at),
@@ -2703,19 +2429,14 @@ async function handleCrmManagerialReport(req, res) {
         ? {
             at: handoffEvent.at,
             channel: String(handoffChannel || "").trim() || null,
-            mapped_sector: handoffSectorKey
-              ? REPORT_SECTORS[handoffSectorKey]
-              : null,
+            mapped_sector: handoffSectorKey ? REPORT_SECTORS[handoffSectorKey] : null,
           }
         : null,
     },
     qualification_intelligence: {
       score: lead.score,
-      probability_qualified:
-        lead.score_probability ?? scoreMeta.probability_qualified ?? null,
-      probability_qualified_text: pctText(
-        lead.score_probability ?? scoreMeta.probability_qualified ?? null,
-      ),
+      probability_qualified: lead.score_probability ?? scoreMeta.probability_qualified ?? null,
+      probability_qualified_text: pctText(lead.score_probability ?? scoreMeta.probability_qualified ?? null),
       score_engine: lead.score_engine || scoreMeta.engine || null,
       score_model_name: lead.score_model_name || scoreMeta.model_name || null,
       scored_at: isoDateTime(lead.score_scored_at),
@@ -2732,12 +2453,8 @@ async function handleCrmManagerialReport(req, res) {
       latest_notes: latestNotes,
       next_action: {
         text: lead.next_action_text || null,
-        date: lead.next_action_date
-          ? String(lead.next_action_date).slice(0, 10)
-          : null,
-        time: lead.next_action_time
-          ? String(lead.next_action_time).slice(0, 5)
-          : null,
+        date: lead.next_action_date ? String(lead.next_action_date).slice(0, 10) : null,
+        time: lead.next_action_time ? String(lead.next_action_time).slice(0, 5) : null,
         at: isoDateTime(lead.next_action_at),
       },
     },
@@ -2750,9 +2467,7 @@ async function handleCrmManagerialReport(req, res) {
           : "Nao ha parceiros aderentes suficientes para recomendacao imediata.",
     },
     managerial_risks: managerialRisks,
-    managerial_recommendations: buildManagerialActionPlan(
-      routing.primary_sector.key,
-    ),
+    managerial_recommendations: buildManagerialActionPlan(routing.primary_sector.key),
     governance: {
       data_sources: ["leads", "lead_notes", "events", "partners"],
       generated_by: "growth-equestre-report-engine v1",
@@ -2771,14 +2486,8 @@ app.post("/crm/leads/:id/apply-rule", asyncHandler(handleCrmApplyRule));
 app.post("/crm/leads/:id/notes", asyncHandler(handleCrmAddNote));
 app.get("/crm/leads/:id/notes", asyncHandler(handleCrmGetNotes));
 app.get("/crm/leads/:id/matches", asyncHandler(handleCrmMatches));
-app.get(
-  "/crm/leads/:id/managerial-report",
-  asyncHandler(handleCrmManagerialReport),
-);
-app.get(
-  "/crm/leads/:id/relatorio-gerencial",
-  asyncHandler(handleCrmManagerialReport),
-);
+app.get("/crm/leads/:id/managerial-report", asyncHandler(handleCrmManagerialReport));
+app.get("/crm/leads/:id/relatorio-gerencial", asyncHandler(handleCrmManagerialReport));
 
 // Compat: alguns ambientes antigos chamam sem o prefixo /crm
 app.get("/board", asyncHandler(handleCrmBoard));
@@ -2788,10 +2497,7 @@ app.post("/apply-rule", asyncHandler(handleCrmApplyRule));
 app.post("/leads/:id/apply-rule", asyncHandler(handleCrmApplyRule));
 app.post("/leads/:id/notes", asyncHandler(handleCrmAddNote));
 app.get("/leads/:id/matches", asyncHandler(handleCrmMatches));
-app.get(
-  "/leads/:id/managerial-report",
-  asyncHandler(handleCrmManagerialReport),
-);
+app.get("/leads/:id/managerial-report", asyncHandler(handleCrmManagerialReport));
 
 // Rotas adicionais de CRM (ex.: /crm/seed, /crm/partners/*).
 // Mantido após as rotas principais para preservar os contratos já utilizados pela UI.
@@ -2801,14 +2507,10 @@ app.post(
   "/handoff",
   asyncHandler(async (req, res) => {
     const { lead_id, channel } = req.body || {};
-    if (!lead_id)
-      return res.status(400).json({ error: "lead_id é obrigatório" });
+    if (!lead_id) return res.status(400).json({ error: "lead_id é obrigatório" });
 
-    const leadR = await query("SELECT status FROM leads WHERE id=$1", [
-      lead_id,
-    ]);
-    if (!leadR.rows.length)
-      return res.status(404).json({ error: "Lead nao encontrado" });
+    const leadR = await query("SELECT status FROM leads WHERE id=$1", [lead_id]);
+    if (!leadR.rows.length) return res.status(404).json({ error: "Lead nao encontrado" });
 
     const currentStatus = String(leadR.rows[0]?.status || "")
       .toUpperCase()
@@ -2822,22 +2524,22 @@ app.post(
 
     await query(
       "UPDATE leads SET status='ENVIADO', crm_stage='ENVIADO', updated_at=now() WHERE id=$1",
-      [lead_id],
+      [lead_id]
     );
     await query(
       "INSERT INTO events (lead_id, event_type, metadata) VALUES ($1,'handoff',$2)",
-      [lead_id, JSON.stringify({ channel: channel || "manual" })],
+      [lead_id, JSON.stringify({ channel: channel || "manual" })]
     );
 
     res.json({ ok: true });
-  }),
+  })
 );
 
 // -----------------------------
 // PARTNERS
 // -----------------------------
 app.get(
-  "/partners",
+  "/partners/count",
   asyncHandler(async (req, res) => {
     const { uf, segment, q } = req.query;
 
@@ -2855,21 +2557,68 @@ app.get(
     }
     if (q) {
       where.push(
-        `(coalesce(nome_fantasia,'') ILIKE $${i} OR coalesce(razao_social,'') ILIKE $${i})`,
+        `(coalesce(nome_fantasia,'') ILIKE $${i} OR coalesce(razao_social,'') ILIKE $${i})`
       );
       params.push(`%${q}%`);
       i++;
     }
 
+    const sql = `SELECT COUNT(*)::int AS total
+                 FROM partners
+                 ${where.length ? "WHERE " + where.join(" AND ") : ""}`;
+
+    const r = await query(sql, params);
+    const total = Number(r.rows?.[0]?.total ?? 0);
+    res.json({ total: Number.isFinite(total) ? total : 0 });
+  })
+);
+
+app.get(
+  "/partners",
+  asyncHandler(async (req, res) => {
+    const { uf, segment, q } = req.query;
+    const requestedLimit = parseInt(String(req.query?.limit ?? "5000"), 10);
+    const limit = Number.isFinite(requestedLimit)
+      ? Math.max(1, Math.min(requestedLimit, 10000))
+      : 5000;
+    const requestedOffset = parseInt(String(req.query?.offset ?? "0"), 10);
+    const offset = Number.isFinite(requestedOffset) ? Math.max(0, requestedOffset) : 0;
+
+    const where = [];
+    const params = [];
+    let i = 1;
+
+    if (uf) {
+      where.push(`uf=$${i++}`);
+      params.push(uf);
+    }
+    if (segment) {
+      where.push(`segmento=$${i++}`);
+      params.push(segment);
+    }
+    if (q) {
+      where.push(
+        `(coalesce(nome_fantasia,'') ILIKE $${i} OR coalesce(razao_social,'') ILIKE $${i})`
+      );
+      params.push(`%${q}%`);
+      i++;
+    }
+
+    const limitParamIndex = i++;
+    params.push(limit);
+    const offsetParamIndex = i++;
+    params.push(offset);
+
     const sql = `SELECT *
                  FROM partners
                  ${where.length ? "WHERE " + where.join(" AND ") : ""}
                  ORDER BY prioridade ASC, nome_fantasia ASC NULLS LAST
-                 LIMIT 500`;
+                 LIMIT $${limitParamIndex}
+                 OFFSET $${offsetParamIndex}`;
 
     const r = await query(sql, params);
     res.json(r.rows);
-  }),
+  })
 );
 
 app.get(
@@ -2890,24 +2639,21 @@ app.get(
        ${where}
        GROUP BY segmento
        ORDER BY total DESC`,
-      params,
+      params
     );
 
     res.json(r.rows);
-  }),
+  })
 );
 
 app.post(
   "/admin/dedup-leads",
   asyncHandler(async (req, res) => {
     const body = req.body || {};
-    const dryRun = parseBooleanFlag(
-      body.dry_run ?? body.dryRun ?? req.query?.dry_run,
-      false,
-    );
+    const dryRun = parseBooleanFlag(body.dry_run ?? body.dryRun ?? req.query?.dry_run, false);
     const windowMinutes = normalizeWindowMinutesInput(
       body.window_minutes ?? body.windowMinutes ?? req.query?.window_minutes,
-      LEAD_DUPLICATE_WINDOW_MINUTES,
+      LEAD_DUPLICATE_WINDOW_MINUTES
     );
 
     const result = await cleanupLeadDuplicates({
@@ -2920,7 +2666,7 @@ app.post(
       action: dryRun ? "dry_run" : "cleanup",
       executed_at: new Date().toISOString(),
     });
-  }),
+  })
 );
 
 // -----------------------------
@@ -2983,52 +2729,123 @@ const DEMO_LEAD_LAST_NAMES = [
 ];
 
 const DEMO_UF_CITIES = {
-  SP: [
-    "Sao Paulo",
-    "Campinas",
-    "Ribeirao Preto",
-    "Sorocaba",
-    "Sao Jose dos Campos",
-  ],
-  MG: [
-    "Belo Horizonte",
-    "Uberlandia",
-    "Juiz de Fora",
-    "Contagem",
-    "Montes Claros",
-  ],
+  SP: ["Sao Paulo", "Campinas", "Ribeirao Preto", "Sorocaba", "Sao Jose dos Campos"],
+  MG: ["Belo Horizonte", "Uberlandia", "Juiz de Fora", "Contagem", "Montes Claros"],
   GO: ["Goiania", "Aparecida de Goiania", "Anapolis", "Rio Verde", "Jatai"],
 };
 
 const DEMO_SEGMENTS = ["CAVALOS", "SERVICOS", "EVENTOS", "EQUIPAMENTOS"];
 const DEMO_BUDGETS = ["0-5k", "5k-20k", "20k-60k", "60k+"];
 const DEMO_DEADLINES = ["7d", "30d", "90d"];
+const DEMO_SEED_ANCHOR_TS = Date.parse("2026-01-15T12:00:00.000Z");
+const DEMO_SEED_ANCHOR_DATE = Date.parse("2026-01-15T00:00:00.000Z");
+const DEMO_SEGMENT_CNAE = {
+  CAVALOS: "0152-1/02",
+  SERVICOS: "9313-1/00",
+  EVENTOS: "8230-0/01",
+  EQUIPAMENTOS: "4647-8/01",
+};
 
-function randomInt(min, max) {
+function stableHashHex(input, length = 64) {
+  const value = createHash("sha256").update(String(input ?? "")).digest("hex");
+  return value.slice(0, Math.max(1, Math.min(length, value.length)));
+}
+
+function hashToUint32(input) {
+  return Number.parseInt(stableHashHex(input, 8), 16) >>> 0;
+}
+
+function mulberry32(seed) {
+  let t = seed >>> 0;
+  return () => {
+    t += 0x6d2b79f5;
+    let x = t;
+    x = Math.imul(x ^ (x >>> 15), x | 1);
+    x ^= x + Math.imul(x ^ (x >>> 7), x | 61);
+    return ((x ^ (x >>> 14)) >>> 0) / 4294967296;
+  };
+}
+
+function normalizeDemoSeed(value) {
+  if (value === undefined || value === null) return null;
+  const raw = String(value).trim();
+  if (!raw) return null;
+  return raw.slice(0, 120);
+}
+
+function formatDateISO(dateValue) {
+  const dt = dateValue instanceof Date ? dateValue : new Date(dateValue);
+  if (Number.isNaN(dt.getTime())) return null;
+  return dt.toISOString().slice(0, 10);
+}
+
+function deterministicUuid(seedLabel, namespace, index) {
+  const raw = stableHashHex(`${seedLabel}|${namespace}|${index}`, 32).split("");
+  raw[12] = "4";
+  raw[16] = ["8", "9", "a", "b"][Number.parseInt(raw[16], 16) % 4];
+  const hex = raw.join("");
+  return `${hex.slice(0, 8)}-${hex.slice(8, 12)}-${hex.slice(12, 16)}-${hex.slice(16, 20)}-${hex.slice(20, 32)}`;
+}
+
+function buildDeterministicCnpj(seedLabel, index) {
+  const bigint = BigInt(`0x${stableHashHex(`${seedLabel}|cnpj|${index}`, 16)}`);
+  const span = 8999999999999n;
+  const value = 10000000000000n + (bigint % span);
+  return String(value).padStart(14, "0");
+}
+
+function createDemoSeedContext(rawSeed, namespace) {
+  const normalizedSeed = normalizeDemoSeed(rawSeed);
+  if (!normalizedSeed) {
+    const now = Date.now();
+    return {
+      deterministic: false,
+      seed: null,
+      scoped_seed: null,
+      seed_int: null,
+      rng: Math.random,
+      run_tag: `random-${namespace}-${now}`,
+      anchor_ts: now,
+      anchor_date: new Date(now),
+    };
+  }
+
+  const scoped = `${namespace}:${normalizedSeed}`;
+  const seedInt = hashToUint32(scoped);
+  const dayOffset = seedInt % 365;
+  const secondOffset = seedInt % (24 * 60 * 60);
+  return {
+    deterministic: true,
+    seed: normalizedSeed,
+    scoped_seed: scoped,
+    seed_int: seedInt,
+    rng: mulberry32(seedInt),
+    run_tag: stableHashHex(scoped, 12),
+    anchor_ts: DEMO_SEED_ANCHOR_TS + secondOffset * 1000,
+    anchor_date: new Date(DEMO_SEED_ANCHOR_DATE + dayOffset * 24 * 60 * 60 * 1000),
+  };
+}
+
+function randomInt(min, max, rng = Math.random) {
   const lo = Math.ceil(min);
   const hi = Math.floor(max);
   if (hi <= lo) return lo;
-  return Math.floor(Math.random() * (hi - lo + 1)) + lo;
+  return Math.floor(rng() * (hi - lo + 1)) + lo;
 }
 
-function randomChoice(list) {
+function randomChoice(list, rng = Math.random) {
   if (!Array.isArray(list) || !list.length) return null;
-  return list[randomInt(0, list.length - 1)];
+  return list[randomInt(0, list.length - 1, rng)];
 }
 
 function statusToCrmStage(status) {
-  const key = String(status || "")
-    .toUpperCase()
-    .trim();
-  if (key === "AQUECENDO" || key === "QUALIFICADO" || key === "ENVIADO")
-    return key;
+  const key = String(status || "").toUpperCase().trim();
+  if (key === "AQUECENDO" || key === "QUALIFICADO" || key === "ENVIADO") return key;
   return "INBOX";
 }
 
 function statusScoreRange(status) {
-  const key = String(status || "")
-    .toUpperCase()
-    .trim();
+  const key = String(status || "").toUpperCase().trim();
   if (key === "ENVIADO") return [82, 96];
   if (key === "QUALIFICADO") return [70, 89];
   // Alinhado ao scoring_service (_score_to_status): AQUECENDO >= 40.
@@ -3037,9 +2854,7 @@ function statusScoreRange(status) {
 }
 
 function statusProbabilityRange(status) {
-  const key = String(status || "")
-    .toUpperCase()
-    .trim();
+  const key = String(status || "").toUpperCase().trim();
   if (key === "ENVIADO") return [0.82, 0.98];
   if (key === "QUALIFICADO") return [0.7, 0.89];
   // Mantem consistencia aproximada com as faixas de score sintetico.
@@ -3047,12 +2862,12 @@ function statusProbabilityRange(status) {
   return [0.05, 0.39];
 }
 
-function randomFloat(min, max, digits = 4) {
-  const raw = min + Math.random() * (max - min);
+function randomFloat(min, max, digits = 4, rng = Math.random) {
+  const raw = min + rng() * (max - min);
   return Number(raw.toFixed(digits));
 }
 
-function buildStatusPlan(total) {
+function buildStatusPlan(total, rng = Math.random) {
   const n = Math.max(1, Math.floor(total));
   const target = {
     CURIOSO: Math.floor(n * 0.5),
@@ -3068,7 +2883,7 @@ function buildStatusPlan(total) {
   }
 
   for (let i = out.length - 1; i > 0; i--) {
-    const j = randomInt(0, i);
+    const j = randomInt(0, i, rng);
     const tmp = out[i];
     out[i] = out[j];
     out[j] = tmp;
@@ -3077,44 +2892,45 @@ function buildStatusPlan(total) {
   return out;
 }
 
-function buildSyntheticLead(index, status) {
-  const uf = randomChoice(Object.keys(DEMO_UF_CITIES)) || "SP";
-  const city = randomChoice(DEMO_UF_CITIES[uf]) || "Sao Paulo";
-  const first = randomChoice(DEMO_LEAD_FIRST_NAMES) || "Visitante";
-  const last = randomChoice(DEMO_LEAD_LAST_NAMES) || "Demo";
+function buildSyntheticLead(index, status, options = {}) {
+  const rng = typeof options.rng === "function" ? options.rng : Math.random;
+  const deterministic = Boolean(options.deterministic);
+  const seedLabel = String(options.seed_label || "random");
+  const runTag = String(options.run_tag || Date.now());
+  const anchorTs = Number.isFinite(options.anchor_ts) ? options.anchor_ts : Date.now();
+
+  const uf = randomChoice(Object.keys(DEMO_UF_CITIES), rng) || "SP";
+  const city = randomChoice(DEMO_UF_CITIES[uf], rng) || "Sao Paulo";
+  const first = randomChoice(DEMO_LEAD_FIRST_NAMES, rng) || "Visitante";
+  const last = randomChoice(DEMO_LEAD_LAST_NAMES, rng) || "Demo";
   const serial = String(index + 1).padStart(4, "0");
   const nome = `${first} ${last} ${serial}`;
-  const email =
-    Math.random() < 0.82
-      ? `lead.demo.${Date.now()}.${serial}@exemplo.com`
-      : null;
+  const email = rng() < 0.82 ? `lead.demo.${runTag}.${serial}@exemplo.com` : null;
   const whatsapp =
-    Math.random() < 0.9
+    rng() < 0.9
       ? `55${uf === "SP" ? "11" : uf === "MG" ? "31" : "62"}9${String(
-          randomInt(10000000, 99999999),
+          randomInt(10000000, 99999999, rng)
         )}`
       : null;
 
+  const segmento = randomChoice(DEMO_SEGMENTS, rng) || "SERVICOS";
+  const orcamento = randomChoice(DEMO_BUDGETS, rng) || "5k-20k";
+  const prazo = randomChoice(DEMO_DEADLINES, rng) || "30d";
   const [scoreMin, scoreMax] = statusScoreRange(status);
   const [probMin, probMax] = statusProbabilityRange(status);
-  const probability = randomFloat(probMin, probMax, 4);
-  const score = randomInt(scoreMin, scoreMax);
+  const probability = randomFloat(probMin, probMax, 4, rng);
+  const score = randomInt(scoreMin, scoreMax, rng);
 
-  const daysAgo = randomInt(0, 120);
-  const minutesAgo = randomInt(0, 24 * 60 - 1);
-  const createdAt = new Date(
-    Date.now() - (daysAgo * 24 * 60 + minutesAgo) * 60 * 1000,
-  );
+  const daysAgo = randomInt(0, 120, rng);
+  const minutesAgo = randomInt(0, 24 * 60 - 1, rng);
+  const createdAt = new Date(anchorTs - (daysAgo * 24 * 60 + minutesAgo) * 60 * 1000);
+  const updatedAt = new Date(createdAt.getTime() + randomInt(1, 360, rng) * 60 * 1000);
 
   const motives = [
-    {
-      fator: "Regiao foco",
-      impacto: uf === "SP" || uf === "MG" ? 4 : 3,
-      detalhe: `UF ${uf}`,
-    },
+    { fator: "Regiao foco", impacto: uf === "SP" || uf === "MG" ? 4 : 3, detalhe: `UF ${uf}` },
     {
       fator: "Orcamento informado",
-      impacto: randomChoice(DEMO_BUDGETS) === "60k+" ? 6 : 3,
+      impacto: orcamento === "60k+" ? 6 : 3,
       detalhe: "Perfil sintetico para treino",
     },
     {
@@ -3124,88 +2940,141 @@ function buildSyntheticLead(index, status) {
     },
   ];
 
+  const scoreMeta = {
+    engine: "synthetic_seed",
+    model_name: "seed_generator_v1",
+    probability_qualified: probability,
+    synthetic: true,
+  };
+  if (deterministic) {
+    scoreMeta.seed = seedLabel;
+    scoreMeta.seed_index = index + 1;
+  }
+
   return {
+    id: deterministic ? deterministicUuid(seedLabel, "lead", index + 1) : randomUUID(),
     nome,
     whatsapp,
     email,
     uf,
     cidade: city,
-    segmento_interesse: randomChoice(DEMO_SEGMENTS),
-    orcamento_faixa: randomChoice(DEMO_BUDGETS),
-    prazo_compra: randomChoice(DEMO_DEADLINES),
+    segmento_interesse: segmento,
+    orcamento_faixa: orcamento,
+    prazo_compra: prazo,
     status,
     crm_stage: statusToCrmStage(status),
     score,
     score_probability: probability,
     score_engine: "synthetic_seed",
     score_model_name: "seed_generator_v1",
-    score_meta: {
-      engine: "synthetic_seed",
-      model_name: "seed_generator_v1",
-      probability_qualified: probability,
-      synthetic: true,
-    },
+    score_meta: scoreMeta,
     score_motivos: motives,
     created_at: createdAt,
+    updated_at: updatedAt,
   };
 }
 
-function buildSyntheticEvents(status, createdAt) {
-  const key = String(status || "")
-    .toUpperCase()
-    .trim();
+function buildSyntheticEvents(status, createdAt, rng = Math.random) {
+  const key = String(status || "").toUpperCase().trim();
   const timeline = [];
   const start = new Date(createdAt);
 
   const pageViews =
     key === "CURIOSO"
-      ? randomInt(1, 2)
+      ? randomInt(1, 2, rng)
       : key === "AQUECENDO"
-        ? randomInt(1, 3)
-        : randomInt(2, 5);
+        ? randomInt(1, 3, rng)
+        : randomInt(2, 5, rng);
   for (let i = 0; i < pageViews; i++) {
     timeline.push({
       event_type: "page_view",
-      ts: new Date(start.getTime() + (i + 1) * randomInt(10, 120) * 60 * 1000),
+      ts: new Date(start.getTime() + (i + 1) * randomInt(10, 120, rng) * 60 * 1000),
       metadata: { source: "seed", step: i + 1 },
     });
   }
 
-  if (
-    key === "AQUECENDO" ||
-    key === "QUALIFICADO" ||
-    key === "ENVIADO" ||
-    Math.random() < 0.2
-  ) {
+  if (key === "AQUECENDO" || key === "QUALIFICADO" || key === "ENVIADO" || rng() < 0.2) {
     timeline.push({
       event_type: "hook_complete",
-      ts: new Date(start.getTime() + randomInt(2, 24) * 60 * 60 * 1000),
+      ts: new Date(start.getTime() + randomInt(2, 24, rng) * 60 * 60 * 1000),
       metadata: { source: "seed", form: "quiz" },
     });
   }
 
-  if (
-    key === "QUALIFICADO" ||
-    key === "ENVIADO" ||
-    (key === "AQUECENDO" && Math.random() < 0.5)
-  ) {
+  if (key === "QUALIFICADO" || key === "ENVIADO" || (key === "AQUECENDO" && rng() < 0.5)) {
     timeline.push({
       event_type: "cta_click",
-      ts: new Date(start.getTime() + randomInt(3, 48) * 60 * 60 * 1000),
+      ts: new Date(start.getTime() + randomInt(3, 48, rng) * 60 * 60 * 1000),
       metadata: { source: "seed", channel: "landing" },
     });
   }
 
-  if (key === "ENVIADO" || (key === "QUALIFICADO" && Math.random() < 0.5)) {
+  if (key === "ENVIADO" || (key === "QUALIFICADO" && rng() < 0.5)) {
     timeline.push({
       event_type: "whatsapp_click",
-      ts: new Date(start.getTime() + randomInt(4, 72) * 60 * 60 * 1000),
+      ts: new Date(start.getTime() + randomInt(4, 72, rng) * 60 * 60 * 1000),
       metadata: { source: "seed", channel: "whatsapp" },
     });
   }
 
   timeline.sort((a, b) => a.ts.getTime() - b.ts.getTime());
   return timeline;
+}
+
+function buildSyntheticPartner(index, options = {}) {
+  const rng = typeof options.rng === "function" ? options.rng : Math.random;
+  const deterministic = Boolean(options.deterministic);
+  const seedLabel = String(options.seed_label || "random");
+  const anchorDate = options.anchor_date instanceof Date ? options.anchor_date : new Date();
+  const serial = index + 1;
+  const ufKeys = Object.keys(DEMO_UF_CITIES);
+  const uf = deterministic
+    ? ufKeys[index % ufKeys.length]
+    : randomChoice(ufKeys, rng) || "SP";
+  const cities = DEMO_UF_CITIES[uf] || DEMO_UF_CITIES.SP;
+  const city = deterministic ? cities[index % cities.length] : randomChoice(cities, rng) || cities[0];
+  const segmento = deterministic
+    ? DEMO_SEGMENTS[index % DEMO_SEGMENTS.length]
+    : randomChoice(DEMO_SEGMENTS, rng) || "SERVICOS";
+  const prioridade = index % 10 < 3 ? 1 : index % 10 < 7 ? 2 : 3;
+  const cnae = DEMO_SEGMENT_CNAE[segmento] || DEMO_SEGMENT_CNAE.SERVICOS;
+  const daysAgo = deterministic ? index % 365 : randomInt(0, 364, rng);
+  const inicioAtividade = new Date(anchorDate.getTime() - daysAgo * 24 * 60 * 60 * 1000);
+  const phoneSeed = deterministic
+    ? hashToUint32(`${seedLabel}|partner_phone|${serial}`)
+    : randomInt(0, 89999999, rng);
+  const phoneDdd = uf === "SP" ? "11" : uf === "MG" ? "31" : "62";
+  const phoneTail = String(10000000 + (phoneSeed % 90000000)).padStart(8, "0");
+  const cnpj = deterministic
+    ? buildDeterministicCnpj(seedLabel, serial)
+    : String(10000000000000 + randomInt(0, 8999999999999, rng)).padStart(14, "0");
+
+  return {
+    id: deterministic ? deterministicUuid(seedLabel, "partner", serial) : randomUUID(),
+    cnpj,
+    razao_social: `Parceiro Demo ${serial} LTDA`,
+    nome_fantasia: `Parceiro Demo ${serial}`,
+    uf,
+    municipio_cod: null,
+    municipio_nome: city,
+    cnae_principal: cnae,
+    cnaes_secundarios: null,
+    segmento,
+    prioridade,
+    situacao_cadastral: null,
+    data_inicio_atividade: formatDateISO(inicioAtividade),
+    contato: {
+      site: `https://exemplo.com/p/${serial}`,
+      instagram: `@parceiro_demo_${serial}`,
+      telefone: `+55 ${phoneDdd} 9${phoneTail}`,
+      email: `contato${serial}@exemplo.com`,
+    },
+    endereco: {
+      logradouro: "Rua Demo",
+      numero: String(serial),
+      bairro: "Centro",
+    },
+  };
 }
 
 app.post(
@@ -3215,40 +3084,52 @@ app.post(
     await ensureScoreSchema();
 
     const nRaw = Number(req.body?.n ?? 450);
+    const seedRaw = req.body?.seed ?? req.query?.seed;
     const replace = parseBooleanFlag(req.body?.replace, false);
-    const n = Number.isFinite(nRaw)
-      ? Math.max(1, Math.min(3000, Math.floor(nRaw)))
-      : 450;
-    const statusPlan = buildStatusPlan(n);
+    const n = Number.isFinite(nRaw) ? Math.max(1, Math.min(3000, Math.floor(nRaw))) : 450;
+    const seedContext = createDemoSeedContext(seedRaw, "leads");
+    if (seedContext.deterministic && !replace) {
+      return res.status(400).json({
+        error: "Para set seed deterministico use replace=true.",
+        hint: 'Exemplo: { "n": 450, "replace": true, "seed": "equipepulse-v1" }',
+      });
+    }
+    const statusPlan = buildStatusPlan(n, seedContext.rng);
 
     const client = await pool.connect();
     const byStatus = { CURIOSO: 0, AQUECENDO: 0, QUALIFICADO: 0, ENVIADO: 0 };
     let insertedEvents = 0;
+    let insertedLeads = 0;
 
     try {
       await client.query("BEGIN");
 
       if (replace) {
-        await client.query(
-          "TRUNCATE TABLE lead_notes, events, leads RESTART IDENTITY CASCADE",
-        );
+        await client.query("TRUNCATE TABLE lead_notes, events, leads RESTART IDENTITY CASCADE");
       }
 
       for (let i = 0; i < statusPlan.length; i++) {
         const status = statusPlan[i];
-        const seed = buildSyntheticLead(i, status);
+        const seed = buildSyntheticLead(i, status, {
+          rng: seedContext.rng,
+          deterministic: seedContext.deterministic,
+          seed_label: seedContext.scoped_seed || seedContext.seed || "random",
+          run_tag: seedContext.run_tag,
+          anchor_ts: seedContext.anchor_ts,
+        });
 
         const leadIns = await client.query(
           `INSERT INTO leads
-            (nome, whatsapp, email, uf, cidade, segmento_interesse, orcamento_faixa, prazo_compra,
+            (id, nome, whatsapp, email, uf, cidade, segmento_interesse, orcamento_faixa, prazo_compra,
              status, crm_stage, score, score_probability, score_engine, score_model_name, score_meta,
              score_motivos, score_scored_at, created_at, updated_at)
            VALUES
-            ($1,$2,$3,$4,$5,$6,$7,$8,
-             $9,$10,$11,$12,$13,$14,$15,
-             $16, now(), $17, now())
+            ($1,$2,$3,$4,$5,$6,$7,$8,$9,
+             $10,$11,$12,$13,$14,$15,$16,
+             $17, $18, $19, $20)
            RETURNING id`,
           [
+            seed.id,
             seed.nome,
             seed.whatsapp,
             seed.email,
@@ -3266,20 +3147,23 @@ app.post(
             JSON.stringify(seed.score_meta),
             JSON.stringify(seed.score_motivos),
             seed.created_at,
-          ],
+            seed.created_at,
+            seed.updated_at,
+          ]
         );
 
         const leadId = String(leadIns.rows?.[0]?.id || "");
         if (!leadId) continue;
 
+        insertedLeads += 1;
         byStatus[status] = Number(byStatus[status] || 0) + 1;
 
-        const events = buildSyntheticEvents(status, seed.created_at);
+        const events = buildSyntheticEvents(status, seed.created_at, seedContext.rng);
         for (const ev of events) {
           await client.query(
             `INSERT INTO events (lead_id, event_type, metadata, ts)
              VALUES ($1,$2,$3,$4)`,
-            [leadId, ev.event_type, JSON.stringify(ev.metadata || {}), ev.ts],
+            [leadId, ev.event_type, JSON.stringify(ev.metadata || {}), ev.ts]
           );
           insertedEvents += 1;
         }
@@ -3296,112 +3180,96 @@ app.post(
     const totalsR = await query("SELECT COUNT(*)::int AS total FROM leads");
     return res.json({
       ok: true,
-      inserted: n,
+      inserted: insertedLeads,
       by_status: byStatus,
       events_inserted: insertedEvents,
       total_leads: totalsR.rows?.[0]?.total ?? null,
       replace,
-      message: `${n} leads sinteticos gerados para treino.`,
+      seed: seedContext.seed,
+      deterministic: seedContext.deterministic,
+      message: `${insertedLeads} leads sinteticos gerados para treino.`,
     });
-  }),
+  })
 );
+
 
 app.post(
   "/demo/seed-partners",
   asyncHandler(async (req, res) => {
     const nRaw = Number(req.body?.n ?? 160);
-    const replace = Boolean(req.body?.replace ?? false);
-    const n = Number.isFinite(nRaw)
-      ? Math.max(1, Math.min(1000, Math.floor(nRaw)))
-      : 160;
+    const seedRaw = req.body?.seed ?? req.query?.seed;
+    const replace = parseBooleanFlag(req.body?.replace, false);
+    const n = Number.isFinite(nRaw) ? Math.max(1, Math.min(1000, Math.floor(nRaw))) : 160;
+    const seedContext = createDemoSeedContext(seedRaw, "partners");
+    if (seedContext.deterministic && !replace) {
+      return res.status(400).json({
+        error: "Para set seed deterministico use replace=true.",
+        hint: 'Exemplo: { "n": 1000, "replace": true, "seed": "equipepulse-v1" }',
+      });
+    }
 
     if (replace) {
       await query("TRUNCATE partners RESTART IDENTITY;");
     }
 
-    // Inserção demo compatível com seu schema.
-    // Usa CNPJ pseudo-aleatório e ON CONFLICT para evitar erro se repetir.
-    const sql = `
-      INSERT INTO partners
-      (cnpj, razao_social, nome_fantasia, uf, municipio_cod, municipio_nome,
-       cnae_principal, cnaes_secundarios, segmento, prioridade,
-       situacao_cadastral, data_inicio_atividade, contato, endereco)
-      SELECT
-        lpad((10000000000000::bigint + floor(random()*8999999999999)::bigint)::text, 14, '0') as cnpj,
-        ('Parceiro Demo '||g||' LTDA') as razao_social,
-        ('Parceiro Demo '||g) as nome_fantasia,
+    let inserted = 0;
+    let skippedConflicts = 0;
+    for (let i = 0; i < n; i++) {
+      const partner = buildSyntheticPartner(i, {
+        rng: seedContext.rng,
+        deterministic: seedContext.deterministic,
+        seed_label: seedContext.scoped_seed || seedContext.seed || "random",
+        anchor_date: seedContext.anchor_date,
+      });
 
-        -- UF: alterna SP/MG/GO
-        (CASE (g % 3)
-          WHEN 0 THEN 'SP'
-          WHEN 1 THEN 'MG'
-          ELSE 'GO'
-        END)::character(2) as uf,
+      const ins = await query(
+        `INSERT INTO partners
+          (id, cnpj, razao_social, nome_fantasia, uf, municipio_cod, municipio_nome,
+           cnae_principal, cnaes_secundarios, segmento, prioridade,
+           situacao_cadastral, data_inicio_atividade, contato, endereco, created_at, updated_at)
+         VALUES
+          ($1,$2,$3,$4,$5,$6,$7,
+           $8,$9,$10,$11,
+           $12,$13,$14,$15, now(), now())
+         ON CONFLICT (cnpj) DO NOTHING
+         RETURNING id`,
+        [
+          partner.id,
+          partner.cnpj,
+          partner.razao_social,
+          partner.nome_fantasia,
+          partner.uf,
+          partner.municipio_cod,
+          partner.municipio_nome,
+          partner.cnae_principal,
+          partner.cnaes_secundarios,
+          partner.segmento,
+          partner.prioridade,
+          partner.situacao_cadastral,
+          partner.data_inicio_atividade,
+          JSON.stringify(partner.contato),
+          JSON.stringify(partner.endereco),
+        ]
+      );
 
-        NULL::integer as municipio_cod,
+      if (ins.rowCount > 0) inserted += 1;
+      else skippedConflicts += 1;
+    }
 
-        -- Município “compatível” com UF
-        (CASE (g % 3)
-          WHEN 0 THEN (ARRAY['São Paulo','Campinas','Ribeirão Preto','Sorocaba','São José do Rio Preto'])[1 + (g % 5)]
-          WHEN 1 THEN (ARRAY['Belo Horizonte','Uberlândia','Juiz de Fora','Montes Claros','Contagem'])[1 + (g % 5)]
-          ELSE (ARRAY['Goiânia','Anápolis','Rio Verde','Jataí','Aparecida de Goiânia'])[1 + (g % 5)]
-        END) as municipio_nome,
-
-        -- CNAE (texto) só para dar “cara de dado”; você pode substituir pelos CNAEs do seu lookup depois
-        (CASE (g % 4)
-          WHEN 0 THEN '0152-1/02'  -- cavalos (exemplo)
-          WHEN 1 THEN '9313-1/00'  -- serviços esportivos (exemplo)
-          WHEN 2 THEN '8230-0/01'  -- eventos (exemplo)
-          ELSE '4647-8/01'         -- comércio/equipamentos (exemplo)
-        END) as cnae_principal,
-
-        NULL::text[] as cnaes_secundarios,
-
-        -- Segmentos do MVP
-        (CASE (g % 4)
-          WHEN 0 THEN 'CAVALOS'
-          WHEN 1 THEN 'SERVICOS'
-          WHEN 2 THEN 'EVENTOS'
-          ELSE 'EQUIPAMENTOS'
-        END) as segmento,
-
-        -- Prioridade 1/2/3
-        (CASE
-          WHEN (g % 10) < 3 THEN 1
-          WHEN (g % 10) < 7 THEN 2
-          ELSE 3
-        END) as prioridade,
-
-        NULL::integer as situacao_cadastral,
-        (CURRENT_DATE - ((g % 365))::int) as data_inicio_atividade,
-
-        jsonb_build_object(
-          'site', 'https://exemplo.com/p/'||g,
-          'instagram', '@parceiro_demo_'||g,
-          'telefone', '+55 11 9' || lpad((10000000 + (g % 90000000))::text, 8, '0'),
-          'email', 'contato'||g||'@exemplo.com'
-        ) as contato,
-
-        jsonb_build_object(
-          'logradouro', 'Rua Demo',
-          'numero', g::text,
-          'bairro', 'Centro'
-        ) as endereco
-      FROM generate_series(1, $1) g
-      ON CONFLICT (cnpj) DO NOTHING
-      RETURNING 1;
-    `;
-
-    const r = await query(sql, [n]);
     const totalR = await query("SELECT COUNT(*)::int AS total FROM partners");
     res.json({
       ok: true,
-      inserted: r.rowCount,
+      inserted,
+      skipped_conflicts: skippedConflicts,
       total: totalR.rows?.[0]?.total ?? null,
-      message: "Parceiros de demonstração criados com sucesso.",
+      replace,
+      seed: seedContext.seed,
+      deterministic: seedContext.deterministic,
+      message: "Parceiros de demonstracao criados com sucesso.",
     });
-  }),
+  })
 );
+
 
 /**
  * POST /demo/reset
@@ -3418,10 +3286,7 @@ app.post(
   "/demo/reset-seeded-leads",
   asyncHandler(async (req, res) => {
     await ensureCrmSchema();
-    const dryRun = parseBooleanFlag(
-      req.body?.dry_run ?? req.query?.dry_run,
-      false,
-    );
+    const dryRun = parseBooleanFlag(req.body?.dry_run ?? req.query?.dry_run, false);
 
     const client = await pool.connect();
     try {
@@ -3431,11 +3296,9 @@ app.post(
           WHERE COALESCE(score_engine, '') = 'synthetic_seed'
              OR COALESCE(score_model_name, '') = 'seed_generator_v1'
              OR COALESCE(score_meta->>'synthetic', 'false') = 'true'
-             OR COALESCE(email, '') ILIKE 'lead.demo.%@exemplo.com'`,
+             OR COALESCE(email, '') ILIKE 'lead.demo.%@exemplo.com'`
       );
-      const seededIds = (seededR.rows || [])
-        .map((row) => String(row.id))
-        .filter(Boolean);
+      const seededIds = (seededR.rows || []).map((row) => String(row.id)).filter(Boolean);
 
       if (!seededIds.length) {
         return res.json({
@@ -3455,14 +3318,14 @@ app.post(
 
       const eventsBeforeR = await client.query(
         "SELECT COUNT(*)::int AS total FROM events WHERE lead_id = ANY($1::uuid[])",
-        [seededIds],
+        [seededIds]
       );
 
       let leadNotesBefore = 0;
       if (await tableExists(client, "public.lead_notes")) {
         const leadNotesBeforeR = await client.query(
           "SELECT COUNT(*)::int AS total FROM lead_notes WHERE lead_id = ANY($1::uuid[])",
-          [seededIds],
+          [seededIds]
         );
         leadNotesBefore = leadNotesBeforeR.rows?.[0]?.total ?? 0;
       }
@@ -3471,7 +3334,7 @@ app.post(
       if (await tableExists(client, "public.crm_lead_notes")) {
         const crmLeadNotesBeforeR = await client.query(
           "SELECT COUNT(*)::int AS total FROM crm_lead_notes WHERE lead_id = ANY($1::uuid[])",
-          [seededIds],
+          [seededIds]
         );
         crmLeadNotesBefore = crmLeadNotesBeforeR.rows?.[0]?.total ?? 0;
       }
@@ -3480,7 +3343,7 @@ app.post(
       if (await tableExists(client, "public.crm_lead_state")) {
         const crmLeadStateBeforeR = await client.query(
           "SELECT COUNT(*)::int AS total FROM crm_lead_state WHERE lead_id = ANY($1::uuid[])",
-          [seededIds],
+          [seededIds]
         );
         crmLeadStateBefore = crmLeadStateBeforeR.rows?.[0]?.total ?? 0;
       }
@@ -3508,39 +3371,26 @@ app.post(
       await client.query("BEGIN");
 
       if (await tableExists(client, "public.crm_lead_state")) {
-        await client.query(
-          "DELETE FROM crm_lead_state WHERE lead_id = ANY($1::uuid[])",
-          [seededIds],
-        );
+        await client.query("DELETE FROM crm_lead_state WHERE lead_id = ANY($1::uuid[])", [seededIds]);
       }
 
       if (await tableExists(client, "public.crm_lead_notes")) {
-        await client.query(
-          "DELETE FROM crm_lead_notes WHERE lead_id = ANY($1::uuid[])",
-          [seededIds],
-        );
+        await client.query("DELETE FROM crm_lead_notes WHERE lead_id = ANY($1::uuid[])", [seededIds]);
       }
 
       if (await tableExists(client, "public.lead_notes")) {
-        await client.query(
-          "DELETE FROM lead_notes WHERE lead_id = ANY($1::uuid[])",
-          [seededIds],
-        );
+        await client.query("DELETE FROM lead_notes WHERE lead_id = ANY($1::uuid[])", [seededIds]);
       }
 
-      await client.query("DELETE FROM events WHERE lead_id = ANY($1::uuid[])", [
-        seededIds,
-      ]);
+      await client.query("DELETE FROM events WHERE lead_id = ANY($1::uuid[])", [seededIds]);
       const deletedLeadsR = await client.query(
         "DELETE FROM leads WHERE id = ANY($1::uuid[]) RETURNING id",
-        [seededIds],
+        [seededIds]
       );
 
       await client.query("COMMIT");
 
-      const totalLeadsR = await query(
-        "SELECT COUNT(*)::int AS total FROM leads",
-      );
+      const totalLeadsR = await query("SELECT COUNT(*)::int AS total FROM leads");
       return res.json({
         ...preview,
         deleted: {
@@ -3560,7 +3410,7 @@ app.post(
     } finally {
       client.release();
     }
-  }),
+  })
 );
 
 app.post(
@@ -3568,17 +3418,14 @@ app.post(
   asyncHandler(async (_req, res) => {
     await ensureCrmSchema();
 
-    const [leadsBefore, eventsBefore, notesBefore, partnersBefore] =
-      await Promise.all([
-        query("SELECT COUNT(*)::int AS total FROM leads"),
-        query("SELECT COUNT(*)::int AS total FROM events"),
-        query("SELECT COUNT(*)::int AS total FROM lead_notes"),
-        query("SELECT COUNT(*)::int AS total FROM partners"),
-      ]);
+    const [leadsBefore, eventsBefore, notesBefore, partnersBefore] = await Promise.all([
+      query("SELECT COUNT(*)::int AS total FROM leads"),
+      query("SELECT COUNT(*)::int AS total FROM events"),
+      query("SELECT COUNT(*)::int AS total FROM lead_notes"),
+      query("SELECT COUNT(*)::int AS total FROM partners"),
+    ]);
 
-    await query(
-      "TRUNCATE TABLE lead_notes, events, leads, partners RESTART IDENTITY CASCADE",
-    );
+    await query("TRUNCATE TABLE lead_notes, events, leads, partners RESTART IDENTITY CASCADE");
 
     res.json({
       ok: true,
@@ -3590,7 +3437,7 @@ app.post(
       },
       message: "Reset de demo concluido.",
     });
-  }),
+  })
 );
 
 /**
@@ -3607,98 +3454,7 @@ app.post(
       deleted: before.rows?.[0]?.total ?? null,
       message: "Parceiros removidos (reset concluído).",
     });
-  }),
-);
-
-/* =========================================================
-   OUTPUT ROUTES (Relatórios exportáveis para UI Web)
-   =========================================================
-*/
-
-function jsonToCsv(rows) {
-  if (!rows || !rows.length) return "";
-  const headers = [
-    "id",
-    "nome",
-    "whatsapp",
-    "email",
-    "uf",
-    "cidade",
-    "segmento_interesse",
-    "orcamento_faixa",
-    "prazo_compra",
-    "status",
-    "score",
-    "crm_stage",
-    "created_at",
-  ];
-
-  const lines = [headers.join(",")];
-
-  for (const row of rows) {
-    const cols = headers.map((h) => {
-      let val = row[h];
-      if (val === null || val === undefined) val = "";
-      val = String(val).replace(/"/g, '""');
-      if (val.includes(",") || val.includes("\\n")) val = `"${val}"`;
-      return val;
-    });
-    lines.push(cols.join(","));
-  }
-  return lines.join("\\n");
-}
-
-app.get(
-  "/output/leads",
-  asyncHandler(async (req, res) => {
-    const { stage, segmento } = req.query;
-    const params = [];
-    let sql = "SELECT * FROM leads WHERE 1=1";
-
-    // Filtros opcionais usados pela UI Web (output.js)
-    if (stage) {
-      params.push(stage);
-      sql += ` AND (UPPER(status) = UPPER($${params.length}) OR UPPER(crm_stage) = UPPER($${params.length}))`;
-    }
-    if (segmento) {
-      params.push(segmento);
-      sql += ` AND UPPER(segmento_interesse) = UPPER($${params.length})`;
-    }
-
-    sql += " ORDER BY created_at DESC LIMIT 1000";
-
-    const r = await query(sql, params);
-    const items = r.rows.map(serializeLead);
-    res.json(items);
-  }),
-);
-
-app.get(
-  "/output/leads/csv",
-  asyncHandler(async (req, res) => {
-    const { stage, segmento } = req.query;
-    const params = [];
-    let sql = "SELECT * FROM leads WHERE 1=1";
-
-    if (stage) {
-      params.push(stage);
-      sql += ` AND (UPPER(status) = UPPER($${params.length}) OR UPPER(crm_stage) = UPPER($${params.length}))`;
-    }
-    if (segmento) {
-      params.push(segmento);
-      sql += ` AND UPPER(segmento_interesse) = UPPER($${params.length})`;
-    }
-
-    sql += " ORDER BY created_at DESC LIMIT 1000";
-
-    const r = await query(sql, params);
-    const items = r.rows.map(serializeLead);
-    const csv = jsonToCsv(items);
-
-    res.header("Content-Type", "text/csv");
-    res.attachment("leads_output.csv");
-    res.send(csv);
-  }),
+  })
 );
 
 async function bootstrap() {
@@ -3710,10 +3466,7 @@ async function bootstrap() {
   try {
     await ensureScoreSchema();
   } catch (e) {
-    console.warn(
-      "Nao foi possivel garantir colunas de diagnostico de score no startup:",
-      e,
-    );
+    console.warn("Nao foi possivel garantir colunas de diagnostico de score no startup:", e);
   }
   app.listen(PORT, () => console.log(`Backend up on :${PORT}`));
 }

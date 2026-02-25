@@ -1,0 +1,25 @@
+<aside class="sidebar">
+  <div class="sidebar-header">
+    <div>
+      <div class="sidebar-title"><%= APP_NAME %> (MVP)</div>
+      <div class="sidebar-sub">Admin &bull; MG/SP/GO &bull; Funil + Lead Scoring + Parceiros</div>
+    </div>
+  </div>
+
+  <div class="sidebar-section">Navega&ccedil;&atilde;o</div>
+  <nav class="sidebar-nav">
+    <a class="<%= currentPath === '/' ? 'active' : '' %>" href="/">Vis&atilde;o geral</a>
+    <a class="<%= currentPath === '/create-lead-demos' ? 'active' : '' %>" href="/create-lead-demos">
+      Criar lead (demos)
+    </a>
+    <a class="<%= currentPath === '/leads' ? 'active' : '' %>" href="/leads">Leads</a>
+    <a class="<%= currentPath === '/kanban' ? 'active' : '' %>" href="/kanban">CRM (Kanban)</a>
+    <a class="<%= currentPath === '/partners' ? 'active' : '' %>" href="/partners">Parceiros</a>
+    <a class="<%= currentPath === '/settings' ? 'active' : '' %>" href="/settings">Configura&ccedil;&otilde;es</a>
+  </nav>
+
+  <div class="sidebar-footer">
+    <div class="sidebar-chip">Backend: <span class="mono"><%= BACKEND_URL %></span></div>
+    <div class="sidebar-chip">UI: Node.js + EJS</div>
+  </div>
+</aside>
