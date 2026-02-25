@@ -43,6 +43,7 @@
 - [15. Documentação Complementar](#15-documentacao-complementar)
 - [16. Automação das Evidências do Relatório](#16-automacao-das-evidencias-do-relatorio)
 - [17. Licenca e Uso](#17-licenca-e-uso)
+- [18. LGPD e Privacidade (Resumo Operacional)](#18-lgpd-e-privacidade-resumo-operacional)
 
 ---
 
@@ -558,4 +559,60 @@ Se for evoluir para produção, recomenda-se:
 - observabilidade centralizada;
 - autenticação/autorização;
 - governança de dados e LGPD.
+
+---
+
+<a id="18-lgpd-e-privacidade-resumo-operacional"></a>
+## 18. LGPD e Privacidade (Resumo Operacional)
+
+[![Voltar ao Indice](https://img.shields.io/badge/%E2%AC%86%EF%B8%8F-Voltar%20ao%20%C3%8Dndice-0b5fff?style=for-the-badge)](#indice)
+> Este resumo e informativo e nao substitui validacao juridica formal.
+
+### 18.1 Finalidade do tratamento
+Os dados de leads sao usados para:
+- organizar o funil comercial (Kanban);
+- calcular score de qualificacao;
+- sugerir matching de parceiros;
+- registrar historico de acoes e relatorios gerenciais.
+
+### 18.2 Dados tratados
+Dados cadastrais e de contexto comercial, como:
+- nome, WhatsApp, e-mail, UF/cidade;
+- segmento de interesse, orcamento e prazo;
+- status comercial, score e eventos de acompanhamento.
+
+### 18.3 Base legal (LGPD)
+O tratamento pode se apoiar em:
+- execucao de procedimentos preliminares de contrato (art. 7, V), e/ou
+- legitimo interesse para operacao comercial (art. 7, IX),
+sempre com teste de proporcionalidade e transparencia ao titular.
+
+### 18.4 Compartilhamento
+O matching recomenda parceiros aderentes ao perfil do lead.
+Qualquer compartilhamento externo deve seguir politica de privacidade e controles de acesso.
+
+### 18.5 Retencao e descarte
+Os dados devem ser mantidos apenas pelo tempo necessario a finalidade comercial e obrigacoes legais, com descarte seguro ao final do ciclo.
+
+### 18.6 Direitos do titular
+A aplicacao suporta operacoes de:
+- correcao (edicao de lead);
+- eliminacao (exclusao de lead(s));
+- rastreabilidade (historico de eventos e movimentacoes).
+
+### 18.7 Decisao automatizada
+O score e o matching sao apoios a decisao comercial.
+O titular pode solicitar revisao humana de decisoes relevantes.
+
+### 18.8 Seguranca
+Aplicar controles tecnicos e organizacionais, incluindo:
+- controle de acesso por perfil;
+- registro de acoes criticas;
+- protecao de trafego e ambiente.
+
+### 18.9 Contato LGPD
+Canal para solicitacoes de titulares:
+- E-mail: [preencher]
+- Responsavel/Encarregado (DPO): [preencher]
+- Prazo de resposta: [preencher, ex.: ate 15 dias]
 
