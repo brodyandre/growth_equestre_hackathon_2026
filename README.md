@@ -313,11 +313,24 @@ Criação manual assistida e atalhos para CURIOSO/AQUECENDO/QUALIFICADO.
 #### 8.2.3 Leads (Node.js)
 Consulta rápida, filtros e ações de score, edição, exclusão e handoff.
 Inclui janela com 20 registros visíveis e barra de rolagem vertical para percorrer os demais registros sem perder o contexto da tela.
+Tambem inclui:
+- botao **Recarregar** com estado visual de carregamento para evitar clique duplicado;
+- seletor de lead com identificacao completa (nome, etapa, score e tag de acompanhamento).
 
 ![Node.js - Leads](docs/readme_images/ui-leads.png)
 
 #### 8.2.4 CRM (Kanban) (Node.js)
 Gestão por etapas (`CURIOSO`, `AQUECENDO`, `QUALIFICADO`, `ENVIADO`) com detalhes e próxima ação.
+Melhorias aplicadas no Kanban:
+- tag **ACOMPANHANDO** para lead em `ENVIADO` com proxima acao salva (texto + data);
+- mapeamento visual de destino no card e no painel de detalhes (`DESTINO: ...`), alimentado pelo relatorio gerencial;
+- controle de **Cards/coluna** com rolagem vertical por coluna, preservando leitura dos cards;
+- painel de **Matching de parceiros** com:
+  - quantidade de matches exibidos;
+  - filtro por **prioridade**;
+  - atualizacao manual por botao **Atualizar matching**;
+- captura rapida de proxima acao com botoes **Hoje** e **Agora** (data/hora atual da maquina local).
+
 No painel de detalhes existe o botão **Visualizar relatório gerencial**, que abre um relatório completo com:
 - para qual setor o lead foi/será enviado (Marketing, Vendas, Parceiros ou Operações);
 - por que foi enviado (justificativa executiva baseada em score, estágio, eventos e matching);
@@ -425,6 +438,9 @@ docker compose up -d --build scoring
 | `/leads/delete` | `POST` | Exclusão em lote |
 | `/crm/board` | `GET` | Dados do Kanban |
 | `/crm/move` | `POST` | Move lead no Kanban |
+| `/crm/event-rules` | `GET` | Lista eventos objetivos para automacao por evento |
+| `/crm/leads/:id/apply-rule` | `POST` | Aplica evento objetivo, ajusta score e movimenta etapa |
+| `/crm/leads/:id/notes` | `POST` | Salva proxima acao (texto/data/hora) e ativa acompanhamento |
 | `/crm/leads/:id/matches` | `GET` | Matching de parceiros |
 | `/crm/leads/:id/managerial-report` | `GET` | Relatório gerencial completo do lead (setor destino, justificativas, score, histórico, riscos e plano de ação) |
 | `/crm/leads/:id/relatorio-gerencial` | `GET` | Alias em PT-BR para o relatório gerencial |
