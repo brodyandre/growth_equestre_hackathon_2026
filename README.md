@@ -1026,7 +1026,7 @@ Para manter o GIF de navegação entre guias sempre atualizado:
    - `tools/docs/build_ui_nav_tour_gif.py`
 2. Geração local do GIF:
    ```powershell
-   python tools/docs/build_ui_nav_tour_gif.py --output docs/readme_images/ui-nodejs-tour.gif --width 1440 --colors 160
+   python tools/docs/build_ui_nav_tour_gif.py --output docs/readme_images/ui-nodejs-tour.gif --width 3840 --height 2160 --colors 96
    ```
 3. Automação no GitHub:
    - workflow: `.github/workflows/update-ui-nav-tour-gif.yml`

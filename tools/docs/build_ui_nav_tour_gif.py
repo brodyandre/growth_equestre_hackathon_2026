@@ -16,7 +16,6 @@ from __future__ import annotations
 import argparse
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Iterable
 
 from PIL import Image, ImageColor, ImageDraw, ImageFont
 
@@ -55,14 +54,20 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument(
         "--width",
         type=int,
-        default=1440,
-        help="Output width in pixels (default: 1440).",
+        default=3840,
+        help="Output width in pixels (default: 3840).",
+    )
+    parser.add_argument(
+        "--height",
+        type=int,
+        default=2160,
+        help="Output height in pixels (default: 2160).",
     )
     parser.add_argument(
         "--colors",
         type=int,
-        default=160,
-        help="Palette color count for GIF compression (default: 160).",
+        default=96,
+        help="Palette color count for GIF compression (default: 96).",
     )
     return parser.parse_args()
 
@@ -103,8 +108,8 @@ def draw_cursor(frame: Image.Image, x: float, y: float, click_strength: float = 
 
 def draw_label(frame: Image.Image, label: str, step_idx: int, total: int) -> None:
     draw = ImageDraw.Draw(frame, "RGBA")
-    font = load_font(26)
-    small = load_font(18)
+    font = load_font(max(24, frame.width // 64))
+    small = load_font(max(16, frame.width // 92))
 
     pad_x = 24
     pad_y = 18
@@ -129,16 +134,23 @@ def draw_label(frame: Image.Image, label: str, step_idx: int, total: int) -> Non
     )
 
 
-def resize_with_width(img: Image.Image, width: int) -> Image.Image:
-    if img.width == width:
-        return img
-    height = int(round(img.height * (width / img.width)))
-    return img.resize((width, height), Image.Resampling.LANCZOS)
+def resize_fit_canvas(
+    img: Image.Image, canvas_width: int, canvas_height: int
+) -> tuple[Image.Image, float, tuple[int, int]]:
+    scale = min(canvas_width / img.width, canvas_height / img.height)
+    out_w = int(round(img.width * scale))
+    out_h = int(round(img.height * scale))
+    resized = img.resize((out_w, out_h), Image.Resampling.LANCZOS)
+    bg = Image.new("RGBA", (canvas_width, canvas_height), (2, 10, 25, 255))
+    offset = ((canvas_width - out_w) // 2, (canvas_height - out_h) // 2)
+    bg.paste(resized, offset)
+    return bg, scale, offset
 
 
-def scaled_point(point: tuple[int, int], width: int) -> tuple[float, float]:
-    scale = width / BASE_SIZE[0]
-    return point[0] * scale, point[1] * scale
+def scaled_point(
+    point: tuple[int, int], scale: float, offset: tuple[int, int]
+) -> tuple[float, float]:
+    return point[0] * scale + offset[0], point[1] * scale + offset[1]
 
 
 def frame_from(
@@ -155,105 +167,86 @@ def frame_from(
     return frame
 
 
-def add_frames(
-    out_frames: list[Image.Image],
-    out_durations: list[int],
-    frame_iter: Iterable[tuple[Image.Image, int]],
-) -> None:
-    for f, d in frame_iter:
-        out_frames.append(f)
-        out_durations.append(d)
-
-
-def build_tour_gif(output_path: Path, width: int, colors: int) -> None:
+def build_tour_gif(output_path: Path, width: int, height: int, colors: int) -> None:
     steps_data: list[tuple[Step, Image.Image, tuple[float, float]]] = []
     for step in STEPS:
         img_path = IMG_DIR / step.image_name
         if not img_path.exists():
             raise FileNotFoundError(f"Imagem base nao encontrada: {img_path}")
         img = Image.open(img_path).convert("RGBA")
-        img = resize_with_width(img, width=width)
-        steps_data.append((step, img, scaled_point(step.click_xy, width=width)))
+        canvas, scale, offset = resize_fit_canvas(
+            img, canvas_width=width, canvas_height=height
+        )
+        steps_data.append((step, canvas, scaled_point(step.click_xy, scale=scale, offset=offset)))
 
     frames: list[Image.Image] = []
     durations: list[int] = []
+
+    def append_frame(img: Image.Image, duration_ms: int) -> None:
+        frames.append(
+            img.convert("P", palette=Image.Palette.ADAPTIVE, colors=colors)
+        )
+        durations.append(duration_ms)
+
     total = len(steps_data)
 
     for i, (step, current_img, current_xy) in enumerate(steps_data):
         # Hold on active screen.
-        hold_frames = (
+        append_frame(
             frame_from(current_img, step.label, i + 1, total, current_xy, click_strength=0.0),
-            260,
+            230,
         )
-        add_frames(frames, durations, [hold_frames])
 
         # Click pulse on active tab.
-        click_phase_frames: list[tuple[Image.Image, int]] = []
-        for k in range(5):
-            phase = k / 4 if 4 else 1.0
-            click_phase_frames.append(
-                (frame_from(current_img, step.label, i + 1, total, current_xy, click_strength=phase), 90)
+        for k in range(3):
+            phase = k / 2 if 2 else 1.0
+            append_frame(
+                frame_from(current_img, step.label, i + 1, total, current_xy, click_strength=phase),
+                80,
             )
-        add_frames(frames, durations, click_phase_frames)
 
         if i == total - 1:
-            add_frames(
-                frames,
-                durations,
-                [
-                    (frame_from(current_img, step.label, i + 1, total, current_xy, click_strength=0.0), 300),
-                ],
+            append_frame(
+                frame_from(current_img, step.label, i + 1, total, current_xy, click_strength=0.0),
+                320,
             )
             break
 
         next_step, next_img, next_xy = steps_data[i + 1]
 
         # Move cursor to next menu item on current image.
-        move_frames: list[tuple[Image.Image, int]] = []
-        for k in range(1, 8):
-            t = k / 7
+        for k in range(1, 4):
+            t = k / 3
             x = lerp(current_xy[0], next_xy[0], t)
             y = lerp(current_xy[1], next_xy[1], t)
-            move_frames.append((frame_from(current_img, step.label, i + 1, total, (x, y)), 65))
-        add_frames(frames, durations, move_frames)
+            append_frame(frame_from(current_img, step.label, i + 1, total, (x, y)), 75)
 
         # Click pulse before route/screen transition.
-        click_next_frames: list[tuple[Image.Image, int]] = []
-        for k in range(5):
-            phase = k / 4 if 4 else 1.0
-            click_next_frames.append(
-                (
-                    frame_from(
-                        current_img,
-                        next_step.label,
-                        i + 2,
-                        total,
-                        next_xy,
-                        click_strength=phase,
-                    ),
-                    90,
-                )
+        for k in range(3):
+            phase = k / 2 if 2 else 1.0
+            append_frame(
+                frame_from(
+                    current_img,
+                    next_step.label,
+                    i + 2,
+                    total,
+                    next_xy,
+                    click_strength=phase,
+                ),
+                80,
             )
-        add_frames(frames, durations, click_next_frames)
 
         # Cross-fade to next screen while keeping cursor on clicked menu.
-        fade_frames: list[tuple[Image.Image, int]] = []
-        for k in range(1, 7):
-            t = k / 6
+        for k in range(1, 4):
+            t = k / 3
             mixed = Image.blend(current_img, next_img, t)
-            fade_frames.append((frame_from(mixed, next_step.label, i + 2, total, next_xy), 80))
-        add_frames(frames, durations, fade_frames)
-
-    # Quantize frames for smaller GIF.
-    paletted: list[Image.Image] = []
-    for frame in frames:
-        paletted.append(frame.convert("P", palette=Image.Palette.ADAPTIVE, colors=colors))
+            append_frame(frame_from(mixed, next_step.label, i + 2, total, next_xy), 85)
 
     output_path.parent.mkdir(parents=True, exist_ok=True)
-    paletted[0].save(
+    frames[0].save(
         output_path,
         save_all=True,
-        append_images=paletted[1:],
+        append_images=frames[1:],
         duration=durations,
         loop=0,
         optimize=True,
@@ -264,7 +257,12 @@ def build_tour_gif(output_path: Path, width: int, colors: int) -> None:
 def main() -> int:
     args = parse_args()
     output = Path(args.output).resolve()
-    build_tour_gif(output_path=output, width=max(640, args.width), colors=max(32, min(256, args.colors)))
+    build_tour_gif(
+        output_path=output,
+        width=max(640, args.width),
+        height=max(360, args.height),
+        colors=max(32, min(256, args.colors)),
+    )
     print(f"[ok] {output}")
     return 0
 
