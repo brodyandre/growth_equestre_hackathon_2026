@@ -20,8 +20,6 @@
 <p align="center">
   <strong>Tour rapido da UI Node.js (clique nas guias)</strong><br/>
   <img src="docs/readme_images/ui-nodejs-tour.gif" alt="Tour visual da UI Node.js com navegacao pelas guias principais" width="100%" />
-  <br/>
-  <sub>Comparativo: <a href="docs/readme_images/ui-nodejs-tour.gif">Padrao (1280)</a> | <a href="docs/readme_images/ui-nodejs-tour-hd.gif">HD (1440)</a></sub>
 </p>
 
 ---
@@ -1028,7 +1026,7 @@ Para manter o GIF de navegação entre guias sempre atualizado:
    - `tools/docs/build_ui_nav_tour_gif.py`
 2. Geração local do GIF:
    ```powershell
-   python tools/docs/build_ui_nav_tour_gif.py --output docs/readme_images/ui-nodejs-tour.gif --width 1280 --colors 128
+   python tools/docs/build_ui_nav_tour_gif.py --output docs/readme_images/ui-nodejs-tour.gif --width 1440 --colors 160
    ```
 3. Automação no GitHub:
    - workflow: `.github/workflows/update-ui-nav-tour-gif.yml`
@@ -1036,7 +1034,6 @@ Para manter o GIF de navegação entre guias sempre atualizado:
    - execução automática quando os prints-base (`ui-visao-geral`, `ui-criar-lead-demos`, `ui-leads`, `ui-crm-kanban`, `ui-parceiros`, `ui-configuracoes`) forem alterados.
 4. Arquivo gerado/atualizado:
    - `docs/readme_images/ui-nodejs-tour.gif`
-   - `docs/readme_images/ui-nodejs-tour-hd.gif` (comparativo HD opcional)
 
 ---
 

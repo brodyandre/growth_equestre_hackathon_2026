@@ -55,14 +55,14 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument(
         "--width",
         type=int,
-        default=1280,
-        help="Output width in pixels (default: 1280).",
+        default=1440,
+        help="Output width in pixels (default: 1440).",
     )
     parser.add_argument(
         "--colors",
         type=int,
-        default=128,
-        help="Palette color count for GIF compression (default: 128).",
+        default=160,
+        help="Palette color count for GIF compression (default: 160).",
     )
     return parser.parse_args()
 
