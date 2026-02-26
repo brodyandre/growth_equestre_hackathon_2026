@@ -1063,6 +1063,6 @@ Esta seção é atualizada automaticamente pela automação do repositório, lis
 <!-- CONTRIBUTORS:START -->
 <!-- Gerado automaticamente por tools/docs/update_readme_contributors.py -->
 - [@brodyandre](https://github.com/brodyandre) - Luiz André de Souza - 27 contribuicoes
-- [@aluizr](https://github.com/aluizr) - AndreRibeiro - 5 contribuicoes
+- [@aluizr](https://github.com/aluizr) - Andre Ribeiro - 5 contribuicoes
 - [@Eduardo-Marchi2025](https://github.com/Eduardo-Marchi2025) - Eduardo Marchi - 2 contribuicoes
 <!-- CONTRIBUTORS:END -->
