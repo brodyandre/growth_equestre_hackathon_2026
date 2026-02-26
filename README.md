@@ -52,6 +52,7 @@
 - [15. Documentação Complementar](#15-documentacao-complementar)
 - [16. Automação das Evidências do Relatório](#16-automacao-das-evidencias-do-relatorio)
 - [17. Licença e Uso](#17-licenca-e-uso)
+- [18. Contribuidores Autorizados no GitHub](#18-contribuidores-autorizados-no-github)
 
 ---
 
@@ -997,6 +998,22 @@ Para atualizar os prints das guias principais da UI Node.js:
    - `docs/readme_images/ui-configuracoes.png`
    - `docs/readme_images/ui-configuracoes-retreino-resultado.png` (quando usado `--capture-retrain-result`)
 
+### 16.3 Lista automática de contribuidores autorizados (README)
+Para manter a seção **18. Contribuidores Autorizados no GitHub** sempre atualizada:
+
+1. Script local:
+   - `tools/docs/update_readme_contributors.py`
+2. Execução local (opcional):
+   ```powershell
+   python tools/docs/update_readme_contributors.py --readme README.md --repo owner/repo
+   ```
+3. Automação no GitHub:
+   - workflow: `.github/workflows/update-readme-contributors.yml`
+   - execução automática semanal (segunda-feira) e manual via `workflow_dispatch`.
+4. O script atualiza:
+   - item `18` no Índice (quando ausente);
+   - seção `18` com links dos perfis GitHub e total de contribuições.
+
 ---
 
 <a id="17-licenca-e-uso"></a>
@@ -1011,3 +1028,20 @@ Se for evoluir para produção, recomenda-se:
 - observabilidade centralizada;
 - autenticação/autorização;
 - governança de dados e LGPD.
+
+---
+
+<a id="18-contribuidores-autorizados-no-github"></a>
+
+## 18. Contribuidores Autorizados no GitHub
+
+[![Voltar ao Indice](https://img.shields.io/badge/%E2%AC%86%EF%B8%8F-Voltar%20ao%20%C3%8Dndice-0b5fff?style=for-the-badge)](#indice)
+
+Esta seção é atualizada automaticamente pela automação do repositório, listando os usuários que contribuíram no GitHub para este projeto.
+
+<!-- CONTRIBUTORS:START -->
+<!-- Gerado automaticamente por tools/docs/update_readme_contributors.py -->
+- [@brodyandre](https://github.com/brodyandre) - Luiz André de Souza - 27 contribuicoes
+- [@aluizr](https://github.com/aluizr) - AndreRibeiro - 5 contribuicoes
+- [@Eduardo-Marchi2025](https://github.com/Eduardo-Marchi2025) - Eduardo Marchi - 2 contribuicoes
+<!-- CONTRIBUTORS:END -->
