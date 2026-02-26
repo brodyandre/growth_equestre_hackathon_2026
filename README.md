@@ -232,6 +232,8 @@ Board visual para priorizar atendimento e acompanhar o progresso por etapa.
 
 ![Streamlit - CRM (Kanban)](docs/readme_images/streamlit-crm-kanban.png)
 
+[![Voltar ao Indice](https://img.shields.io/badge/%E2%AC%86%EF%B8%8F-Voltar%20ao%20%C3%8Dndice-0b5fff?style=for-the-badge)](#indice)
+
 #### 8.1.4 Parceiros (Streamlit)
 Diretório para busca por UF/segmento e exportação de lista de prospecção.
 
@@ -246,6 +248,8 @@ Formulário com atalhos por status para gerar cenários rapidamente e simular fu
 Página guiada para pitch: cria cenário completo, mostra ordem recomendada e checklist de apresentação.
 
 ![Streamlit - Roteiro de demo](docs/readme_images/streamlit-roteiro-demo.png)
+
+[![Voltar ao Indice](https://img.shields.io/badge/%E2%AC%86%EF%B8%8F-Voltar%20ao%20%C3%8Dndice-0b5fff?style=for-the-badge)](#indice)
 
 ### 8.2 Fase 2 - UI Node.js + EJS (escalabilidade)
 Com a Streamlit validada, migramos para Node.js + EJS para elevar escalabilidade de frontend, roteamento e evolução de produto com maior controle.
@@ -297,6 +301,8 @@ Segunda rolagem (diretório de parceiros):
 3. Revise o bloco de modelo de ML para saber qual motor está ativo em novos scores.
 4. Use o diretório de parceiros (com filtro UF) para planejar encaminhamentos.
 5. Navegue pelos atalhos para atuar no `CRM (Kanban)` e em `Leads`.
+
+[![Voltar ao Indice](https://img.shields.io/badge/%E2%AC%86%EF%B8%8F-Voltar%20ao%20%C3%8Dndice-0b5fff?style=for-the-badge)](#indice)
 
 <a id="822-guia-detalhado-criar-lead-demos"></a>
 
@@ -403,6 +409,8 @@ Exemplo real do roteiro executado:
 - `Diagnóstico de ML`: transparência de motor, modelo e probabilidade.
 - Se houver mensagem de reaproveitamento de lead existente, a UI evitou duplicidade e atualizou score sem repetir eventos.
 
+[![Voltar ao Indice](https://img.shields.io/badge/%E2%AC%86%EF%B8%8F-Voltar%20ao%20%C3%8Dndice-0b5fff?style=for-the-badge)](#indice)
+
 <a id="823-guia-detalhado-leads"></a>
 
 #### 8.2.3 Leads (Node.js) - guia detalhado com rolagem
@@ -478,6 +486,8 @@ Regras operacionais importantes:
 3. Selecione o lead no campo de ações.
 4. Leia detalhes e explicação do score.
 5. Execute a ação necessária (atualizar, editar, excluir ou handoff).
+
+[![Voltar ao Indice](https://img.shields.io/badge/%E2%AC%86%EF%B8%8F-Voltar%20ao%20%C3%8Dndice-0b5fff?style=for-the-badge)](#indice)
 
 <a id="824-guia-detalhado-crm-kanban"></a>
 
@@ -624,6 +634,8 @@ Como interpretar:
 5. Definir parceiro e plano de execução com responsável e prazo (seção 5).
 6. Registrar riscos e manter rastreabilidade da decisão (seção 6).
 
+[![Voltar ao Indice](https://img.shields.io/badge/%E2%AC%86%EF%B8%8F-Voltar%20ao%20%C3%8Dndice-0b5fff?style=for-the-badge)](#indice)
+
 <a id="825-guia-detalhado-parceiros"></a>
 
 #### 8.2.5 Parceiros (Node.js) - guia detalhado com rolagem
@@ -666,6 +678,8 @@ Evidência da rolagem vertical da página até os detalhes:
 2. Navegue a tabela com rolagem interna e identifique a ordem desejada.
 3. Selecione o parceiro ou use `Procurar por ordem`.
 4. Valide contato/endereço e aderência antes de encaminhar o lead.
+
+[![Voltar ao Indice](https://img.shields.io/badge/%E2%AC%86%EF%B8%8F-Voltar%20ao%20%C3%8Dndice-0b5fff?style=for-the-badge)](#indice)
 
 <a id="826-guia-detalhado-configuracoes"></a>
 
