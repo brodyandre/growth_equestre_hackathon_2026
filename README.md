@@ -37,7 +37,9 @@
 - [8.2.2.1 Forma 1 - Atalhos Gerar CURIOSO/AQUECENDO/QUALIFICADO](#8221-forma-1--atalhos-gerar-curiosoaquecendoqualificado)
 - [8.2.2.2 Forma 2 - Preenchimento manual + checklist do funil](#8222-forma-2--preenchimento-manual--checklist-do-funil)
 - [8.2.2.3 Forma 3 - Roteiro de demo (pitch)](#8223-forma-3--roteiro-de-demo-pitch)
+- [8.2.3 Guia detalhado - Leads](#823-guia-detalhado-leads)
 - [8.2.4 Guia detalhado - CRM (Kanban)](#824-guia-detalhado-crm-kanban)
+- [8.2.5 Guia detalhado - Parceiros](#825-guia-detalhado-parceiros)
 - [8.2.6 Guia detalhado - Configurações](#826-guia-detalhado-configuracoes)
 - [9. Como a Solução Apoia a Tomada de Decisão](#9-como-a-solucao-apoia-a-tomada-de-decisao)
 - [10. Motor de Machine Learning (Dual Models)](#10-motor-de-machine-learning-dual-models)
@@ -399,12 +401,50 @@ Exemplo real do roteiro executado:
 - `Diagnóstico de ML`: transparência de motor, modelo e probabilidade.
 - Se houver mensagem de reaproveitamento de lead existente, a UI evitou duplicidade e atualizou score sem repetir eventos.
 
-#### 8.2.3 Leads (Node.js)
-Consulta rápida, filtros e ações de score, edição, exclusão e handoff.
-Inclui janela com 20 registros visíveis e barra de rolagem vertical para percorrer os demais registros sem perder o contexto da tela.
-Também inclui barra de ações posicionada acima da busca para operação rápida (recarregar, exportar CSV filtrado, exclusão em lote e atalho para CRM), com layout ajustado para não interferir na leitura dos detalhes.
+<a id="823-guia-detalhado-leads"></a>
 
-![Node.js - Leads](docs/readme_images/ui-leads.png)
+#### 8.2.3 Leads (Node.js) - guia detalhado com rolagem
+Esta guia concentra a operação tabular de leads e possui dois tipos de rolagem:
+1. **Rolagem interna da tabela** (janela com 20 linhas visíveis).
+2. **Rolagem vertical da página** para acessar o bloco de detalhes e ações.
+
+Visão inicial da guia:
+
+![Node.js - Leads (topo)](docs/readme_images/ui-leads.png)
+
+##### 8.2.3.1 O que cada área representa
+| Área | O que mostra | Como interpretar no dia a dia |
+|---|---|---|
+| Barra superior | `Recarregar`, `Baixar CSV (leads filtrados)`, `Ir para CRM (Kanban)`. | Controle rápido de atualização, exportação e navegação operacional. |
+| Faixa de controle | Total filtrado, confirmação de exclusão e total selecionado. | Evita exclusão acidental e mostra claramente o impacto da ação em lote. |
+| Busca | Filtro por nome, cidade, status e segmento. | Refina a fila de trabalho sem sair da tela. |
+| Tabela de leads | Lista operacional com score, status e motivos. | Base para priorização e decisão de próxima ação. |
+
+Evidência da rolagem interna da tabela (janela com sticky header):
+
+![Node.js - Leads (rolagem da tabela)](docs/readme_images/ui-leads-rolagem-1.png)
+
+##### 8.2.3.2 Como usar a rolagem da tabela
+- A tabela mantém cabeçalho fixo durante a rolagem.
+- O usuário percorre os registros sem perder os nomes das colunas.
+- A navegação é mais rápida em bases grandes (ex.: milhares de leads).
+
+Evidência da rolagem vertical da página até o bloco de ações:
+
+![Node.js - Leads (rolagem para ações)](docs/readme_images/ui-leads-rolagem-2.png)
+
+##### 8.2.3.3 Bloco inferior (detalhes e ações) e interpretação
+- `Selecionar lead para ações`: define o lead ativo para detalhamento e operação.
+- `Detalhes do lead`: visão legível para negócio, sem jargão técnico.
+- `Explicação do score`: motivos que contribuíram para a pontuação.
+- `Ações`: recalcular score, editar lead, excluir e executar handoff (`ENVIADO`).
+
+##### 8.2.3.4 Fluxo recomendado na guia Leads
+1. Filtre os leads pela busca.
+2. Percorra a tabela usando a rolagem interna.
+3. Selecione o lead no campo de ações.
+4. Leia detalhes e explicação do score.
+5. Execute a ação necessária (atualizar, editar, excluir ou handoff).
 
 <a id="824-guia-detalhado-crm-kanban"></a>
 
@@ -468,16 +508,48 @@ No relatório, o usuário final interpreta 6 blocos principais:
 5. **Matching e plano de ação**: parceiros aderentes e próximos passos por janela de tempo.
 6. **Riscos e governança**: alertas de operação e rastreabilidade das fontes.
 
-#### 8.2.5 Parceiros (Node.js)
-Busca, filtros e consistência de dados para matching e exportação CSV.
-Também inclui:
-- coluna **Ordem** à esquerda do CNPJ;
-- janela com 20 registros visíveis e rolagem vertical;
-- painel **Detalhes do parceiro** com os mesmos campos principais da UI Streamlit (informações principais, contato e endereço);
-- campo **Selecionar parceiro** com ordem no label e busca direta por número da ordem via botão **Procurar**;
-- botão **Limpar** para limpar simultaneamente **Selecionar parceiro** e **Procurar por ordem**.
+<a id="825-guia-detalhado-parceiros"></a>
 
-![Node.js - Parceiros](docs/readme_images/ui-parceiros.png)
+#### 8.2.5 Parceiros (Node.js) - guia detalhado com rolagem
+A guia de parceiros é o diretório operacional para matching e encaminhamento. Assim como Leads, ela usa:
+1. **Rolagem interna da tabela** (janela com 20 linhas).
+2. **Rolagem vertical da página** para acessar os detalhes completos do parceiro.
+
+Visão inicial da guia:
+
+![Node.js - Parceiros (topo)](docs/readme_images/ui-parceiros.png)
+
+##### 8.2.5.1 O que cada área representa
+| Área | O que mostra | Como interpretar no dia a dia |
+|---|---|---|
+| Barra superior | Busca por nome/CNPJ/cidade/segmento + `Recarregar` + `Abrir CRM`. | Entrada principal para localizar parceiros e navegar para operação CRM. |
+| Tabela de parceiros | Catálogo com coluna `Ordem`, identificação e dados-chave. | A coluna `Ordem` facilita referência rápida entre times. |
+| Nota de rolagem horizontal | Orienta quando há muitas colunas na tabela. | Garante leitura completa sem perda de informação. |
+
+Evidência da rolagem interna da tabela:
+
+![Node.js - Parceiros (rolagem da tabela)](docs/readme_images/ui-parceiros-rolagem-1.png)
+
+##### 8.2.5.2 Como usar a rolagem e a ordem
+- Use a barra vertical da tabela para navegar no catálogo sem perder o cabeçalho.
+- Use `Ordem` para localizar parceiro específico de forma rápida.
+- Em bases extensas, combine busca textual + ordem para reduzir tempo de operação.
+
+Evidência da rolagem vertical da página até os detalhes:
+
+![Node.js - Parceiros (rolagem para detalhes)](docs/readme_images/ui-parceiros-rolagem-2.png)
+
+##### 8.2.5.3 Bloco de detalhes e interpretação
+- `Selecionar parceiro`: lista consolidada com `ordem`, CNPJ, nome, cidade/UF, segmento e id curto.
+- `Procurar por ordem`: acesso direto ao parceiro pelo número da coluna `Ordem`.
+- `Limpar`: reseta simultaneamente seleção e busca por ordem.
+- `Informações principais`, `Contato` e `Endereço`: visão completa para decisão de encaminhamento comercial.
+
+##### 8.2.5.4 Fluxo recomendado na guia Parceiros
+1. Use a busca para reduzir o universo de parceiros.
+2. Navegue a tabela com rolagem interna e identifique a ordem desejada.
+3. Selecione o parceiro ou use `Procurar por ordem`.
+4. Valide contato/endereço e aderência antes de encaminhar o lead.
 
 <a id="826-guia-detalhado-configuracoes"></a>
 
@@ -762,7 +834,11 @@ Para atualizar os prints das guias principais da UI Node.js:
    ```powershell
    python tools/docs/capture_ui_core_screens.py --ui-url http://127.0.0.1:3200 --start-server --only-overview --capture-overview-deep
    ```
-6. Arquivos gerados/atualizados:
+6. (Opcional) Capturar as seções **8.2.3 Leads** e **8.2.5 Parceiros** com rolagem:
+   ```powershell
+   python tools/docs/capture_ui_core_screens.py --ui-url http://127.0.0.1:3200 --start-server --only-leads-partners --capture-leads-deep --capture-partners-deep
+   ```
+7. Arquivos gerados/atualizados:
    - `docs/readme_images/ui-visao-geral.png`
    - `docs/readme_images/ui-visao-geral-rolagem-1.png` (quando usado `--capture-overview-deep`)
    - `docs/readme_images/ui-visao-geral-rolagem-2.png` (quando usado `--capture-overview-deep`)
@@ -770,7 +846,12 @@ Para atualizar os prints das guias principais da UI Node.js:
    - `docs/readme_images/ui-criar-lead-demos-resultado.png` (quando usado `--capture-create-deep`)
    - `docs/readme_images/ui-criar-lead-demos-roteiro.png` (quando usado `--capture-create-deep`)
    - `docs/readme_images/ui-leads.png`
+   - `docs/readme_images/ui-leads-rolagem-1.png` (quando usado `--capture-leads-deep`)
+   - `docs/readme_images/ui-leads-rolagem-2.png` (quando usado `--capture-leads-deep`)
    - `docs/readme_images/ui-crm-kanban.png`
+   - `docs/readme_images/ui-parceiros.png`
+   - `docs/readme_images/ui-parceiros-rolagem-1.png` (quando usado `--capture-partners-deep`)
+   - `docs/readme_images/ui-parceiros-rolagem-2.png` (quando usado `--capture-partners-deep`)
    - `docs/readme_images/ui-configuracoes.png`
    - `docs/readme_images/ui-configuracoes-retreino-resultado.png` (quando usado `--capture-retrain-result`)
 

@@ -4,7 +4,10 @@ Capture updated README screenshots for the main UI Node.js screens:
 - overview (dashboard)
 - create-lead-demos
 - leads
+- leads (scroll evidence)
 - kanban
+- partners
+- partners (scroll evidence)
 - settings
 - settings (training output)
 - create-lead (result and pitch scenario)
@@ -14,6 +17,7 @@ Usage (from repo root):
   python tools/docs/capture_ui_core_screens.py --ui-url http://127.0.0.1:3200 --start-server --capture-create-deep
   python tools/docs/capture_ui_core_screens.py --ui-url http://127.0.0.1:3200 --start-server --capture-retrain-result
   python tools/docs/capture_ui_core_screens.py --ui-url http://127.0.0.1:3100 --capture-overview-deep
+  python tools/docs/capture_ui_core_screens.py --ui-url http://127.0.0.1:3100 --only-leads-partners --capture-leads-deep --capture-partners-deep
 """
 
 from __future__ import annotations
@@ -44,7 +48,12 @@ PNG_CREATE = OUT_DIR / "ui-criar-lead-demos.png"
 PNG_CREATE_RESULT = OUT_DIR / "ui-criar-lead-demos-resultado.png"
 PNG_CREATE_PITCH = OUT_DIR / "ui-criar-lead-demos-roteiro.png"
 PNG_LEADS = OUT_DIR / "ui-leads.png"
+PNG_LEADS_SCROLL_1 = OUT_DIR / "ui-leads-rolagem-1.png"
+PNG_LEADS_SCROLL_2 = OUT_DIR / "ui-leads-rolagem-2.png"
 PNG_KANBAN = OUT_DIR / "ui-crm-kanban.png"
+PNG_PARTNERS = OUT_DIR / "ui-parceiros.png"
+PNG_PARTNERS_SCROLL_1 = OUT_DIR / "ui-parceiros-rolagem-1.png"
+PNG_PARTNERS_SCROLL_2 = OUT_DIR / "ui-parceiros-rolagem-2.png"
 PNG_SETTINGS = OUT_DIR / "ui-configuracoes.png"
 PNG_SETTINGS_RETRAIN = OUT_DIR / "ui-configuracoes-retreino-resultado.png"
 
@@ -169,6 +178,63 @@ def capture_overview_deep(driver: webdriver.Chrome, wait: WebDriverWait) -> None
         driver.set_window_size(original_size.get("width", 1920), original_size.get("height", 1080))
 
 
+def capture_leads_deep(driver: webdriver.Chrome, wait: WebDriverWait) -> None:
+    wait.until(ec.presence_of_element_located((By.CSS_SELECTOR, "#leadsTable tbody tr")))
+
+    # Evidence 1: internal vertical scroll in table window.
+    driver.execute_script(
+        """
+        const t = document.getElementById('leadsTable');
+        if (!t) return;
+        const maxScroll = Math.max(0, t.scrollHeight - t.clientHeight);
+        t.scrollTop = Math.floor(maxScroll * 0.6);
+        """
+    )
+    time.sleep(0.35)
+    capture_viewport_png(driver, PNG_LEADS_SCROLL_1)
+
+    # Evidence 2: lower section (details + actions) with selection.
+    selected = driver.execute_script(
+        """
+        const sel = document.getElementById('leadActionSelect');
+        if (!sel) return false;
+        const next = Array.from(sel.options || []).find((o) => o.value);
+        if (!next) return false;
+        sel.value = next.value;
+        sel.dispatchEvent(new Event('change', { bubbles: true }));
+        return true;
+        """
+    )
+    if selected:
+        wait.until(ec.presence_of_element_located((By.CSS_SELECTOR, "#leadDetailWrap table")))
+    action_anchor = driver.find_element(By.ID, "leadActionSelect")
+    driver.execute_script("arguments[0].scrollIntoView({block: 'start'});", action_anchor)
+    time.sleep(0.35)
+    capture_viewport_png(driver, PNG_LEADS_SCROLL_2)
+
+
+def capture_partners_deep(driver: webdriver.Chrome, wait: WebDriverWait) -> None:
+    wait.until(ec.presence_of_element_located((By.CSS_SELECTOR, "#partnersTable tbody tr[data-partner-id]")))
+
+    # Evidence 1: internal vertical scroll in table window.
+    driver.execute_script(
+        """
+        const t = document.getElementById('partnersTable');
+        if (!t) return;
+        const maxScroll = Math.max(0, t.scrollHeight - t.clientHeight);
+        t.scrollTop = Math.floor(maxScroll * 0.6);
+        """
+    )
+    time.sleep(0.35)
+    capture_viewport_png(driver, PNG_PARTNERS_SCROLL_1)
+
+    # Evidence 2: lower section (partner details block).
+    detail_anchor = driver.find_element(By.ID, "partnerDetailSelect")
+    driver.execute_script("arguments[0].scrollIntoView({block: 'start'});", detail_anchor)
+    time.sleep(0.35)
+    capture_viewport_png(driver, PNG_PARTNERS_SCROLL_2)
+
+
 def capture_create_lead_result_and_pitch(driver: webdriver.Chrome, wait: WebDriverWait) -> None:
     wait.until(ec.element_to_be_clickable((By.ID, "clQuickQualificado")))
 
@@ -237,7 +303,10 @@ def capture_assets(
     capture_retrain_result: bool = False,
     capture_create_deep: bool = False,
     capture_overview_deep_flag: bool = False,
+    capture_leads_deep_flag: bool = False,
+    capture_partners_deep_flag: bool = False,
     only_overview: bool = False,
+    only_leads_partners: bool = False,
 ) -> None:
     OUT_DIR.mkdir(parents=True, exist_ok=True)
 
@@ -252,20 +321,30 @@ def capture_assets(
     wait = WebDriverWait(driver, 25)
     base = ui_url.rstrip("/")
     try:
-        wait_page_ready(driver, wait, f"{base}/", "#kpiLeads")
-        capture_viewport_png(driver, PNG_OVERVIEW)
-        if capture_overview_deep_flag:
-            capture_overview_deep(driver, wait)
-        if only_overview:
+        if not only_leads_partners:
+            wait_page_ready(driver, wait, f"{base}/", "#kpiLeads")
+            capture_viewport_png(driver, PNG_OVERVIEW)
+            if capture_overview_deep_flag:
+                capture_overview_deep(driver, wait)
+            if only_overview:
+                return
+
+        wait_page_ready(driver, wait, f"{base}/leads", "#leadsTable")
+        capture_viewport_png(driver, PNG_LEADS)
+        if capture_leads_deep_flag:
+            capture_leads_deep(driver, wait)
+
+        wait_page_ready(driver, wait, f"{base}/partners", "#partnersTable")
+        capture_viewport_png(driver, PNG_PARTNERS)
+        if capture_partners_deep_flag:
+            capture_partners_deep(driver, wait)
+        if only_leads_partners:
             return
 
         wait_page_ready(driver, wait, f"{base}/create-lead-demos", "#createLeadDemoForm")
         capture_viewport_png(driver, PNG_CREATE)
         if capture_create_deep:
             capture_create_lead_result_and_pitch(driver, wait)
-
-        wait_page_ready(driver, wait, f"{base}/leads", "#leadsTable")
-        capture_viewport_png(driver, PNG_LEADS)
 
         wait_page_ready(driver, wait, f"{base}/kanban", "#kanbanRoot")
         open_first_kanban_lead_details(driver, wait)
@@ -303,11 +382,28 @@ def main() -> int:
         help="Captura evidencias adicionais da 8.2.1 (Visao geral) em rolagem.",
     )
     parser.add_argument(
+        "--capture-leads-deep",
+        action="store_true",
+        help="Captura evidencias adicionais da 8.2.3 (Leads) em rolagem.",
+    )
+    parser.add_argument(
+        "--capture-partners-deep",
+        action="store_true",
+        help="Captura evidencias adicionais da 8.2.5 (Parceiros) em rolagem.",
+    )
+    parser.add_argument(
         "--only-overview",
         action="store_true",
         help="Captura apenas a guia Visao geral e encerra.",
     )
+    parser.add_argument(
+        "--only-leads-partners",
+        action="store_true",
+        help="Captura apenas as guias Leads e Parceiros e encerra.",
+    )
     args = parser.parse_args()
+    if args.only_overview and args.only_leads_partners:
+        raise ValueError("Use apenas um modo: --only-overview OU --only-leads-partners.")
 
     ui_url = args.ui_url.rstrip("/")
     proc: subprocess.Popen[str] | None = None
@@ -325,19 +421,32 @@ def main() -> int:
             capture_retrain_result=args.capture_retrain_result,
             capture_create_deep=args.capture_create_deep,
             capture_overview_deep_flag=args.capture_overview_deep,
+            capture_leads_deep_flag=args.capture_leads_deep,
+            capture_partners_deep_flag=args.capture_partners_deep,
             only_overview=args.only_overview,
+            only_leads_partners=args.only_leads_partners,
         )
-        print(f"[ok] {PNG_OVERVIEW.relative_to(ROOT)}")
-        if args.capture_overview_deep:
-            print(f"[ok] {PNG_OVERVIEW_SCROLL_1.relative_to(ROOT)}")
-            print(f"[ok] {PNG_OVERVIEW_SCROLL_2.relative_to(ROOT)}")
-        if args.only_overview:
+        if not args.only_leads_partners:
+            print(f"[ok] {PNG_OVERVIEW.relative_to(ROOT)}")
+            if args.capture_overview_deep:
+                print(f"[ok] {PNG_OVERVIEW_SCROLL_1.relative_to(ROOT)}")
+                print(f"[ok] {PNG_OVERVIEW_SCROLL_2.relative_to(ROOT)}")
+            if args.only_overview:
+                return 0
+        print(f"[ok] {PNG_LEADS.relative_to(ROOT)}")
+        if args.capture_leads_deep:
+            print(f"[ok] {PNG_LEADS_SCROLL_1.relative_to(ROOT)}")
+            print(f"[ok] {PNG_LEADS_SCROLL_2.relative_to(ROOT)}")
+        print(f"[ok] {PNG_PARTNERS.relative_to(ROOT)}")
+        if args.capture_partners_deep:
+            print(f"[ok] {PNG_PARTNERS_SCROLL_1.relative_to(ROOT)}")
+            print(f"[ok] {PNG_PARTNERS_SCROLL_2.relative_to(ROOT)}")
+        if args.only_leads_partners:
             return 0
         print(f"[ok] {PNG_CREATE.relative_to(ROOT)}")
         if args.capture_create_deep:
             print(f"[ok] {PNG_CREATE_RESULT.relative_to(ROOT)}")
             print(f"[ok] {PNG_CREATE_PITCH.relative_to(ROOT)}")
-        print(f"[ok] {PNG_LEADS.relative_to(ROOT)}")
         print(f"[ok] {PNG_KANBAN.relative_to(ROOT)}")
         print(f"[ok] {PNG_SETTINGS.relative_to(ROOT)}")
         if args.capture_retrain_result:
