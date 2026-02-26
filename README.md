@@ -499,7 +499,9 @@ Esta é a tela central de operação: concentra priorização, avanço de etapa,
   - `CURIOSO`: `0-39` (coluna `INBOX` no motor interno).
   - `AQUECENDO`: `40-69`.
   - `QUALIFICADO`: `70-100`.
-- Gate obrigatório para `QUALIFICADO`: `budget_confirmed + timeline_confirmed + need_confirmed`.
+- Gate obrigatório para `QUALIFICADO`: no campo `Evento objetivo (ajusta score e move o lead)`, aplique os 3 eventos `Confirmou orcamento (+15)`, `Confirmou prazo (+10)` e `Confirmou necessidade (+10)` (equivalentes internos: `budget_confirmed + timeline_confirmed + need_confirmed`).
+- Eventos de avanço exibidos no dropdown `Evento objetivo`: `Respondeu WhatsApp (+8)`, `Pediu valores (+12)`, `Clicou na proposta (+10)`, `Agendou reuniao (+15)`, `Compareceu reuniao (+18)`, `Confirmou orcamento (+15)`, `Confirmou prazo (+10)`, `Confirmou necessidade (+10)`, `Solicitou proposta formal (+12)`, `Enviou documentos (+9)`, `Retorno positivo no follow up (+6)`.
+- Eventos de risco exibidos no dropdown `Evento objetivo`: `Sem resposta por 3 dias (-6)`, `Sem resposta por 7 dias (-12)`, `Sem resposta por 14 dias (-20)`, `Adiou sem nova data (-12)`, `Sem orcamento agora (-20)`, `Esfriou sem retorno (-18)`, `Contato invalido (-8)`.
 - Se faltar sinal obrigatório, o lead pode ter score alto, mas permanece em `AQUECENDO`.
 - `ENVIADO` representa handoff comercial e mantém consistência de score/etapa para operação.
 - Movimentação manual (`Atualizar etapa`) ajusta score para a faixa da coluna de destino, mantendo coerência visual e de regra.
