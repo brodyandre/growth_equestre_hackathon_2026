@@ -39,6 +39,8 @@
 - [8.2.2.3 Forma 3 - Roteiro de demo (pitch)](#8223-forma-3--roteiro-de-demo-pitch)
 - [8.2.3 Guia detalhado - Leads](#823-guia-detalhado-leads)
 - [8.2.4 Guia detalhado - CRM (Kanban)](#824-guia-detalhado-crm-kanban)
+- [8.2.4.1 Caso real - Lead Luiz Andre no CRM](#8241-caso-real-luiz-andre-no-crm)
+- [8.2.4.2 Relatório gerencial - leitura completa por seção](#8242-relatorio-gerencial-luiz-andre-por-secao)
 - [8.2.5 Guia detalhado - Parceiros](#825-guia-detalhado-parceiros)
 - [8.2.6 Guia detalhado - Configurações](#826-guia-detalhado-configuracoes)
 - [9. Como a Solução Apoia a Tomada de Decisão](#9-como-a-solucao-apoia-a-tomada-de-decisao)
@@ -520,8 +522,27 @@ Esta é a tela central de operação: concentra priorização, avanço de etapa,
 - **Salvar próxima ação**: para garantir disciplina de acompanhamento e evitar lead `ENVIADO` sem dono/data.
 - **Visualizar relatório gerencial**: para justificar decisão a coordenação, vendas ou parceiros com evidência estruturada.
 
-##### Relatório gerencial (cérebro da aplicação)
-Este é o artefato mais importante da solução para tomada de decisão.
+<a id="8241-caso-real-luiz-andre-no-crm"></a>
+
+##### 8.2.4.1 Caso real - Lead Luiz Andre no CRM
+Exemplo de operação no board com o lead **Luiz Andre** selecionado no painel de detalhes.
+
+![Node.js - CRM (Kanban) - Luiz Andre em detalhes](docs/readme_images/ui-crm-kanban-luiz-andre-detalhes.png)
+
+Leitura rápida deste print:
+- O card do lead foi destacado para facilitar identificação visual no board.
+- O painel `Detalhes` mostra o mesmo lead selecionado para operação.
+- A partir desse ponto, toda ação executada no painel (etapa, evento, próxima ação e relatório) é aplicada ao mesmo lead.
+
+<a id="8242-relatorio-gerencial-luiz-andre-por-secao"></a>
+
+##### 8.2.4.2 Relatório gerencial - leitura completa por seção (lead Luiz Andre)
+Este é o documento mais importante da aplicação, porque consolida em uma única visão:
+- decisão de encaminhamento,
+- inteligência de qualificação,
+- histórico operacional,
+- plano de ação com parceiros,
+- riscos e rastreabilidade.
 
 **Print da tela do relatório gerencial**
 
@@ -531,13 +552,75 @@ Este é o artefato mais importante da solução para tomada de decisão.
 
 ![Node.js - Relatório gerencial (loop)](docs/readme_images/ui-crm-relatorio-gerencial-loop.gif)
 
-No relatório, o usuário final interpreta 6 blocos principais:
-1. **Resumo executivo**: destino recomendado/confirmado do lead e confiança da decisão.
-2. **Roteamento**: setor principal, setores secundários e justificativas de encaminhamento.
-3. **Inteligência de qualificação**: score, probabilidade, engine/modelo e fatores explicativos.
-4. **Engajamento e histórico CRM**: eventos, notas e linha do tempo operacional.
-5. **Matching e plano de ação**: parceiros aderentes e próximos passos por janela de tempo.
-6. **Riscos e governança**: alertas de operação e rastreabilidade das fontes.
+Visão geral do relatório do Luiz Andre (cabeçalho + KPIs executivos):
+
+![Node.js - Relatório Luiz Andre (visão geral)](docs/readme_images/ui-crm-relatorio-luiz-andre-visao-geral.png)
+
+Como interpretar essa abertura:
+- `Headline`: síntese da recomendação final para decisão gerencial.
+- `Setor destino`: setor principal para onde o lead deve ser encaminhado.
+- `Modo / Confiança`: natureza da decisão e nível de confiança indicado.
+- KPIs (`Score`, `Prob. Qualificação`, `Eventos`, `Notas CRM`): leitura executiva imediata da qualidade e maturidade do lead.
+
+###### Seção 1 - Encaminhamento e justificativa executiva
+![Node.js - Relatório Luiz Andre (seção 1)](docs/readme_images/ui-crm-relatorio-luiz-andre-secao-1-encaminhamento.png)
+
+Como interpretar:
+- `Destino principal`: setor recomendado para execução comercial.
+- `Destinos secundários`: alternativas em caso de indisponibilidade ou estratégia complementar.
+- `Porque foi enviado`: justificativas de negócio que sustentam o encaminhamento.
+- Uso prático: se a justificativa não fizer sentido comercial, revise sinais/eventos antes de enviar o lead.
+
+###### Seção 2 - Cadastro do lead (snapshot)
+![Node.js - Relatório Luiz Andre (seção 2)](docs/readme_images/ui-crm-relatorio-luiz-andre-secao-2-cadastro.png)
+
+Como interpretar:
+- Mostra fotografia do lead no momento do relatório (`ID`, nome, localização, segmento, status/etapa).
+- `Motor / Modelo`: identifica qual mecanismo de scoring foi usado no cálculo vigente.
+- Uso prático: garante auditoria e evita decisões com dados de cadastro desatualizados.
+
+###### Seção 3 - Inteligência de qualificação (score)
+![Node.js - Relatório Luiz Andre (seção 3)](docs/readme_images/ui-crm-relatorio-luiz-andre-secao-3-inteligencia.png)
+
+Como interpretar:
+- Tabela por `Fator`, `Impacto`, `Detalhe`.
+- Impactos positivos (`+`) elevam chance de qualificação; impactos negativos reduzem.
+- O conjunto dos fatores explica o score final e dá transparência para o time comercial.
+- Uso prático: orientar conversa e próximos passos com base no que realmente puxou o score.
+
+###### Seção 4 - Engajamento e histórico CRM
+![Node.js - Relatório Luiz Andre (seção 4)](docs/readme_images/ui-crm-relatorio-luiz-andre-secao-4-engajamento.png)
+
+Como interpretar:
+- `Distribuição de eventos`: concentração dos sinais comportamentais do lead.
+- `Timeline de eventos`: ordem cronológica dos fatos relevantes.
+- `Notas CRM`: contexto qualitativo registrado pela operação.
+- Uso prático: separar lead ativo de lead parado e identificar gargalos de follow-up.
+
+###### Seção 5 - Matching de parceiros e plano de ação
+![Node.js - Relatório Luiz Andre (seção 5)](docs/readme_images/ui-crm-relatorio-luiz-andre-secao-5-matching.png)
+
+Como interpretar:
+- `Recomendação`: direção estratégica de encaminhamento.
+- Tabela de parceiros: aderência por UF/município/prioridade/score de match.
+- Plano por janela (`curto`, `médio`, `longo prazo`): define responsável e ação recomendada.
+- Uso prático: transformar diagnóstico em execução concreta de encaminhamento.
+
+###### Seção 6 - Riscos e governança
+![Node.js - Relatório Luiz Andre (seção 6)](docs/readme_images/ui-crm-relatorio-luiz-andre-secao-6-riscos-governanca.png)
+
+Como interpretar:
+- `Riscos gerenciais`: alertas que podem afetar conversão ou qualidade da operação.
+- `Rastreabilidade`: fontes de dados, engine geradora e endpoint usado.
+- Uso prático: sustentar decisões para auditoria interna, liderança e parceiros.
+
+##### Como o usuário deve usar este relatório no dia a dia
+1. Validar a recomendação executiva (seção 1) antes de encaminhar.
+2. Confirmar consistência de cadastro (seção 2).
+3. Explicar o score com base em fatores objetivos (seção 3).
+4. Checar histórico e notas para não duplicar abordagem (seção 4).
+5. Definir parceiro e plano de execução com responsável e prazo (seção 5).
+6. Registrar riscos e manter rastreabilidade da decisão (seção 6).
 
 <a id="825-guia-detalhado-parceiros"></a>
 
@@ -835,10 +918,22 @@ Para manter o print e o loop do relatório gerencial sempre atualizados:
    ```powershell
    python tools/docs/capture_managerial_report_media.py --ui-url http://127.0.0.1:3200 --start-server
    ```
-3. Arquivos gerados/atualizados:
+3. (Opcional) Capturar também o caso detalhado do lead `Luiz Andre` (board + relatório por seção):
+   ```powershell
+   python tools/docs/capture_managerial_report_media.py --ui-url http://127.0.0.1:3200 --start-server --capture-lead-deep --lead-query "Luiz Andre"
+   ```
+4. Arquivos gerados/atualizados:
    - `docs/readme_images/ui-crm-relatorio-gerencial.png`
    - `docs/readme_images/ui-crm-relatorio-gerencial-loop.gif`
-4. Automação no GitHub:
+   - `docs/readme_images/ui-crm-kanban-luiz-andre-detalhes.png` (quando usado `--capture-lead-deep`)
+   - `docs/readme_images/ui-crm-relatorio-luiz-andre-visao-geral.png` (quando usado `--capture-lead-deep`)
+   - `docs/readme_images/ui-crm-relatorio-luiz-andre-secao-1-encaminhamento.png` (quando usado `--capture-lead-deep`)
+   - `docs/readme_images/ui-crm-relatorio-luiz-andre-secao-2-cadastro.png` (quando usado `--capture-lead-deep`)
+   - `docs/readme_images/ui-crm-relatorio-luiz-andre-secao-3-inteligencia.png` (quando usado `--capture-lead-deep`)
+   - `docs/readme_images/ui-crm-relatorio-luiz-andre-secao-4-engajamento.png` (quando usado `--capture-lead-deep`)
+   - `docs/readme_images/ui-crm-relatorio-luiz-andre-secao-5-matching.png` (quando usado `--capture-lead-deep`)
+   - `docs/readme_images/ui-crm-relatorio-luiz-andre-secao-6-riscos-governanca.png` (quando usado `--capture-lead-deep`)
+5. Automação no GitHub:
    - workflow: `.github/workflows/update-managerial-report-media.yml`
    - modo recomendado: executar manualmente via `workflow_dispatch` para publicar artefatos e, opcionalmente, commitar os assets.
 
