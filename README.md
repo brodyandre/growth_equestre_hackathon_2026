@@ -928,50 +928,50 @@ Complemento atualizado da automação CRM (evento -> score/status/etapa):
 
 <a id="16-3-questoes-de-lgpd-uso-pratico-na-operacao"></a>
 
-## 16. 3 Questoes de LGPD (uso pratico na operacao)
+## 16. 3 Questões de LGPD (uso prático na operação)
 
 [![Voltar ao Indice](https://img.shields.io/badge/%E2%AC%86%EF%B8%8F-Voltar%20ao%20%C3%8Dndice-0b5fff?style=for-the-badge)](#indice)
 
-Esta secao consolida as 3 perguntas de LGPD que devem guiar a operacao diaria do produto.
+Esta seção consolida as 3 perguntas de LGPD que devem guiar a operação diária do produto.
 
-### 16.1 Questao 1 - Qual a base legal para coletar e tratar os dados do lead?
-Pergunta pratica:
-- Estamos tratando somente os dados necessarios para a finalidade comercial declarada?
-
-Diretriz:
-- Definir base legal antes da coleta (ex.: consentimento, execucao de contrato ou legitimo interesse, conforme o caso).
-- Registrar finalidade de uso de cada dado coletado (nome, contato, cidade, segmento, historico de eventos).
-- Aplicar principio de minimizacao: nao coletar dado sem necessidade operacional clara.
-
-Como interpretar na operacao:
-- Se um campo nao influencia atendimento, score, handoff ou auditoria, ele deve ser revisto.
-- A coleta precisa ser transparente ao titular (o lead deve entender para que os dados serao usados).
-
-### 16.2 Questao 2 - Como compartilhar dados com parceiros sem violar LGPD?
-Pergunta pratica:
-- Quais dados realmente precisam ser compartilhados no handoff para o parceiro executar a acao comercial?
+### 16.1 Questão 1 - Qual a base legal para coletar e tratar os dados do lead?
+Pergunta prática:
+- Estamos tratando somente os dados necessários para a finalidade comercial declarada?
 
 Diretriz:
-- Compartilhar apenas o minimo necessario para execucao do atendimento.
+- Definir base legal antes da coleta (ex.: consentimento, execução de contrato ou legítimo interesse, conforme o caso).
+- Registrar finalidade de uso de cada dado coletado (nome, contato, cidade, segmento, histórico de eventos).
+- Aplicar princípio de minimização: não coletar dado sem necessidade operacional clara.
+
+Como interpretar na operação:
+- Se um campo não influencia atendimento, score, handoff ou auditoria, ele deve ser revisto.
+- A coleta precisa ser transparente ao titular (o lead deve entender para que os dados serão usados).
+
+### 16.2 Questão 2 - Como compartilhar dados com parceiros sem violar LGPD?
+Pergunta prática:
+- Quais dados realmente precisam ser compartilhados no handoff para o parceiro executar a ação comercial?
+
+Diretriz:
+- Compartilhar apenas o mínimo necessário para execução do atendimento.
 - Garantir que o parceiro use os dados apenas para a finalidade definida.
 - Manter rastreabilidade de envio (quem enviou, quando enviou, para qual parceiro e por qual motivo).
 
-Como interpretar na operacao:
-- O status `ENVIADO` deve representar handoff controlado e justificavel.
-- Dados sensiveis ou excessivos nao devem ser repassados sem necessidade e sem base legal.
+Como interpretar na operação:
+- O status `ENVIADO` deve representar handoff controlado e justificável.
+- Dados sensíveis ou excessivos não devem ser repassados sem necessidade e sem base legal.
 
-### 16.3 Questao 3 - Como atender os direitos do titular (acesso, correcao e exclusao)?
-Pergunta pratica:
-- Se o titular solicitar acesso, correcao ou eliminacao dos dados, o time consegue responder com prazo e evidencia?
+### 16.3 Questão 3 - Como atender os direitos do titular (acesso, correção e exclusão)?
+Pergunta prática:
+- Se o titular solicitar acesso, correção ou eliminação dos dados, o time consegue responder com prazo e evidência?
 
 Diretriz:
-- Manter fluxo operacional para localizar rapidamente o lead e seu historico.
-- Permitir correcao de cadastro e exclusao quando cabivel, com registro da acao realizada.
-- Definir politica de retencao e descarte para nao manter dado por tempo indefinido.
+- Manter fluxo operacional para localizar rapidamente o lead e seu histórico.
+- Permitir correção de cadastro e exclusão quando cabível, com registro da ação realizada.
+- Definir política de retenção e descarte para não manter dado por tempo indefinido.
 
-Como interpretar na operacao:
-- O sistema precisa sustentar resposta auditavel para solicitacoes do titular.
-- Governanca de dados nao e opcional: ela reduz risco juridico e melhora confiabilidade da operacao.
+Como interpretar na operação:
+- O sistema precisa sustentar resposta auditável para solicitações do titular.
+- Governança de dados não é opcional: ela reduz risco jurídico e melhora confiabilidade da operação.
 
 ---
 
