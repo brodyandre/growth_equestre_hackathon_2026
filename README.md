@@ -55,7 +55,7 @@
 - [13. Troubleshooting](#13-troubleshooting)
 - [14. Branches e Estratégia de Trabalho](#14-branches-e-estrategia-de-trabalho)
 - [15. Documentação Complementar](#15-documentacao-complementar)
-- [16. Automação das Evidências do Relatório](#16-automacao-das-evidencias-do-relatorio)
+- [16. 3 Questões de LGPD (uso prático na operação)](#16-3-questoes-de-lgpd-uso-pratico-na-operacao)
 - [17. Licença e Uso](#17-licenca-e-uso)
 - [18. Contribuidores Autorizados no GitHub](#18-contribuidores-autorizados-no-github)
 
@@ -926,114 +926,52 @@ Complemento atualizado da automação CRM (evento -> score/status/etapa):
 
 ---
 
-<a id="16-automacao-das-evidencias-do-relatorio"></a>
+<a id="16-3-questoes-de-lgpd-uso-pratico-na-operacao"></a>
 
-## 16. Automação das Evidências do Relatório
+## 16. 3 Questoes de LGPD (uso pratico na operacao)
 
-[![⬆️ Voltar ao Índice](https://img.shields.io/badge/%E2%AC%86%EF%B8%8F-Voltar%20ao%20%C3%8Dndice-0b5fff?style=for-the-badge)](#indice)
-### 16.1 Relatório gerencial (print + loop)
-Para manter o print e o loop do relatório gerencial sempre atualizados:
+[![Voltar ao Indice](https://img.shields.io/badge/%E2%AC%86%EF%B8%8F-Voltar%20ao%20%C3%8Dndice-0b5fff?style=for-the-badge)](#indice)
 
-1. Script local de captura:
-   - `tools/docs/capture_managerial_report_media.py`
-2. Geração local (inicia a UI automaticamente):
-   ```powershell
-   python tools/docs/capture_managerial_report_media.py --ui-url http://127.0.0.1:3200 --start-server
-   ```
-3. (Opcional) Capturar também o caso detalhado do lead `Luiz Andre` (board + relatório por seção):
-   ```powershell
-   python tools/docs/capture_managerial_report_media.py --ui-url http://127.0.0.1:3200 --start-server --capture-lead-deep --lead-query "Luiz Andre"
-   ```
-4. Arquivos gerados/atualizados:
-   - `docs/readme_images/ui-crm-relatorio-gerencial.png`
-   - `docs/readme_images/ui-crm-relatorio-gerencial-loop.gif`
-   - `docs/readme_images/ui-crm-kanban-luiz-andre-detalhes.png` (quando usado `--capture-lead-deep`)
-   - `docs/readme_images/ui-crm-relatorio-luiz-andre-visao-geral.png` (quando usado `--capture-lead-deep`)
-   - `docs/readme_images/ui-crm-relatorio-luiz-andre-secao-1-encaminhamento.png` (quando usado `--capture-lead-deep`)
-   - `docs/readme_images/ui-crm-relatorio-luiz-andre-secao-2-cadastro.png` (quando usado `--capture-lead-deep`)
-   - `docs/readme_images/ui-crm-relatorio-luiz-andre-secao-3-inteligencia.png` (quando usado `--capture-lead-deep`)
-   - `docs/readme_images/ui-crm-relatorio-luiz-andre-secao-4-engajamento.png` (quando usado `--capture-lead-deep`)
-   - `docs/readme_images/ui-crm-relatorio-luiz-andre-secao-5-matching.png` (quando usado `--capture-lead-deep`)
-   - `docs/readme_images/ui-crm-relatorio-luiz-andre-secao-6-riscos-governanca.png` (quando usado `--capture-lead-deep`)
-5. Automação no GitHub:
-   - workflow: `.github/workflows/update-managerial-report-media.yml`
-   - modo recomendado: executar manualmente via `workflow_dispatch` para publicar artefatos e, opcionalmente, commitar os assets.
+Esta secao consolida as 3 perguntas de LGPD que devem guiar a operacao diaria do produto.
 
-Melhor ponto da documentação para essa evidência: seção **8.2.4 CRM (Kanban)**, onde o usuário já está no contexto do botão **Visualizar relatório gerencial**.
+### 16.1 Questao 1 - Qual a base legal para coletar e tratar os dados do lead?
+Pergunta pratica:
+- Estamos tratando somente os dados necessarios para a finalidade comercial declarada?
 
-### 16.2 Telas principais da UI Node.js
-Para atualizar os prints das guias principais da UI Node.js:
+Diretriz:
+- Definir base legal antes da coleta (ex.: consentimento, execucao de contrato ou legitimo interesse, conforme o caso).
+- Registrar finalidade de uso de cada dado coletado (nome, contato, cidade, segmento, historico de eventos).
+- Aplicar principio de minimizacao: nao coletar dado sem necessidade operacional clara.
 
-1. Script local de captura:
-   - `tools/docs/capture_ui_core_screens.py`
-2. Geração local (inicia a UI automaticamente):
-   ```powershell
-   python tools/docs/capture_ui_core_screens.py --ui-url http://127.0.0.1:3200 --start-server
-   ```
-3. (Opcional) Capturar também as evidências detalhadas da guia **Criar lead (demos)**:
-   ```powershell
-   python tools/docs/capture_ui_core_screens.py --ui-url http://127.0.0.1:3200 --start-server --capture-create-deep
-   ```
-4. (Opcional) Capturar também a saída da seção de retreinamento:
-   ```powershell
-   python tools/docs/capture_ui_core_screens.py --ui-url http://127.0.0.1:3200 --start-server --capture-retrain-result
-   ```
-5. (Opcional) Capturar a seção **8.2.1 Visão geral** com rolagem (somente overview):
-   ```powershell
-   python tools/docs/capture_ui_core_screens.py --ui-url http://127.0.0.1:3200 --start-server --only-overview --capture-overview-deep
-   ```
-6. (Opcional) Capturar as seções **8.2.3 Leads** e **8.2.5 Parceiros** com rolagem:
-   ```powershell
-   python tools/docs/capture_ui_core_screens.py --ui-url http://127.0.0.1:3200 --start-server --only-leads-partners --capture-leads-deep --capture-partners-deep
-   ```
-7. Arquivos gerados/atualizados:
-   - `docs/readme_images/ui-visao-geral.png`
-   - `docs/readme_images/ui-visao-geral-rolagem-1.png` (quando usado `--capture-overview-deep`)
-   - `docs/readme_images/ui-visao-geral-rolagem-2.png` (quando usado `--capture-overview-deep`)
-   - `docs/readme_images/ui-criar-lead-demos.png`
-   - `docs/readme_images/ui-criar-lead-demos-resultado.png` (quando usado `--capture-create-deep`)
-   - `docs/readme_images/ui-criar-lead-demos-roteiro.png` (quando usado `--capture-create-deep`)
-   - `docs/readme_images/ui-leads.png`
-   - `docs/readme_images/ui-leads-rolagem-1.png` (quando usado `--capture-leads-deep`)
-   - `docs/readme_images/ui-leads-rolagem-2.png` (quando usado `--capture-leads-deep`)
-   - `docs/readme_images/ui-crm-kanban.png`
-   - `docs/readme_images/ui-parceiros.png`
-   - `docs/readme_images/ui-parceiros-rolagem-1.png` (quando usado `--capture-partners-deep`)
-   - `docs/readme_images/ui-parceiros-rolagem-2.png` (quando usado `--capture-partners-deep`)
-   - `docs/readme_images/ui-configuracoes.png`
-   - `docs/readme_images/ui-configuracoes-retreino-resultado.png` (quando usado `--capture-retrain-result`)
+Como interpretar na operacao:
+- Se um campo nao influencia atendimento, score, handoff ou auditoria, ele deve ser revisto.
+- A coleta precisa ser transparente ao titular (o lead deve entender para que os dados serao usados).
 
-### 16.3 Lista automática de contribuidores autorizados (README)
-Para manter a seção **18. Contribuidores Autorizados no GitHub** sempre atualizada:
+### 16.2 Questao 2 - Como compartilhar dados com parceiros sem violar LGPD?
+Pergunta pratica:
+- Quais dados realmente precisam ser compartilhados no handoff para o parceiro executar a acao comercial?
 
-1. Script local:
-   - `tools/docs/update_readme_contributors.py`
-2. Execução local (opcional):
-   ```powershell
-   python tools/docs/update_readme_contributors.py --readme README.md --repo owner/repo
-   ```
-3. Automação no GitHub:
-   - workflow: `.github/workflows/update-readme-contributors.yml`
-   - execução automática semanal (segunda-feira) e manual via `workflow_dispatch`.
-4. O script atualiza:
-   - item `18` no Índice (quando ausente);
-   - seção `18` com links dos perfis GitHub e total de contribuições.
+Diretriz:
+- Compartilhar apenas o minimo necessario para execucao do atendimento.
+- Garantir que o parceiro use os dados apenas para a finalidade definida.
+- Manter rastreabilidade de envio (quem enviou, quando enviou, para qual parceiro e por qual motivo).
 
-### 16.4 Tour animado da UI Node.js no topo do README
-Para manter o GIF de navegação entre guias sempre atualizado:
+Como interpretar na operacao:
+- O status `ENVIADO` deve representar handoff controlado e justificavel.
+- Dados sensiveis ou excessivos nao devem ser repassados sem necessidade e sem base legal.
 
-1. Script local:
-   - `tools/docs/build_ui_nav_tour_gif.py`
-2. Geração local do GIF:
-   ```powershell
-   python tools/docs/build_ui_nav_tour_gif.py --output docs/readme_images/ui-nodejs-tour.gif --width 3840 --height 2160 --colors 96
-   ```
-3. Automação no GitHub:
-   - workflow: `.github/workflows/update-ui-nav-tour-gif.yml`
-   - execução manual via `workflow_dispatch`;
-   - execução automática quando os prints-base (`ui-visao-geral`, `ui-criar-lead-demos`, `ui-leads`, `ui-crm-kanban`, `ui-parceiros`, `ui-configuracoes`) forem alterados.
-4. Arquivo gerado/atualizado:
-   - `docs/readme_images/ui-nodejs-tour.gif`
+### 16.3 Questao 3 - Como atender os direitos do titular (acesso, correcao e exclusao)?
+Pergunta pratica:
+- Se o titular solicitar acesso, correcao ou eliminacao dos dados, o time consegue responder com prazo e evidencia?
+
+Diretriz:
+- Manter fluxo operacional para localizar rapidamente o lead e seu historico.
+- Permitir correcao de cadastro e exclusao quando cabivel, com registro da acao realizada.
+- Definir politica de retencao e descarte para nao manter dado por tempo indefinido.
+
+Como interpretar na operacao:
+- O sistema precisa sustentar resposta auditavel para solicitacoes do titular.
+- Governanca de dados nao e opcional: ela reduz risco juridico e melhora confiabilidade da operacao.
 
 ---
 
