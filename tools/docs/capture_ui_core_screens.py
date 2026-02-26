@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 """
 Capture updated README screenshots for the main UI Node.js screens:
+- overview (dashboard)
 - create-lead-demos
 - leads
 - kanban
@@ -12,6 +13,7 @@ Usage (from repo root):
   python tools/docs/capture_ui_core_screens.py --ui-url http://127.0.0.1:3100
   python tools/docs/capture_ui_core_screens.py --ui-url http://127.0.0.1:3200 --start-server --capture-create-deep
   python tools/docs/capture_ui_core_screens.py --ui-url http://127.0.0.1:3200 --start-server --capture-retrain-result
+  python tools/docs/capture_ui_core_screens.py --ui-url http://127.0.0.1:3100 --capture-overview-deep
 """
 
 from __future__ import annotations
@@ -35,6 +37,9 @@ from selenium.webdriver.support.ui import WebDriverWait
 
 ROOT = Path(__file__).resolve().parents[2]
 OUT_DIR = ROOT / "docs" / "readme_images"
+PNG_OVERVIEW = OUT_DIR / "ui-visao-geral.png"
+PNG_OVERVIEW_SCROLL_1 = OUT_DIR / "ui-visao-geral-rolagem-1.png"
+PNG_OVERVIEW_SCROLL_2 = OUT_DIR / "ui-visao-geral-rolagem-2.png"
 PNG_CREATE = OUT_DIR / "ui-criar-lead-demos.png"
 PNG_CREATE_RESULT = OUT_DIR / "ui-criar-lead-demos-resultado.png"
 PNG_CREATE_PITCH = OUT_DIR / "ui-criar-lead-demos-roteiro.png"
@@ -140,6 +145,30 @@ def open_first_kanban_lead_details(driver: webdriver.Chrome, wait: WebDriverWait
         time.sleep(0.4)
 
 
+def capture_overview_deep(driver: webdriver.Chrome, wait: WebDriverWait) -> None:
+    wait.until(ec.presence_of_element_located((By.ID, "kpiLeads")))
+    # Use a shorter viewport to ensure visible vertical scroll captures.
+    original_size = driver.get_window_size()
+    try:
+        driver.set_window_size(1920, 760)
+        driver.execute_script("window.scrollTo(0, 0);")
+        time.sleep(0.25)
+
+        # Mid scroll: modelo/acoes/resumo por status.
+        mid_anchor = driver.find_element(By.ID, "dashboardTable")
+        driver.execute_script("arguments[0].scrollIntoView({block: 'start'});", mid_anchor)
+        time.sleep(0.35)
+        capture_viewport_png(driver, PNG_OVERVIEW_SCROLL_1)
+
+        # Deep scroll: bloco de parceiros (filtro + KPIs + tabela).
+        partner_anchor = driver.find_element(By.ID, "overviewPartnersTable")
+        driver.execute_script("arguments[0].scrollIntoView({block: 'start'});", partner_anchor)
+        time.sleep(0.35)
+        capture_viewport_png(driver, PNG_OVERVIEW_SCROLL_2)
+    finally:
+        driver.set_window_size(original_size.get("width", 1920), original_size.get("height", 1080))
+
+
 def capture_create_lead_result_and_pitch(driver: webdriver.Chrome, wait: WebDriverWait) -> None:
     wait.until(ec.element_to_be_clickable((By.ID, "clQuickQualificado")))
 
@@ -207,6 +236,8 @@ def capture_assets(
     ui_url: str,
     capture_retrain_result: bool = False,
     capture_create_deep: bool = False,
+    capture_overview_deep_flag: bool = False,
+    only_overview: bool = False,
 ) -> None:
     OUT_DIR.mkdir(parents=True, exist_ok=True)
 
@@ -221,6 +252,13 @@ def capture_assets(
     wait = WebDriverWait(driver, 25)
     base = ui_url.rstrip("/")
     try:
+        wait_page_ready(driver, wait, f"{base}/", "#kpiLeads")
+        capture_viewport_png(driver, PNG_OVERVIEW)
+        if capture_overview_deep_flag:
+            capture_overview_deep(driver, wait)
+        if only_overview:
+            return
+
         wait_page_ready(driver, wait, f"{base}/create-lead-demos", "#createLeadDemoForm")
         capture_viewport_png(driver, PNG_CREATE)
         if capture_create_deep:
@@ -259,6 +297,16 @@ def main() -> int:
         action="store_true",
         help="Captura evidencias da guia Criar lead: card de resultado e roteiro de demo executado.",
     )
+    parser.add_argument(
+        "--capture-overview-deep",
+        action="store_true",
+        help="Captura evidencias adicionais da 8.2.1 (Visao geral) em rolagem.",
+    )
+    parser.add_argument(
+        "--only-overview",
+        action="store_true",
+        help="Captura apenas a guia Visao geral e encerra.",
+    )
     args = parser.parse_args()
 
     ui_url = args.ui_url.rstrip("/")
@@ -276,7 +324,15 @@ def main() -> int:
             ui_url,
             capture_retrain_result=args.capture_retrain_result,
             capture_create_deep=args.capture_create_deep,
+            capture_overview_deep_flag=args.capture_overview_deep,
+            only_overview=args.only_overview,
         )
+        print(f"[ok] {PNG_OVERVIEW.relative_to(ROOT)}")
+        if args.capture_overview_deep:
+            print(f"[ok] {PNG_OVERVIEW_SCROLL_1.relative_to(ROOT)}")
+            print(f"[ok] {PNG_OVERVIEW_SCROLL_2.relative_to(ROOT)}")
+        if args.only_overview:
+            return 0
         print(f"[ok] {PNG_CREATE.relative_to(ROOT)}")
         if args.capture_create_deep:
             print(f"[ok] {PNG_CREATE_RESULT.relative_to(ROOT)}")

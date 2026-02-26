@@ -32,6 +32,7 @@
 - [8. Como Usar as UIs na Prática](#8-como-usar-as-uis-na-pratica)
 - [8.1 Fase 1 - UI Streamlit (MVP funcional)](#81-fase-1---ui-streamlit-mvp-funcional)
 - [8.2 Fase 2 - UI Node.js + EJS (escalabilidade)](#82-fase-2---ui-nodejs--ejs-escalabilidade)
+- [8.2.1 Guia detalhado - Visão geral](#821-guia-detalhado-visao-geral)
 - [8.2.2 Guia detalhado - Criar lead (demos)](#822-guia-detalhado-criar-lead-demos)
 - [8.2.2.1 Forma 1 - Atalhos Gerar CURIOSO/AQUECENDO/QUALIFICADO](#8221-forma-1--atalhos-gerar-curiosoaquecendoqualificado)
 - [8.2.2.2 Forma 2 - Preenchimento manual + checklist do funil](#8222-forma-2--preenchimento-manual--checklist-do-funil)
@@ -245,10 +246,53 @@ Página guiada para pitch: cria cenário completo, mostra ordem recomendada e ch
 ### 8.2 Fase 2 - UI Node.js + EJS (escalabilidade)
 Com a Streamlit validada, migramos para Node.js + EJS para elevar escalabilidade de frontend, roteamento e evolução de produto com maior controle.
 
-#### 8.2.1 Visão geral (Node.js)
-KPIs executivos, conversão, resumo de status e modelo de ML em produção.
+<a id="821-guia-detalhado-visao-geral"></a>
 
-![Node.js - Visão geral](docs/readme_images/ui-visao-geral.png)
+#### 8.2.1 Visão geral (Node.js) - guia detalhado com rolagem
+A guia **Visão geral** é o painel executivo da operação. Ela possui **rolagem vertical** e foi organizada em blocos para responder três perguntas:
+1. Quantos leads temos e em quais status?
+2. Qual modelo de ML está ativo para novos scores?
+3. Como está a base de parceiros por segmento e UF?
+
+Topo da guia (KPIs principais):
+
+![Node.js - Visão geral (topo)](docs/readme_images/ui-visao-geral.png)
+
+##### 8.2.1.1 Blocos do topo e o que cada informação representa
+| Bloco | O que mostra | Como interpretar na prática |
+|---|---|---|
+| `Leads (total)` | Quantidade total de leads no board (`/api/crm/board`). | Volume geral do funil no momento. |
+| `Curioso` | Leads no estágio inicial de interesse. | Base de descoberta; exige nutrição e diagnóstico. |
+| `Aquecendo` | Leads com sinais de evolução no funil. | Momento de acelerar contato e qualificação. |
+| `Qualificados` | Leads com maior aderência comercial. | Prioridade alta de atendimento. |
+| `Enviado` | Leads já encaminhados para parceiro/operação. | Controle de handoff e acompanhamento. |
+| `Conversão p/ qualificado` | Percentual de leads qualificados sobre o total. | Indicador de eficiência do funil (`qualificados / total`). |
+
+Primeira rolagem (modelo em produção, ações rápidas e resumo por status):
+
+![Node.js - Visão geral (rolagem 1)](docs/readme_images/ui-visao-geral-rolagem-1.png)
+
+##### 8.2.1.2 Bloco intermediário e interpretação
+- `Modelo de ML em produção`: mostra o **modelo vencedor** ativo, resumo de **fine tuning** e o **runner-up** para referência técnica.
+- `Ações rápidas`: atalhos para abrir `CRM (Kanban)`, `Leads` e `Parceiros`, reduzindo navegação operacional.
+- `Resumo por status`: tabela consolidada por status comercial; útil para validar se os números dos cards estão coerentes.
+
+Segunda rolagem (diretório de parceiros):
+
+![Node.js - Visão geral (rolagem 2)](docs/readme_images/ui-visao-geral-rolagem-2.png)
+
+##### 8.2.1.3 Bloco de parceiros e interpretação
+- `UF`: filtra o resumo por estado (`MG`, `SP`, `GO` ou todos).
+- `Atualizar resumo`: recarrega os dados do bloco de parceiros com o filtro atual.
+- `KPIs de parceiros`: total geral e distribuição por segmento (`Cavalos`, `Serviços`, `Eventos`, `Equipamentos`).
+- `Tabela de parceiros`: detalha o total por segmento; apoia decisão de encaminhamento por oferta disponível.
+
+##### 8.2.1.4 Fluxo recomendado para o usuário final
+1. Verifique os KPIs do topo para entender volume e estágio do funil.
+2. Confira a conversão para medir eficiência de qualificação.
+3. Revise o bloco de modelo de ML para saber qual motor está ativo em novos scores.
+4. Use o diretório de parceiros (com filtro UF) para planejar encaminhamentos.
+5. Navegue pelos atalhos para atuar no `CRM (Kanban)` e em `Leads`.
 
 <a id="822-guia-detalhado-criar-lead-demos"></a>
 
@@ -714,7 +758,14 @@ Para atualizar os prints das guias principais da UI Node.js:
    ```powershell
    python tools/docs/capture_ui_core_screens.py --ui-url http://127.0.0.1:3200 --start-server --capture-retrain-result
    ```
-5. Arquivos gerados/atualizados:
+5. (Opcional) Capturar a seção **8.2.1 Visão geral** com rolagem (somente overview):
+   ```powershell
+   python tools/docs/capture_ui_core_screens.py --ui-url http://127.0.0.1:3200 --start-server --only-overview --capture-overview-deep
+   ```
+6. Arquivos gerados/atualizados:
+   - `docs/readme_images/ui-visao-geral.png`
+   - `docs/readme_images/ui-visao-geral-rolagem-1.png` (quando usado `--capture-overview-deep`)
+   - `docs/readme_images/ui-visao-geral-rolagem-2.png` (quando usado `--capture-overview-deep`)
    - `docs/readme_images/ui-criar-lead-demos.png`
    - `docs/readme_images/ui-criar-lead-demos-resultado.png` (quando usado `--capture-create-deep`)
    - `docs/readme_images/ui-criar-lead-demos-roteiro.png` (quando usado `--capture-create-deep`)
