@@ -434,10 +434,41 @@ Evidência da rolagem vertical da página até o bloco de ações:
 ![Node.js - Leads (rolagem para ações)](docs/readme_images/ui-leads-rolagem-2.png)
 
 ##### 8.2.3.3 Bloco inferior (detalhes e ações) e interpretação
-- `Selecionar lead para ações`: define o lead ativo para detalhamento e operação.
-- `Detalhes do lead`: visão legível para negócio, sem jargão técnico.
-- `Explicação do score`: motivos que contribuíram para a pontuação.
-- `Ações`: recalcular score, editar lead, excluir e executar handoff (`ENVIADO`).
+| Componente | O que é | Como interpretar |
+|---|---|---|
+| `Selecionar lead para ações` | Lista dos leads filtrados para escolher o lead ativo da operação. | Tudo que você executar no bloco de ações vale para esse lead selecionado. |
+| `Detalhes do lead` | Tabela com dados de cadastro e contexto comercial do lead. | Use para validar se o lead está completo antes de recalcular score ou fazer handoff. |
+| `Explicação do score` | Diagnóstico legível com fatores que puxaram score para cima/baixo, além de motor/modelo/probabilidade. | É a justificativa do “porquê” do score atual; importante para auditoria e decisão comercial. |
+| `Ações` | Botões operacionais: `Calcular/Atualizar score`, `Editar`, `Excluir` e `Handoff`. | Fluxo sugerido: atualizar score -> validar explicação -> decidir próximo passo comercial. |
+
+###### Recalcular score (`Calcular/Atualizar score`) - guia prático
+Quando usar:
+1. Após editar dados do lead (ex.: cidade, segmento, orçamento, prazo).
+2. Após novos eventos/comportamentos do lead no funil.
+3. Antes de decisão comercial importante (priorização, handoff, contato).
+
+O que o botão faz tecnicamente:
+1. Usa o **lead selecionado** e o histórico de eventos desse lead.
+2. Envia para o endpoint de score (`POST /api/leads/:id/score`).
+3. Atualiza o registro com os novos campos:
+   - `score`
+   - `status`
+   - `motivos do score`
+   - `motor/modelo`
+   - `probabilidade de qualificação`
+   - `timestamp do cálculo`
+4. Recarrega a tabela, os detalhes e o diagnóstico na própria tela.
+
+Como interpretar o retorno na UI:
+- Mensagem `Calculando score...`: requisição em andamento.
+- Mensagem `Score atualizado com sucesso.`: cálculo concluído e dados atualizados.
+- KPIs de ação (Score/Status/Sugestão) são atualizados após o cálculo.
+- Em caso de falha, aparece `Não foi possível calcular o score agora...` e o valor anterior é mantido.
+
+Regras operacionais importantes:
+- Recalcular score **não** executa handoff automaticamente.
+- `Handoff (ENVIADO)` só é permitido quando o lead está `QUALIFICADO`.
+- Se a explicação estiver vazia, recalcular score é a primeira ação recomendada para preencher diagnóstico.
 
 ##### 8.2.3.4 Fluxo recomendado na guia Leads
 1. Filtre os leads pela busca.
