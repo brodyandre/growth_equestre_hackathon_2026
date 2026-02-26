@@ -17,6 +17,11 @@
   <img src="https://img.shields.io/badge/Infra-Docker%20Compose-2496ed?style=for-the-badge" alt="Docker Compose" />
 </p>
 
+<p align="center">
+  <strong>Tour rapido da UI Node.js (clique nas guias)</strong><br/>
+  <img src="docs/readme_images/ui-nodejs-tour.gif" alt="Tour visual da UI Node.js com navegacao pelas guias principais" width="100%" />
+</p>
+
 ---
 
 <a id="indice"></a>
@@ -1013,6 +1018,22 @@ Para manter a seção **18. Contribuidores Autorizados no GitHub** sempre atuali
 4. O script atualiza:
    - item `18` no Índice (quando ausente);
    - seção `18` com links dos perfis GitHub e total de contribuições.
+
+### 16.4 Tour animado da UI Node.js no topo do README
+Para manter o GIF de navegação entre guias sempre atualizado:
+
+1. Script local:
+   - `tools/docs/build_ui_nav_tour_gif.py`
+2. Geração local do GIF:
+   ```powershell
+   python tools/docs/build_ui_nav_tour_gif.py --output docs/readme_images/ui-nodejs-tour.gif --width 1000 --colors 80
+   ```
+3. Automação no GitHub:
+   - workflow: `.github/workflows/update-ui-nav-tour-gif.yml`
+   - execução manual via `workflow_dispatch`;
+   - execução automática quando os prints-base (`ui-visao-geral`, `ui-criar-lead-demos`, `ui-leads`, `ui-crm-kanban`, `ui-parceiros`, `ui-configuracoes`) forem alterados.
+4. Arquivo gerado/atualizado:
+   - `docs/readme_images/ui-nodejs-tour.gif`
 
 ---
 

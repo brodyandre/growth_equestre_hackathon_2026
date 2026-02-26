@@ -1,0 +1,50 @@
+name: Update UI Nav Tour GIF
+
+"on":
+  workflow_dispatch:
+  push:
+    branches:
+      - main
+    paths:
+      - ".github/workflows/update-ui-nav-tour-gif.yml"
+      - "tools/docs/build_ui_nav_tour_gif.py"
+      - "docs/readme_images/ui-visao-geral.png"
+      - "docs/readme_images/ui-criar-lead-demos.png"
+      - "docs/readme_images/ui-leads.png"
+      - "docs/readme_images/ui-crm-kanban.png"
+      - "docs/readme_images/ui-parceiros.png"
+      - "docs/readme_images/ui-configuracoes.png"
+
+permissions:
+  contents: write
+
+jobs:
+  build-tour-gif:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Generate tour GIF
+        run: |
+          python -m pip install --upgrade pip
+          pip install pillow
+          python tools/docs/build_ui_nav_tour_gif.py --output docs/readme_images/ui-nodejs-tour.gif --width 1000 --colors 80
+
+      - name: Commit generated GIF
+        run: |
+          git add docs/readme_images/ui-nodejs-tour.gif
+          if git diff --cached --quiet; then
+            echo "No tour GIF changes."
+            exit 0
+          fi
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git commit -m "docs(readme): atualiza tour animado da UI Node.js"
+          git push
