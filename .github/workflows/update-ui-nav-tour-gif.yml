@@ -36,10 +36,11 @@ jobs:
           python -m pip install --upgrade pip
           pip install pillow
           python tools/docs/build_ui_nav_tour_gif.py --output docs/readme_images/ui-nodejs-tour.gif --width 1280 --colors 128
+          python tools/docs/build_ui_nav_tour_gif.py --output docs/readme_images/ui-nodejs-tour-hd.gif --width 1440 --colors 160
 
       - name: Commit generated GIF
         run: |
-          git add docs/readme_images/ui-nodejs-tour.gif
+          git add docs/readme_images/ui-nodejs-tour.gif docs/readme_images/ui-nodejs-tour-hd.gif
           if git diff --cached --quiet; then
             echo "No tour GIF changes."
             exit 0
