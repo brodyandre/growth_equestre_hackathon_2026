@@ -211,21 +211,32 @@ def capture_settings_retrain_result(driver: webdriver.Chrome, wait: WebDriverWai
 
 def capture_leads_scroll_evidence(driver: webdriver.Chrome, wait: WebDriverWait) -> None:
     wait.until(ec.presence_of_element_located((By.CSS_SELECTOR, "#leadsTable table tbody tr")))
-    driver.execute_script("const t=document.getElementById('leadsTable'); if(t){t.scrollTop=0;}")
+    driver.execute_script(
+        "window.scrollTo(0, 0);"
+        "const t=document.getElementById('leadsTable');"
+        "if(t){t.scrollTop=0;}"
+    )
     time.sleep(0.35)
     capture_viewport_png(driver, PNG_LEADS_SCROLL_1)
 
-    max_scroll = int(
-        driver.execute_script(
-            "const t=document.getElementById('leadsTable');"
-            "if(!t) return 0;"
-            "return Math.max(t.scrollHeight - t.clientHeight, 0);"
-        )
-        or 0
+    # Select first lead and scroll page to the lower action/diagnostic block.
+    selected = driver.execute_script(
+        """
+        const sel = document.getElementById('leadActionSelect');
+        if (!sel) return false;
+        const first = [...sel.options].find((o) => (o.value || '').trim());
+        if (!first) return false;
+        sel.value = first.value;
+        sel.dispatchEvent(new Event('change', { bubbles: true }));
+        return true;
+        """
     )
-    target = int(max_scroll * 0.58) if max_scroll > 0 else 0
-    driver.execute_script("const t=document.getElementById('leadsTable'); if(t){t.scrollTop=arguments[0];}", target)
-    time.sleep(0.35)
+    if selected:
+        wait.until(ec.presence_of_element_located((By.CSS_SELECTOR, "#leadDetailWrap table")))
+    action_card = driver.find_element(By.CSS_SELECTOR, ".lead-actions-card")
+    driver.execute_script("arguments[0].scrollIntoView({block: 'start'});", action_card)
+    driver.execute_script("window.scrollBy(0, 110);")
+    time.sleep(0.4)
     capture_viewport_png(driver, PNG_LEADS_SCROLL_2)
 
 

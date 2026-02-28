@@ -380,10 +380,17 @@ Também inclui barra de ações posicionada acima da busca para operação rápi
 
 ![Node.js - Leads](docs/readme_images/ui-leads.png)
 
-Evidencias de rolagem vertical da janela da tabela (20 registros visiveis por vez):
+Evidencias de rolagem vertical da pagina (topo da guia -> bloco inferior de Acoes e Diagnostico):
 
 ![Node.js - Leads (rolagem 1)](docs/readme_images/ui-leads-rolagem-1.png)
 ![Node.js - Leads (rolagem 2)](docs/readme_images/ui-leads-rolagem-2.png)
+
+Como interpretar o conteudo inferior da guia (Acoes e Diagnostico):
+- **Selecionar lead para acoes**: define o registro alvo para operar sem ambiguidade.
+- **Detalhes do lead**: mostra cadastro consolidado (dados de contato, segmento, score, status, motor/modelo e probabilidade).
+- **Explicacao do score**: lista fatores e impactos para justificar prioridade comercial.
+- **Acoes**: executa fluxo operacional (`Calcular/Atualizar score`, edicao, exclusao e `Handoff` para `ENVIADO`).
+- **Avisos e KPIs de acao**: confirmam resultado da ultima operacao e ajudam na validacao rapida do estado do lead.
 
 [![Voltar ao Indice](https://img.shields.io/badge/%E2%AC%86%EF%B8%8F-Voltar%20ao%20%C3%8Dndice-0b5fff?style=for-the-badge)](#indice)
 
