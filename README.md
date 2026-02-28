@@ -17,6 +17,10 @@
   <img src="https://img.shields.io/badge/Infra-Docker%20Compose-2496ed?style=for-the-badge" alt="Docker Compose" />
 </p>
 
+<p align="center">
+  <img src="docs/readme_images/ui-nodejs-tour.gif" alt="Tour da UI Node.js com clique nas guias Visao geral, Criar lead (demos), Leads, CRM (Kanban), Parceiros, Configuracoes e Sobre Nos" width="1440" />
+</p>
+
 ---
 
 <a id="indice"></a>
