@@ -474,6 +474,18 @@ Também inclui:
 
 ![Node.js - Parceiros](docs/readme_images/ui-parceiros.png)
 
+Evidencias de rolagem vertical da pagina (topo da guia -> bloco inferior de detalhes):
+
+![Node.js - Parceiros (rolagem 1)](docs/readme_images/ui-parceiros-rolagem-1.png)
+![Node.js - Parceiros (rolagem 2)](docs/readme_images/ui-parceiros-rolagem-2.png)
+
+Como interpretar os dados da guia Parceiros:
+- **Tabela superior (catalogo)**: use `Ordem`, `UF`, `Municipio`, `Segmento` e `Prioridade` para filtrar rapidamente a aderencia do parceiro ao lead.
+- **Selecionar parceiro / Procurar por ordem**: fixa o parceiro de trabalho e facilita navegacao direta quando a lista e longa.
+- **Informacoes principais**: valida identidade e enquadramento do parceiro (CNPJ, nome fantasia, razao social, CNAE e situacao cadastral).
+- **Contato**: define o melhor canal de acionamento comercial imediato (site, email, telefone, instagram).
+- **Endereco**: confirma contexto geografico para operacao/logistica e evita encaminhamento para regiao inadequada.
+
 [![Voltar ao Indice](https://img.shields.io/badge/%E2%AC%86%EF%B8%8F-Voltar%20ao%20%C3%8Dndice-0b5fff?style=for-the-badge)](#indice)
 
 <a id="826-guia-detalhado-configuracoes"></a>
