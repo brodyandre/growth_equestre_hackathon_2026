@@ -17,6 +17,10 @@
   <img src="https://img.shields.io/badge/Infra-Docker%20Compose-2496ed?style=for-the-badge" alt="Docker Compose" />
 </p>
 
+<p align="center">
+  <img src="docs/readme_images/ui-nodejs-tour-cursor-v2.gif" alt="Tour da UI Node.js com clique nas guias Visao geral, Criar lead (demos), Leads, CRM (Kanban), Parceiros, Configuracoes e Sobre Nos" width="1440" />
+</p>
+
 ---
 
 <a id="indice"></a>
@@ -46,8 +50,9 @@
 - [13. Troubleshooting](#13-troubleshooting)
 - [14. Branches e Estratégia de Trabalho](#14-branches-e-estrategia-de-trabalho)
 - [15. Documentação Complementar](#15-documentacao-complementar)
-- [16. Automação das Evidências do Relatório](#16-automacao-das-evidencias-do-relatorio)
+- [16. 3 Questoes de LGPD (uso pratico na operacao)](#16-3-questoes-de-lgpd-uso-pratico-na-operacao)
 - [17. Licença e Uso](#17-licenca-e-uso)
+- [18. Colaboradores](#18-colaboradores)
 
 ---
 
@@ -243,6 +248,8 @@ Página guiada para pitch: cria cenário completo, mostra ordem recomendada e ch
 
 ![Streamlit - Roteiro de demo](docs/readme_images/streamlit-roteiro-demo.png)
 
+[![Voltar ao Indice](https://img.shields.io/badge/%E2%AC%86%EF%B8%8F-Voltar%20ao%20%C3%8Dndice-0b5fff?style=for-the-badge)](#indice)
+
 ### 8.2 Fase 2 - UI Node.js + EJS (escalabilidade)
 Com a Streamlit validada, migramos para Node.js + EJS para elevar escalabilidade de frontend, roteamento e evolução de produto com maior controle.
 
@@ -250,6 +257,8 @@ Com a Streamlit validada, migramos para Node.js + EJS para elevar escalabilidade
 KPIs executivos, conversão, resumo de status e modelo de ML em produção.
 
 ![Node.js - Visão geral](docs/readme_images/ui-visao-geral.png)
+
+[![Voltar ao Indice](https://img.shields.io/badge/%E2%AC%86%EF%B8%8F-Voltar%20ao%20%C3%8Dndice-0b5fff?style=for-the-badge)](#indice)
 
 <a id="822-guia-detalhado-criar-lead-demos"></a>
 
@@ -260,6 +269,8 @@ Esta guia oferece **3 formas de gerar leads** para operação e demonstração:
 3. Pelo **Roteiro de demo (pitch)**, que cria 3 leads de uma vez.
 
 ![Node.js - Criar lead (demos)](docs/readme_images/ui-criar-lead-demos.png)
+
+[![Voltar ao Indice](https://img.shields.io/badge/%E2%AC%86%EF%B8%8F-Voltar%20ao%20%C3%8Dndice-0b5fff?style=for-the-badge)](#indice)
 
 ##### Como decidir qual forma usar
 | Forma | Quando usar | Resultado esperado |
@@ -289,6 +300,8 @@ Como interpretar:
 Exemplo real de retorno após atalho:
 
 ![Node.js - Criar lead (resultado)](docs/readme_images/ui-criar-lead-demos-resultado.png)
+
+[![Voltar ao Indice](https://img.shields.io/badge/%E2%AC%86%EF%B8%8F-Voltar%20ao%20%C3%8Dndice-0b5fff?style=for-the-badge)](#indice)
 
 <a id="8222-forma-2--preenchimento-manual--checklist-do-funil"></a>
 
@@ -347,6 +360,8 @@ Exemplo real do roteiro executado:
 
 ![Node.js - Criar lead (roteiro de demo)](docs/readme_images/ui-criar-lead-demos-roteiro.png)
 
+[![Voltar ao Indice](https://img.shields.io/badge/%E2%AC%86%EF%B8%8F-Voltar%20ao%20%C3%8Dndice-0b5fff?style=for-the-badge)](#indice)
+
 ##### 8.2.2.4 Como interpretar os resultados da guia (regra geral)
 - `Score 0-39`: tendência de **CURIOSO**.
 - `Score 40-69`: tendência de **AQUECENDO**.
@@ -356,12 +371,16 @@ Exemplo real do roteiro executado:
 - `Diagnóstico de ML`: transparência de motor, modelo e probabilidade.
 - Se houver mensagem de reaproveitamento de lead existente, a UI evitou duplicidade e atualizou score sem repetir eventos.
 
+[![Voltar ao Indice](https://img.shields.io/badge/%E2%AC%86%EF%B8%8F-Voltar%20ao%20%C3%8Dndice-0b5fff?style=for-the-badge)](#indice)
+
 #### 8.2.3 Leads (Node.js)
 Consulta rápida, filtros e ações de score, edição, exclusão e handoff.
 Inclui janela com 20 registros visíveis e barra de rolagem vertical para percorrer os demais registros sem perder o contexto da tela.
 Também inclui barra de ações posicionada acima da busca para operação rápida (recarregar, exportar CSV filtrado, exclusão em lote e atalho para CRM), com layout ajustado para não interferir na leitura dos detalhes.
 
 ![Node.js - Leads](docs/readme_images/ui-leads.png)
+
+[![Voltar ao Indice](https://img.shields.io/badge/%E2%AC%86%EF%B8%8F-Voltar%20ao%20%C3%8Dndice-0b5fff?style=for-the-badge)](#indice)
 
 <a id="824-guia-detalhado-crm-kanban"></a>
 
@@ -425,6 +444,8 @@ No relatório, o usuário final interpreta 6 blocos principais:
 5. **Matching e plano de ação**: parceiros aderentes e próximos passos por janela de tempo.
 6. **Riscos e governança**: alertas de operação e rastreabilidade das fontes.
 
+[![Voltar ao Indice](https://img.shields.io/badge/%E2%AC%86%EF%B8%8F-Voltar%20ao%20%C3%8Dndice-0b5fff?style=for-the-badge)](#indice)
+
 #### 8.2.5 Parceiros (Node.js)
 Busca, filtros e consistência de dados para matching e exportação CSV.
 Também inclui:
@@ -436,12 +457,16 @@ Também inclui:
 
 ![Node.js - Parceiros](docs/readme_images/ui-parceiros.png)
 
+[![Voltar ao Indice](https://img.shields.io/badge/%E2%AC%86%EF%B8%8F-Voltar%20ao%20%C3%8Dndice-0b5fff?style=for-the-badge)](#indice)
+
 <a id="826-guia-detalhado-configuracoes"></a>
 
 #### 8.2.6 Configurações (Node.js) - guia detalhado
 Guia operacional para manutenção de base e atualização controlada do modelo em produção.
 
 ![Node.js - Configurações](docs/readme_images/ui-configuracoes.png)
+
+[![Voltar ao Indice](https://img.shields.io/badge/%E2%AC%86%EF%B8%8F-Voltar%20ao%20%C3%8Dndice-0b5fff?style=for-the-badge)](#indice)
 
 ##### O que o usuário consegue configurar nesta tela
 | Bloco | Finalidade | Resultado esperado |
@@ -499,6 +524,8 @@ Como o usuário final deve interpretar cada bloco do resultado:
 - **Tempo total**: duração do processo para planejamento operacional.
 - **Razões de seleção**: explicação técnica resumida do desempate do modelo vencedor.
 - **Relatório salvo em**: caminho do artefato para auditoria e rastreabilidade.
+
+[![Voltar ao Indice](https://img.shields.io/badge/%E2%AC%86%EF%B8%8F-Voltar%20ao%20%C3%8Dndice-0b5fff?style=for-the-badge)](#indice)
 
 <a id="827-guia-detalhado-sobre-nos"></a>
 
@@ -694,54 +721,52 @@ Complemento atualizado da automação CRM (evento -> score/status/etapa):
 
 ---
 
-<a id="16-automacao-das-evidencias-do-relatorio"></a>
+<a id="16-3-questoes-de-lgpd-uso-pratico-na-operacao"></a>
 
-## 16. Automação das Evidências do Relatório
+## 16. 3 Questoes de LGPD (uso pratico na operacao)
 
-[![⬆️ Voltar ao Índice](https://img.shields.io/badge/%E2%AC%86%EF%B8%8F-Voltar%20ao%20%C3%8Dndice-0b5fff?style=for-the-badge)](#indice)
-### 16.1 Relatório gerencial (print + loop)
-Para manter o print e o loop do relatório gerencial sempre atualizados:
+[![Voltar ao Indice](https://img.shields.io/badge/%E2%AC%86%EF%B8%8F-Voltar%20ao%20%C3%8Dndice-0b5fff?style=for-the-badge)](#indice)
 
-1. Script local de captura:
-   - `tools/docs/capture_managerial_report_media.py`
-2. Geração local (inicia a UI automaticamente):
-   ```powershell
-   python tools/docs/capture_managerial_report_media.py --ui-url http://127.0.0.1:3200 --start-server
-   ```
-3. Arquivos gerados/atualizados:
-   - `docs/readme_images/ui-crm-relatorio-gerencial.png`
-   - `docs/readme_images/ui-crm-relatorio-gerencial-loop.gif`
-4. Automação no GitHub:
-   - workflow: `.github/workflows/update-managerial-report-media.yml`
-   - modo recomendado: executar manualmente via `workflow_dispatch` para publicar artefatos e, opcionalmente, commitar os assets.
+Esta secao consolida as 3 perguntas de LGPD que devem guiar a operacao diaria do produto.
 
-Melhor ponto da documentação para essa evidência: seção **8.2.4 CRM (Kanban)**, onde o usuário já está no contexto do botão **Visualizar relatório gerencial**.
+### 16.1 Questao 1 - Qual a base legal para coletar e tratar os dados do lead?
+Pergunta pratica:
+- Estamos tratando somente os dados necessarios para a finalidade comercial declarada?
 
-### 16.2 Telas principais da UI Node.js
-Para atualizar os prints das guias principais da UI Node.js:
+Diretriz:
+- Definir base legal antes da coleta (ex.: consentimento, execucao de contrato ou legitimo interesse, conforme o caso).
+- Registrar finalidade de uso de cada dado coletado (nome, contato, cidade, segmento, historico de eventos).
+- Aplicar principio de minimizacao: nao coletar dado sem necessidade operacional clara.
 
-1. Script local de captura:
-   - `tools/docs/capture_ui_core_screens.py`
-2. Geração local (inicia a UI automaticamente):
-   ```powershell
-   python tools/docs/capture_ui_core_screens.py --ui-url http://127.0.0.1:3200 --start-server
-   ```
-3. (Opcional) Capturar também as evidências detalhadas da guia **Criar lead (demos)**:
-   ```powershell
-   python tools/docs/capture_ui_core_screens.py --ui-url http://127.0.0.1:3200 --start-server --capture-create-deep
-   ```
-4. (Opcional) Capturar também a saída da seção de retreinamento:
-   ```powershell
-   python tools/docs/capture_ui_core_screens.py --ui-url http://127.0.0.1:3200 --start-server --capture-retrain-result
-   ```
-5. Arquivos gerados/atualizados:
-   - `docs/readme_images/ui-criar-lead-demos.png`
-   - `docs/readme_images/ui-criar-lead-demos-resultado.png` (quando usado `--capture-create-deep`)
-   - `docs/readme_images/ui-criar-lead-demos-roteiro.png` (quando usado `--capture-create-deep`)
-   - `docs/readme_images/ui-leads.png`
-   - `docs/readme_images/ui-crm-kanban.png`
-   - `docs/readme_images/ui-configuracoes.png`
-   - `docs/readme_images/ui-configuracoes-retreino-resultado.png` (quando usado `--capture-retrain-result`)
+Como interpretar na operacao:
+- Se um campo nao influencia atendimento, score, handoff ou auditoria, ele deve ser revisto.
+- A coleta precisa ser transparente ao titular (o lead deve entender para que os dados serao usados).
+
+### 16.2 Questao 2 - Como compartilhar dados com parceiros sem violar LGPD?
+Pergunta pratica:
+- Quais dados realmente precisam ser compartilhados no handoff para o parceiro executar a acao comercial?
+
+Diretriz:
+- Compartilhar apenas o minimo necessario para execucao do atendimento.
+- Garantir que o parceiro use os dados apenas para a finalidade definida.
+- Manter rastreabilidade de envio (quem enviou, quando enviou, para qual parceiro e por qual motivo).
+
+Como interpretar na operacao:
+- O status `ENVIADO` deve representar handoff controlado e justificavel.
+- Dados sensiveis ou excessivos nao devem ser repassados sem necessidade e sem base legal.
+
+### 16.3 Questao 3 - Como atender os direitos do titular (acesso, correcao e exclusao)?
+Pergunta pratica:
+- Se o titular solicitar acesso, correcao ou eliminacao dos dados, o time consegue responder com prazo e evidencia?
+
+Diretriz:
+- Manter fluxo operacional para localizar rapidamente o lead e seu historico.
+- Permitir correcao de cadastro e exclusao quando cabivel, com registro da acao realizada.
+- Definir politica de retencao e descarte para nao manter dado por tempo indefinido.
+
+Como interpretar na operacao:
+- O sistema precisa sustentar resposta auditavel para solicitacoes do titular.
+- Governanca de dados nao e opcional: ela reduz risco juridico e melhora confiabilidade da operacao.
 
 ---
 
@@ -757,3 +782,21 @@ Se for evoluir para produção, recomenda-se:
 - observabilidade centralizada;
 - autenticação/autorização;
 - governança de dados e LGPD.
+
+---
+
+<a id="18-colaboradores"></a>
+
+## 18. Colaboradores
+
+[![Voltar ao Indice](https://img.shields.io/badge/%E2%AC%86%EF%B8%8F-Voltar%20ao%20%C3%8Dndice-0b5fff?style=for-the-badge)](#indice)
+
+Colaboradores autorizados no GitHub deste repositorio:
+
+- [@brodyandre](https://github.com/brodyandre) - Luiz Andre de Souza
+- [@aluizr](https://github.com/aluizr) - AndreRibeiro
+- [@Eduardo-Marchi2025](https://github.com/Eduardo-Marchi2025) - Eduardo Marchi
+- [@emanuelssergio](https://github.com/emanuelssergio) - Emanuel Silva Sergio
+- [@everton754](https://github.com/everton754) - Everton Santos
+- [@Laisallz](https://github.com/Laisallz) - Lisane Lucia Zanatta
+- [@giacomo1960](https://github.com/giacomo1960) - Giacomo Villa

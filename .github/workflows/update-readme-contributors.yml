@@ -1,0 +1,46 @@
+name: Update README Contributors
+
+"on":
+  workflow_dispatch:
+  schedule:
+    - cron: "0 10 * * 1"
+  push:
+    branches:
+      - main
+    paths:
+      - ".github/workflows/update-readme-contributors.yml"
+      - "tools/docs/update_readme_contributors.py"
+
+permissions:
+  contents: write
+
+jobs:
+  update-contributors:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Update README contributors section
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+        run: |
+          python tools/docs/update_readme_contributors.py --readme README.md --repo "${{ github.repository }}"
+
+      - name: Commit README changes
+        run: |
+          git add README.md
+          if git diff --cached --quiet; then
+            echo "No README contributor updates."
+            exit 0
+          fi
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git commit -m "docs(readme): atualiza contribuidores autorizados"
+          git push
