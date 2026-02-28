@@ -18,7 +18,7 @@
 </p>
 
 <p align="center">
-  <img src="docs/readme_images/ui-nodejs-tour.gif" alt="Tour da UI Node.js com clique nas guias Visao geral, Criar lead (demos), Leads, CRM (Kanban), Parceiros, Configuracoes e Sobre Nos" width="1440" />
+  <img src="docs/readme_images/ui-nodejs-tour-cursor-v2.gif" alt="Tour da UI Node.js com clique nas guias Visao geral, Criar lead (demos), Leads, CRM (Kanban), Parceiros, Configuracoes e Sobre Nos" width="1440" />
 </p>
 
 ---

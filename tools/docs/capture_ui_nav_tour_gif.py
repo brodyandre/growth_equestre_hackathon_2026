@@ -35,7 +35,7 @@ from selenium.webdriver.support.ui import WebDriverWait
 
 ROOT = Path(__file__).resolve().parents[2]
 OUT_DIR = ROOT / "docs" / "readme_images"
-OUT_GIF = OUT_DIR / "ui-nodejs-tour.gif"
+OUT_GIF = OUT_DIR / "ui-nodejs-tour-cursor-v2.gif"
 
 PAGES = [
     {
@@ -212,10 +212,9 @@ def decorate_frame(
 
     tx, ty = target
     if phase in {"click1", "click2"}:
-        ring = 18 if phase == "click1" else 34
-        alpha = 210 if phase == "click1" else 120
-        draw.ellipse((tx - ring, ty - ring, tx + ring, ty + ring), outline=(98, 218, 255, alpha), width=4)
-        draw.ellipse((tx - ring - 12, ty - ring - 12, tx + ring + 12, ty + ring + 12), outline=(98, 218, 255, int(alpha * 0.6)), width=3)
+        ring = 14 if phase == "click1" else 20
+        alpha = 220 if phase == "click1" else 140
+        draw.ellipse((tx - ring, ty - ring, tx + ring, ty + ring), outline=(98, 218, 255, alpha), width=3)
 
     if phase == "approach":
         cx, cy = tx - 82, ty - 58
@@ -225,9 +224,6 @@ def decorate_frame(
         cx, cy = tx - 18, ty - 16
 
     draw_cursor(draw, cx, cy, scale=1.05)
-
-    # subtle spotlight near clicked menu
-    draw.ellipse((tx - 120, ty - 60, tx + 120, ty + 60), fill=(59, 174, 255, 34))
 
     # footer caption for readability on GitHub dark theme
     footer_h = 56
