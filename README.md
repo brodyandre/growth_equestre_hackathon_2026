@@ -248,6 +248,8 @@ Página guiada para pitch: cria cenário completo, mostra ordem recomendada e ch
 
 ![Streamlit - Roteiro de demo](docs/readme_images/streamlit-roteiro-demo.png)
 
+[![Voltar ao Indice](https://img.shields.io/badge/%E2%AC%86%EF%B8%8F-Voltar%20ao%20%C3%8Dndice-0b5fff?style=for-the-badge)](#indice)
+
 ### 8.2 Fase 2 - UI Node.js + EJS (escalabilidade)
 Com a Streamlit validada, migramos para Node.js + EJS para elevar escalabilidade de frontend, roteamento e evolução de produto com maior controle.
 
@@ -255,6 +257,8 @@ Com a Streamlit validada, migramos para Node.js + EJS para elevar escalabilidade
 KPIs executivos, conversão, resumo de status e modelo de ML em produção.
 
 ![Node.js - Visão geral](docs/readme_images/ui-visao-geral.png)
+
+[![Voltar ao Indice](https://img.shields.io/badge/%E2%AC%86%EF%B8%8F-Voltar%20ao%20%C3%8Dndice-0b5fff?style=for-the-badge)](#indice)
 
 <a id="822-guia-detalhado-criar-lead-demos"></a>
 
@@ -265,6 +269,8 @@ Esta guia oferece **3 formas de gerar leads** para operação e demonstração:
 3. Pelo **Roteiro de demo (pitch)**, que cria 3 leads de uma vez.
 
 ![Node.js - Criar lead (demos)](docs/readme_images/ui-criar-lead-demos.png)
+
+[![Voltar ao Indice](https://img.shields.io/badge/%E2%AC%86%EF%B8%8F-Voltar%20ao%20%C3%8Dndice-0b5fff?style=for-the-badge)](#indice)
 
 ##### Como decidir qual forma usar
 | Forma | Quando usar | Resultado esperado |
@@ -294,6 +300,8 @@ Como interpretar:
 Exemplo real de retorno após atalho:
 
 ![Node.js - Criar lead (resultado)](docs/readme_images/ui-criar-lead-demos-resultado.png)
+
+[![Voltar ao Indice](https://img.shields.io/badge/%E2%AC%86%EF%B8%8F-Voltar%20ao%20%C3%8Dndice-0b5fff?style=for-the-badge)](#indice)
 
 <a id="8222-forma-2--preenchimento-manual--checklist-do-funil"></a>
 
@@ -352,6 +360,8 @@ Exemplo real do roteiro executado:
 
 ![Node.js - Criar lead (roteiro de demo)](docs/readme_images/ui-criar-lead-demos-roteiro.png)
 
+[![Voltar ao Indice](https://img.shields.io/badge/%E2%AC%86%EF%B8%8F-Voltar%20ao%20%C3%8Dndice-0b5fff?style=for-the-badge)](#indice)
+
 ##### 8.2.2.4 Como interpretar os resultados da guia (regra geral)
 - `Score 0-39`: tendência de **CURIOSO**.
 - `Score 40-69`: tendência de **AQUECENDO**.
@@ -361,12 +371,16 @@ Exemplo real do roteiro executado:
 - `Diagnóstico de ML`: transparência de motor, modelo e probabilidade.
 - Se houver mensagem de reaproveitamento de lead existente, a UI evitou duplicidade e atualizou score sem repetir eventos.
 
+[![Voltar ao Indice](https://img.shields.io/badge/%E2%AC%86%EF%B8%8F-Voltar%20ao%20%C3%8Dndice-0b5fff?style=for-the-badge)](#indice)
+
 #### 8.2.3 Leads (Node.js)
 Consulta rápida, filtros e ações de score, edição, exclusão e handoff.
 Inclui janela com 20 registros visíveis e barra de rolagem vertical para percorrer os demais registros sem perder o contexto da tela.
 Também inclui barra de ações posicionada acima da busca para operação rápida (recarregar, exportar CSV filtrado, exclusão em lote e atalho para CRM), com layout ajustado para não interferir na leitura dos detalhes.
 
 ![Node.js - Leads](docs/readme_images/ui-leads.png)
+
+[![Voltar ao Indice](https://img.shields.io/badge/%E2%AC%86%EF%B8%8F-Voltar%20ao%20%C3%8Dndice-0b5fff?style=for-the-badge)](#indice)
 
 <a id="824-guia-detalhado-crm-kanban"></a>
 
@@ -430,6 +444,8 @@ No relatório, o usuário final interpreta 6 blocos principais:
 5. **Matching e plano de ação**: parceiros aderentes e próximos passos por janela de tempo.
 6. **Riscos e governança**: alertas de operação e rastreabilidade das fontes.
 
+[![Voltar ao Indice](https://img.shields.io/badge/%E2%AC%86%EF%B8%8F-Voltar%20ao%20%C3%8Dndice-0b5fff?style=for-the-badge)](#indice)
+
 #### 8.2.5 Parceiros (Node.js)
 Busca, filtros e consistência de dados para matching e exportação CSV.
 Também inclui:
@@ -441,12 +457,16 @@ Também inclui:
 
 ![Node.js - Parceiros](docs/readme_images/ui-parceiros.png)
 
+[![Voltar ao Indice](https://img.shields.io/badge/%E2%AC%86%EF%B8%8F-Voltar%20ao%20%C3%8Dndice-0b5fff?style=for-the-badge)](#indice)
+
 <a id="826-guia-detalhado-configuracoes"></a>
 
 #### 8.2.6 Configurações (Node.js) - guia detalhado
 Guia operacional para manutenção de base e atualização controlada do modelo em produção.
 
 ![Node.js - Configurações](docs/readme_images/ui-configuracoes.png)
+
+[![Voltar ao Indice](https://img.shields.io/badge/%E2%AC%86%EF%B8%8F-Voltar%20ao%20%C3%8Dndice-0b5fff?style=for-the-badge)](#indice)
 
 ##### O que o usuário consegue configurar nesta tela
 | Bloco | Finalidade | Resultado esperado |
@@ -504,6 +524,8 @@ Como o usuário final deve interpretar cada bloco do resultado:
 - **Tempo total**: duração do processo para planejamento operacional.
 - **Razões de seleção**: explicação técnica resumida do desempate do modelo vencedor.
 - **Relatório salvo em**: caminho do artefato para auditoria e rastreabilidade.
+
+[![Voltar ao Indice](https://img.shields.io/badge/%E2%AC%86%EF%B8%8F-Voltar%20ao%20%C3%8Dndice-0b5fff?style=for-the-badge)](#indice)
 
 <a id="827-guia-detalhado-sobre-nos"></a>
 
