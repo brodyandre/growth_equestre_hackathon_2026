@@ -811,7 +811,7 @@ Se for evoluir para produção, recomenda-se:
 Colaboradores autorizados no GitHub deste repositorio:
 
 - [@brodyandre](https://github.com/brodyandre) - Luiz Andre de Souza
-- [@aluizr](https://github.com/aluizr) - AndreRibeiro
+- [@aluizr](https://github.com/aluizr) - Andre Luiz Ribeiro
 - [@Eduardo-Marchi2025](https://github.com/Eduardo-Marchi2025) - Eduardo Marchi
 - [@emanuelssergio](https://github.com/emanuelssergio) - Emanuel Silva Sergio
 - [@everton754](https://github.com/everton754) - Everton Santos
