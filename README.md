@@ -380,6 +380,11 @@ Também inclui barra de ações posicionada acima da busca para operação rápi
 
 ![Node.js - Leads](docs/readme_images/ui-leads.png)
 
+Evidencias de rolagem vertical da janela da tabela (20 registros visiveis por vez):
+
+![Node.js - Leads (rolagem 1)](docs/readme_images/ui-leads-rolagem-1.png)
+![Node.js - Leads (rolagem 2)](docs/readme_images/ui-leads-rolagem-2.png)
+
 [![Voltar ao Indice](https://img.shields.io/badge/%E2%AC%86%EF%B8%8F-Voltar%20ao%20%C3%8Dndice-0b5fff?style=for-the-badge)](#indice)
 
 <a id="824-guia-detalhado-crm-kanban"></a>
@@ -388,6 +393,11 @@ Também inclui barra de ações posicionada acima da busca para operação rápi
 Esta é a tela central de operação: concentra priorização, avanço de etapa, automação por evento, acompanhamento pós-envio e leitura gerencial.
 
 ![Node.js - CRM (Kanban)](docs/readme_images/ui-crm-kanban.png)
+
+Evidencias de rolagem vertical na operacao do board (cards + painel Detalhes):
+
+![Node.js - CRM (Kanban) - rolagem 1](docs/readme_images/ui-crm-kanban-rolagem-1.png)
+![Node.js - CRM (Kanban) - rolagem 2](docs/readme_images/ui-crm-kanban-rolagem-2.png)
 
 ##### Como ler o board em menos de 1 minuto
 | Área | O que mostra | Como usar no dia a dia |
