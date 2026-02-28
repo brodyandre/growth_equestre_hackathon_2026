@@ -1,6 +1,6 @@
 # Manuais e Documentos (Operacao)
 
-Esta pasta contem os manuais finais em PDF e os guias operacionais do MVP.
+Esta pasta contem os manuais finais em PDF e complementos operacionais do MVP.
 
 ## PDFs base
 - `Growth_Equestre_Deploy_e_Uso_VSCode_GitHub.pdf`
@@ -9,12 +9,6 @@ Esta pasta contem os manuais finais em PDF e os guias operacionais do MVP.
 - `Growth_Equestre_MVP_Guia_Hackathon_ES.pdf`
 - `Growth_Equestre_MVP_Guia_Uso_ES.pdf`
 - `Growth_Equestre_MVP_Guia_Uso_PT-BR.pdf`
-
-## Guias de Clone + Set Seed (time)
-- `Growth_Equestre_Guia_Clone_Setup_VSCode_Seed_e_Compartilhamento_UI_PT-BR.docx`
-- `Growth_Equestre_Guia_Clone_Setup_VSCode_Seed_y_Compartir_UI_ES.docx`
-
-Esses guias cobrem clone, setup local, geracao de leads/parceiros e reproducao deterministica com `seed`.
 
 ## Complemento de CRM Kanban (UI Node.js)
 - `Growth_Equestre_MVP_Guia_Uso_PT-BR_ATUALIZACAO_CRM_EVENTOS_2026-02-18.md`
