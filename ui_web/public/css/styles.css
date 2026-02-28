@@ -901,6 +901,25 @@ select.input option:checked {
   align-self: end;
 }
 
+.field-inline-action {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: start;
+  gap: 8px;
+}
+
+.field-inline-action .input {
+  min-width: 0;
+  width: 100%;
+}
+
+.field-inline-action .btn-capture-now {
+  justify-self: end;
+  min-width: 56px;
+  padding: 8px 12px;
+  white-space: nowrap;
+}
+
 .kpi-row {
   display: grid;
   grid-template-columns: repeat(4, minmax(0, 1fr));
@@ -992,6 +1011,7 @@ select.input option:checked {
   min-height: 300px;
   display: flex;
   flex-direction: column;
+  min-width: 0;
 }
 
 .k-column-head {
@@ -1015,9 +1035,15 @@ select.input option:checked {
 }
 
 .k-cards {
-  display: grid;
+  display: flex;
+  flex-direction: column;
   gap: 8px;
   align-content: start;
+  min-height: 0;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  scrollbar-gutter: stable;
+  padding-right: 2px;
 }
 
 .k-card {
@@ -1028,6 +1054,8 @@ select.input option:checked {
   min-height: 168px;
   display: flex;
   flex-direction: column;
+  flex: 0 0 auto;
+  min-width: 0;
 }
 
 .k-card-title {
@@ -1070,8 +1098,10 @@ select.input option:checked {
   border-radius: 10px;
   padding: 6px 8px;
   font-size: 0.74rem;
+  line-height: 1.25;
   color: #cedaf4;
   background: rgba(0, 0, 0, 0.2);
+  word-break: break-word;
 }
 
 .k-actions {
@@ -1082,6 +1112,14 @@ select.input option:checked {
 
 .k-actions .btn {
   width: 100%;
+}
+
+.k-route-line {
+  margin-top: 6px;
+  font-size: 0.79rem;
+  line-height: 1.25;
+  color: #dce8ff;
+  word-break: break-word;
 }
 
 .k-empty {

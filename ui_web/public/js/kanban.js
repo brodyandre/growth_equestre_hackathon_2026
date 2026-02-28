@@ -958,6 +958,8 @@
 
     ROOT.querySelectorAll(".k-cards").forEach((cardsWrap) => {
       cardsWrap.style.maxHeight = safeMaxHeight;
+      cardsWrap.style.overflowY = "auto";
+      cardsWrap.style.overflowX = "hidden";
     });
   }
 
@@ -2076,12 +2078,18 @@
   }
 
   function bindEvents() {
+    let resizeTimer = null;
+
     SEARCH?.addEventListener("input", () => renderBoard());
     FILTER_STAGE?.addEventListener("change", () => renderBoard());
     FILTER_FOLLOWUP?.addEventListener("change", () => renderBoard());
     SORT?.addEventListener("change", () => renderBoard());
     LIMIT?.addEventListener("change", () => renderBoard());
     REFRESH?.addEventListener("click", () => refreshBoard({ preserveSelection: true }));
+    window.addEventListener("resize", () => {
+      if (resizeTimer) window.clearTimeout(resizeTimer);
+      resizeTimer = window.setTimeout(() => applyColumnScrollHeights(LIMIT?.value), 120);
+    });
 
     ROOT?.addEventListener("click", (event) => {
       const button = event.target.closest("button[data-action='open-details']");

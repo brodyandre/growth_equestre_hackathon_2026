@@ -380,6 +380,18 @@ Também inclui barra de ações posicionada acima da busca para operação rápi
 
 ![Node.js - Leads](docs/readme_images/ui-leads.png)
 
+Evidencias de rolagem vertical da pagina (topo da guia -> bloco inferior de Acoes e Diagnostico):
+
+![Node.js - Leads (rolagem 1)](docs/readme_images/ui-leads-rolagem-1.png)
+![Node.js - Leads (rolagem 2)](docs/readme_images/ui-leads-rolagem-2.png)
+
+Como interpretar o conteudo inferior da guia (Acoes e Diagnostico):
+- **Selecionar lead para acoes**: define o registro alvo para operar sem ambiguidade.
+- **Detalhes do lead**: mostra cadastro consolidado (dados de contato, segmento, score, status, motor/modelo e probabilidade).
+- **Explicacao do score**: lista fatores e impactos para justificar prioridade comercial.
+- **Acoes**: executa fluxo operacional (`Calcular/Atualizar score`, edicao, exclusao e `Handoff` para `ENVIADO`).
+- **Avisos e KPIs de acao**: confirmam resultado da ultima operacao e ajudam na validacao rapida do estado do lead.
+
 [![Voltar ao Indice](https://img.shields.io/badge/%E2%AC%86%EF%B8%8F-Voltar%20ao%20%C3%8Dndice-0b5fff?style=for-the-badge)](#indice)
 
 <a id="824-guia-detalhado-crm-kanban"></a>
@@ -388,6 +400,11 @@ Também inclui barra de ações posicionada acima da busca para operação rápi
 Esta é a tela central de operação: concentra priorização, avanço de etapa, automação por evento, acompanhamento pós-envio e leitura gerencial.
 
 ![Node.js - CRM (Kanban)](docs/readme_images/ui-crm-kanban.png)
+
+Evidencias de rolagem vertical na operacao do board (cards + painel Detalhes):
+
+![Node.js - CRM (Kanban) - rolagem 1](docs/readme_images/ui-crm-kanban-rolagem-1.png)
+![Node.js - CRM (Kanban) - rolagem 2](docs/readme_images/ui-crm-kanban-rolagem-2.png)
 
 ##### Como ler o board em menos de 1 minuto
 | Área | O que mostra | Como usar no dia a dia |
@@ -456,6 +473,18 @@ Também inclui:
 - botão **Limpar** para limpar simultaneamente **Selecionar parceiro** e **Procurar por ordem**.
 
 ![Node.js - Parceiros](docs/readme_images/ui-parceiros.png)
+
+Evidencias de rolagem vertical da pagina (topo da guia -> bloco inferior de detalhes):
+
+![Node.js - Parceiros (rolagem 1)](docs/readme_images/ui-parceiros-rolagem-1.png)
+![Node.js - Parceiros (rolagem 2)](docs/readme_images/ui-parceiros-rolagem-2.png)
+
+Como interpretar os dados da guia Parceiros:
+- **Tabela superior (catalogo)**: use `Ordem`, `UF`, `Municipio`, `Segmento` e `Prioridade` para filtrar rapidamente a aderencia do parceiro ao lead.
+- **Selecionar parceiro / Procurar por ordem**: fixa o parceiro de trabalho e facilita navegacao direta quando a lista e longa.
+- **Informacoes principais**: valida identidade e enquadramento do parceiro (CNPJ, nome fantasia, razao social, CNAE e situacao cadastral).
+- **Contato**: define o melhor canal de acionamento comercial imediato (site, email, telefone, instagram).
+- **Endereco**: confirma contexto geografico para operacao/logistica e evita encaminhamento para regiao inadequada.
 
 [![Voltar ao Indice](https://img.shields.io/badge/%E2%AC%86%EF%B8%8F-Voltar%20ao%20%C3%8Dndice-0b5fff?style=for-the-badge)](#indice)
 
@@ -794,7 +823,7 @@ Se for evoluir para produção, recomenda-se:
 Colaboradores autorizados no GitHub deste repositorio:
 
 - [@brodyandre](https://github.com/brodyandre) - Luiz Andre de Souza
-- [@aluizr](https://github.com/aluizr) - AndreRibeiro
+- [@aluizr](https://github.com/aluizr) - Andre Luiz Ribeiro
 - [@Eduardo-Marchi2025](https://github.com/Eduardo-Marchi2025) - Eduardo Marchi
 - [@emanuelssergio](https://github.com/emanuelssergio) - Emanuel Silva Sergio
 - [@everton754](https://github.com/everton754) - Everton Santos

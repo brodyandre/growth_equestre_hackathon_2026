@@ -3,7 +3,10 @@
 Capture updated README screenshots for the main UI Node.js screens:
 - create-lead-demos
 - leads
+- leads (scroll evidence)
+- partners (scroll evidence)
 - kanban
+- kanban (scroll evidence)
 - settings
 - settings (training output)
 - create-lead (result and pitch scenario)
@@ -39,7 +42,13 @@ PNG_CREATE = OUT_DIR / "ui-criar-lead-demos.png"
 PNG_CREATE_RESULT = OUT_DIR / "ui-criar-lead-demos-resultado.png"
 PNG_CREATE_PITCH = OUT_DIR / "ui-criar-lead-demos-roteiro.png"
 PNG_LEADS = OUT_DIR / "ui-leads.png"
+PNG_LEADS_SCROLL_1 = OUT_DIR / "ui-leads-rolagem-1.png"
+PNG_LEADS_SCROLL_2 = OUT_DIR / "ui-leads-rolagem-2.png"
+PNG_PARTNERS_SCROLL_1 = OUT_DIR / "ui-parceiros-rolagem-1.png"
+PNG_PARTNERS_SCROLL_2 = OUT_DIR / "ui-parceiros-rolagem-2.png"
 PNG_KANBAN = OUT_DIR / "ui-crm-kanban.png"
+PNG_KANBAN_SCROLL_1 = OUT_DIR / "ui-crm-kanban-rolagem-1.png"
+PNG_KANBAN_SCROLL_2 = OUT_DIR / "ui-crm-kanban-rolagem-2.png"
 PNG_SETTINGS = OUT_DIR / "ui-configuracoes.png"
 PNG_SETTINGS_RETRAIN = OUT_DIR / "ui-configuracoes-retreino-resultado.png"
 
@@ -203,6 +212,100 @@ def capture_settings_retrain_result(driver: webdriver.Chrome, wait: WebDriverWai
     capture_viewport_png(driver, PNG_SETTINGS_RETRAIN)
 
 
+def capture_leads_scroll_evidence(driver: webdriver.Chrome, wait: WebDriverWait) -> None:
+    wait.until(ec.presence_of_element_located((By.CSS_SELECTOR, "#leadsTable table tbody tr")))
+    driver.execute_script(
+        "window.scrollTo(0, 0);"
+        "const t=document.getElementById('leadsTable');"
+        "if(t){t.scrollTop=0;}"
+    )
+    time.sleep(0.35)
+    capture_viewport_png(driver, PNG_LEADS_SCROLL_1)
+
+    # Select first lead and scroll page to the lower action/diagnostic block.
+    selected = driver.execute_script(
+        """
+        const sel = document.getElementById('leadActionSelect');
+        if (!sel) return false;
+        const first = [...sel.options].find((o) => (o.value || '').trim());
+        if (!first) return false;
+        sel.value = first.value;
+        sel.dispatchEvent(new Event('change', { bubbles: true }));
+        return true;
+        """
+    )
+    if selected:
+        wait.until(ec.presence_of_element_located((By.CSS_SELECTOR, "#leadDetailWrap table")))
+    action_card = driver.find_element(By.CSS_SELECTOR, ".lead-actions-card")
+    driver.execute_script("arguments[0].scrollIntoView({block: 'start'});", action_card)
+    driver.execute_script("window.scrollBy(0, 110);")
+    time.sleep(0.4)
+    capture_viewport_png(driver, PNG_LEADS_SCROLL_2)
+
+
+def capture_kanban_scroll_evidence(driver: webdriver.Chrome) -> None:
+    driver.execute_script(
+        "window.scrollTo(0, 0);"
+        "document.documentElement.scrollLeft = 0;"
+        "document.body.scrollLeft = 0;"
+        "const shell=document.querySelector('.app-shell'); if(shell){shell.scrollLeft=0;}"
+        "const content=document.querySelector('.content'); if(content){content.scrollLeft=0;}"
+    )
+    time.sleep(0.35)
+    capture_viewport_png(driver, PNG_KANBAN_SCROLL_1)
+
+    max_scroll = int(
+        driver.execute_script(
+            "return Math.max(document.documentElement.scrollHeight - window.innerHeight, 0);"
+        )
+        or 0
+    )
+    target = min(max_scroll, 860) if max_scroll > 0 else 0
+    driver.execute_script(
+        "window.scrollTo(0, arguments[0]);"
+        "document.documentElement.scrollLeft = 0;"
+        "document.body.scrollLeft = 0;"
+        "const shell=document.querySelector('.app-shell'); if(shell){shell.scrollLeft=0;}"
+        "const content=document.querySelector('.content'); if(content){content.scrollLeft=0;}",
+        target,
+    )
+    time.sleep(0.4)
+    capture_viewport_png(driver, PNG_KANBAN_SCROLL_2)
+    driver.execute_script("window.scrollTo(0, 0);")
+
+
+def capture_partners_scroll_evidence(driver: webdriver.Chrome, wait: WebDriverWait) -> None:
+    wait.until(ec.presence_of_element_located((By.CSS_SELECTOR, "#partnersTable table tbody tr[data-partner-id]")))
+    driver.execute_script(
+        "window.scrollTo(0, 0);"
+        "const t=document.getElementById('partnersTable');"
+        "if(t){t.scrollTop=0;}"
+    )
+    time.sleep(0.35)
+    capture_viewport_png(driver, PNG_PARTNERS_SCROLL_1)
+
+    selected = driver.execute_script(
+        """
+        const sel = document.getElementById('partnerDetailSelect');
+        if (!sel) return false;
+        const first = [...sel.options].find((o) => (o.value || '').trim());
+        if (!first) return false;
+        sel.value = first.value;
+        sel.dispatchEvent(new Event('change', { bubbles: true }));
+        return true;
+        """
+    )
+    if selected:
+        wait.until(ec.presence_of_element_located((By.CSS_SELECTOR, "#partnerInfoWrap table")))
+
+    details_card = driver.find_element(By.CSS_SELECTOR, ".partner-details-card")
+    driver.execute_script("arguments[0].scrollIntoView({block: 'start'});", details_card)
+    driver.execute_script("window.scrollBy(0, 90);")
+    time.sleep(0.4)
+    capture_viewport_png(driver, PNG_PARTNERS_SCROLL_2)
+    driver.execute_script("window.scrollTo(0, 0);")
+
+
 def capture_assets(
     ui_url: str,
     capture_retrain_result: bool = False,
@@ -228,10 +331,15 @@ def capture_assets(
 
         wait_page_ready(driver, wait, f"{base}/leads", "#leadsTable")
         capture_viewport_png(driver, PNG_LEADS)
+        capture_leads_scroll_evidence(driver, wait)
 
         wait_page_ready(driver, wait, f"{base}/kanban", "#kanbanRoot")
         open_first_kanban_lead_details(driver, wait)
         capture_viewport_png(driver, PNG_KANBAN)
+        capture_kanban_scroll_evidence(driver)
+
+        wait_page_ready(driver, wait, f"{base}/partners", "#partnersTable")
+        capture_partners_scroll_evidence(driver, wait)
 
         wait_page_ready(driver, wait, f"{base}/settings", "#btnMlRetrainRun")
         capture_viewport_png(driver, PNG_SETTINGS)
@@ -282,7 +390,13 @@ def main() -> int:
             print(f"[ok] {PNG_CREATE_RESULT.relative_to(ROOT)}")
             print(f"[ok] {PNG_CREATE_PITCH.relative_to(ROOT)}")
         print(f"[ok] {PNG_LEADS.relative_to(ROOT)}")
+        print(f"[ok] {PNG_LEADS_SCROLL_1.relative_to(ROOT)}")
+        print(f"[ok] {PNG_LEADS_SCROLL_2.relative_to(ROOT)}")
+        print(f"[ok] {PNG_PARTNERS_SCROLL_1.relative_to(ROOT)}")
+        print(f"[ok] {PNG_PARTNERS_SCROLL_2.relative_to(ROOT)}")
         print(f"[ok] {PNG_KANBAN.relative_to(ROOT)}")
+        print(f"[ok] {PNG_KANBAN_SCROLL_1.relative_to(ROOT)}")
+        print(f"[ok] {PNG_KANBAN_SCROLL_2.relative_to(ROOT)}")
         print(f"[ok] {PNG_SETTINGS.relative_to(ROOT)}")
         if args.capture_retrain_result:
             print(f"[ok] {PNG_SETTINGS_RETRAIN.relative_to(ROOT)}")
