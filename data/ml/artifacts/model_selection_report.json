@@ -1,0 +1,82 @@
+{
+  "winner": "logit_fine",
+  "runner_up": "rf_fine",
+  "selection_reasons": [
+    "Empate tecnico em ROC-AUC; desempate por PR-AUC.",
+    "Empate tecnico em PR-AUC; desempate por Brier.",
+    "Empate tecnico em Brier; desempate por latencia.",
+    "Vencedor por menor latencia."
+  ],
+  "metrics": [
+    {
+      "model": "logit_fine",
+      "val_roc_auc": 0.9845524691358025,
+      "val_pr_auc": 0.9365628340204613,
+      "val_brier": 0.04017733498205489,
+      "val_f1": 0.8957055214723927,
+      "val_precision": 1.0,
+      "val_recall": 0.8111111111111111,
+      "val_latency_ms": 0.015251111111111113,
+      "test_roc_auc": 0.9866147741147742,
+      "test_pr_auc": 0.9665607302576408,
+      "test_brier": 0.029688126937699,
+      "test_f1": 0.9294117647058824,
+      "test_precision": 1.0,
+      "test_recall": 0.8681318681318682,
+      "test_latency_ms": 0.012432372505543238
+    },
+    {
+      "model": "rf_fine",
+      "val_roc_auc": 0.9807716049382716,
+      "val_pr_auc": 0.9432536480002595,
+      "val_brier": 0.03869577022384081,
+      "val_f1": 0.8538011695906432,
+      "val_precision": 0.9012345679012346,
+      "val_recall": 0.8111111111111111,
+      "val_latency_ms": 0.4178866666666667,
+      "test_roc_auc": 0.9938644688644689,
+      "test_pr_auc": 0.9795981278097924,
+      "test_brier": 0.024219554235014564,
+      "test_f1": 0.9248554913294798,
+      "test_precision": 0.975609756097561,
+      "test_recall": 0.8791208791208791,
+      "test_latency_ms": 0.41639024390243895
+    }
+  ],
+  "best_params": {
+    "logit_fine": {
+      "model__C": 0.025,
+      "model__class_weight": null,
+      "model__penalty": "l1"
+    },
+    "rf_fine": {
+      "model__class_weight": "balanced_subsample",
+      "model__max_depth": 18,
+      "model__min_samples_leaf": 1,
+      "model__min_samples_split": 2,
+      "model__n_estimators": 500
+    }
+  },
+  "target_col": "label_qualified",
+  "feature_cols": [
+    "n_events",
+    "n_page_view",
+    "n_hook_complete",
+    "n_cta_click",
+    "recency_last_event_hours",
+    "uf",
+    "cidade",
+    "segmento_interesse",
+    "orcamento_faixa",
+    "prazo_compra"
+  ],
+  "random_state": 42,
+  "search_mode": "quick",
+  "trained_at": "2026-02-26T16:09:14.954729+00:00",
+  "dataset": {
+    "rows": 3001,
+    "qualified_ratio": 0.20093302232589136,
+    "qualified_count": 603,
+    "non_qualified_count": 2398
+  }
+}

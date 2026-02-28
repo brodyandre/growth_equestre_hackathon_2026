@@ -32,6 +32,13 @@
 - [8. Como Usar as UIs na Prática](#8-como-usar-as-uis-na-pratica)
 - [8.1 Fase 1 - UI Streamlit (MVP funcional)](#81-fase-1---ui-streamlit-mvp-funcional)
 - [8.2 Fase 2 - UI Node.js + EJS (escalabilidade)](#82-fase-2---ui-nodejs--ejs-escalabilidade)
+- [8.2.2 Guia detalhado - Criar lead (demos)](#822-guia-detalhado-criar-lead-demos)
+- [8.2.2.1 Forma 1 - Atalhos Gerar CURIOSO/AQUECENDO/QUALIFICADO](#8221-forma-1--atalhos-gerar-curiosoaquecendoqualificado)
+- [8.2.2.2 Forma 2 - Preenchimento manual + checklist do funil](#8222-forma-2--preenchimento-manual--checklist-do-funil)
+- [8.2.2.3 Forma 3 - Roteiro de demo (pitch)](#8223-forma-3--roteiro-de-demo-pitch)
+- [8.2.4 Guia detalhado - CRM (Kanban)](#824-guia-detalhado-crm-kanban)
+- [8.2.6 Guia detalhado - Configurações](#826-guia-detalhado-configuracoes)
+- [8.2.7 Guia detalhado - Sobre Nós](#827-guia-detalhado-sobre-nos)
 - [9. Como a Solução Apoia a Tomada de Decisão](#9-como-a-solucao-apoia-a-tomada-de-decisao)
 - [10. Motor de Machine Learning (Dual Models)](#10-motor-de-machine-learning-dual-models)
 - [11. Fluxo de Dados e Endpoints Principais](#11-fluxo-de-dados-e-endpoints-principais)
@@ -40,6 +47,7 @@
 - [14. Branches e Estratégia de Trabalho](#14-branches-e-estrategia-de-trabalho)
 - [15. Documentação Complementar](#15-documentacao-complementar)
 - [16. Automação das Evidências do Relatório](#16-automacao-das-evidencias-do-relatorio)
+- [17. Licença e Uso](#17-licenca-e-uso)
 
 ---
 
@@ -243,25 +251,160 @@ KPIs executivos, conversão, resumo de status e modelo de ML em produção.
 
 ![Node.js - Visão geral](docs/readme_images/ui-visao-geral.png)
 
-#### 8.2.2 Criar lead (demos) (Node.js)
-Criação manual assistida e atalhos para CURIOSO/AQUECENDO/QUALIFICADO.
+<a id="822-guia-detalhado-criar-lead-demos"></a>
+
+#### 8.2.2 Criar lead (demos) (Node.js) - guia detalhado
+Esta guia oferece **3 formas de gerar leads** para operação e demonstração:
+1. Pelos botões de atalho (`Gerar CURIOSO`, `Gerar AQUECENDO`, `Gerar QUALIFICADO`).
+2. Pelo preenchimento manual dos campos + checklist do funil.
+3. Pelo **Roteiro de demo (pitch)**, que cria 3 leads de uma vez.
 
 ![Node.js - Criar lead (demos)](docs/readme_images/ui-criar-lead-demos.png)
+
+##### Como decidir qual forma usar
+| Forma | Quando usar | Resultado esperado |
+|---|---|---|
+| **Forma 1: atalhos** | Quando você quer gerar rapidamente um perfil-alvo. | Lead criado, score calculado e tentativa de atingir o status escolhido. |
+| **Forma 2: manual** | Quando você quer simular um lead específico de negócio. | Score e motivos coerentes com os campos e eventos informados. |
+| **Forma 3: roteiro de demo** | Quando precisa mostrar o funil completo no pitch. | Geração automática de `QUALIFICADO`, `AQUECENDO` e `CURIOSO`. |
+
+<a id="8221-forma-1--atalhos-gerar-curiosoaquecendoqualificado"></a>
+
+##### 8.2.2.1 Forma 1 - Atalhos Gerar CURIOSO/AQUECENDO/QUALIFICADO
+Use os botões:
+- `Gerar CURIOSO`
+- `Gerar AQUECENDO`
+- `Gerar QUALIFICADO`
+
+Passo a passo:
+1. Clique no botão do status desejado.
+2. A UI testa automaticamente até 3 perfis para aproximar o resultado do status alvo.
+3. Aguarde a mensagem de retorno e o card **Resultado**.
+
+Como interpretar:
+- Se aparecer `status alvo ... atingido`, o modelo confirmou o perfil esperado.
+- Se aparecer `status previsto ... (alvo ...)`, houve variação natural do ML; o lead foi criado, mas em status diferente.
+- O bloco **Diagnóstico de ML** mostra motor, modelo, probabilidade de qualificação e tentativa usada.
+
+Exemplo real de retorno após atalho:
+
+![Node.js - Criar lead (resultado)](docs/readme_images/ui-criar-lead-demos-resultado.png)
+
+<a id="8222-forma-2--preenchimento-manual--checklist-do-funil"></a>
+
+##### 8.2.2.2 Forma 2 - Preenchimento manual + checklist do funil
+Campos da guia e como preencher:
+
+| Campo | Obrigatório | Como preencher | Impacto prático |
+|---|---|---|---|
+| `Nome` | Sim | Nome identificável do lead. | Base para rastreio e operação no CRM. |
+| `UF` | Sim | Estado principal do lead. | Ajuda no matching e sinal regional do score. |
+| `WhatsApp` | Não | Somente número local (sem `55` e sem DDD). | Canal comercial; pode influenciar leitura operacional. |
+| `Cidade` | Não | Município do lead. | Melhora aderência regional com parceiros. |
+| `E-mail` | Não | E-mail válido quando existir. | Canal alternativo de contato. |
+| `Segmento de interesse` | Sim | `CAVALOS`, `SERVICOS`, `EVENTOS` ou `EQUIPAMENTOS`. | Sinal central de intenção comercial. |
+| `Faixa de orçamento` | Não | `0-5k`, `5k-20k`, `20k-60k`, `60k+`. | Quanto maior aderência de orçamento, maior chance de aquecer/qualificar. |
+| `Prazo` | Não | `7d`, `30d`, `90d`. | Prazos curtos indicam maior urgência/intenção. |
+
+Checklist do funil e interpretação:
+
+| Checklist | O que representa | Efeito esperado no score |
+|---|---|---|
+| `Visita (page view)` | Interesse inicial em conteúdo/página. | Aumenta levemente o sinal de engajamento. |
+| `Completou o quiz/calculadora (hook)` | Engajamento ativo com material de diagnóstico. | Aumenta sinal de intenção e contexto do lead. |
+| `Clique no CTA/WhatsApp` | Ação de contato comercial. | Sinal forte de interesse, tende a elevar score. |
+
+Passo a passo da geração manual:
+1. Preencha os campos principais (`Nome`, `UF`, `Segmento de interesse`).
+2. Complete `Faixa de orçamento` e `Prazo` para melhorar qualidade do score.
+3. Marque apenas os checklists que realmente ocorreram.
+4. Clique em `Criar lead e simular funil`.
+5. Analise o card **Resultado** (score, status, próxima ação, motivos e diagnóstico de ML).
+
+<a id="8223-forma-3--roteiro-de-demo-pitch"></a>
+
+##### 8.2.2.3 Forma 3 - Roteiro de demo (pitch)
+Nesta forma, o botão `Criar cenario de demo (3 leads)` gera automaticamente:
+- 1 lead **QUALIFICADO**
+- 1 lead **AQUECENDO**
+- 1 lead **CURIOSO**
+
+Passo a passo:
+1. Role até o bloco **Roteiro de demo (pitch)**.
+2. Clique em `Criar cenario de demo (3 leads)`.
+3. Aguarde o resumo em tabela com os 3 leads criados.
+
+Leitura da tabela de pitch:
+- `Alvo`: status planejado para o lead.
+- `Previsto`: status retornado pelo modelo.
+- `Score`: pontuação final do lead.
+- `Modelo`: modelo usado no cálculo.
+- `Prob. qualificado`: chance estimada de qualificação.
+- `Tentativa`: tentativa usada para atingir o alvo.
+- `Lead`: nome gerado para o cenário.
+
+Exemplo real do roteiro executado:
+
+![Node.js - Criar lead (roteiro de demo)](docs/readme_images/ui-criar-lead-demos-roteiro.png)
+
+##### 8.2.2.4 Como interpretar os resultados da guia (regra geral)
+- `Score 0-39`: tendência de **CURIOSO**.
+- `Score 40-69`: tendência de **AQUECENDO**.
+- `Score 70-100`: tendência de **QUALIFICADO** (respeitando regras de qualificação do CRM).
+- `Próxima ação`: orientação operacional imediata.
+- `Motivos principais`: explicação dos fatores que puxaram score para cima/baixo.
+- `Diagnóstico de ML`: transparência de motor, modelo e probabilidade.
+- Se houver mensagem de reaproveitamento de lead existente, a UI evitou duplicidade e atualizou score sem repetir eventos.
 
 #### 8.2.3 Leads (Node.js)
 Consulta rápida, filtros e ações de score, edição, exclusão e handoff.
 Inclui janela com 20 registros visíveis e barra de rolagem vertical para percorrer os demais registros sem perder o contexto da tela.
+Também inclui barra de ações posicionada acima da busca para operação rápida (recarregar, exportar CSV filtrado, exclusão em lote e atalho para CRM), com layout ajustado para não interferir na leitura dos detalhes.
 
 ![Node.js - Leads](docs/readme_images/ui-leads.png)
 
-#### 8.2.4 CRM (Kanban) (Node.js)
-Gestão por etapas (`CURIOSO`, `AQUECENDO`, `QUALIFICADO`, `ENVIADO`) com detalhes e próxima ação.
-No painel de detalhes existe o botão **Visualizar relatório gerencial**, que abre um relatório completo com:
-- para qual setor o lead foi/será enviado (Marketing, Vendas, Parceiros ou Operações);
-- por que foi enviado (justificativa executiva baseada em score, estágio, eventos e matching);
-- inteligência de qualificação (score, probabilidade e fatores);
-- histórico CRM (eventos e notas);
-- recomendação de plano de ação com riscos e governança.
+<a id="824-guia-detalhado-crm-kanban"></a>
+
+#### 8.2.4 CRM (Kanban) (Node.js) - guia detalhado (o cérebro da aplicação)
+Esta é a tela central de operação: concentra priorização, avanço de etapa, automação por evento, acompanhamento pós-envio e leitura gerencial.
+
+![Node.js - CRM (Kanban)](docs/readme_images/ui-crm-kanban.png)
+
+##### Como ler o board em menos de 1 minuto
+| Área | O que mostra | Como usar no dia a dia |
+|---|---|---|
+| **KPIs por coluna** | Volume por etapa (`CURIOSO`, `AQUECENDO`, `QUALIFICADO`, `ENVIADO`) e indicador de acompanhamento em `ENVIADO`. | Comece por aqui para entender gargalo do funil antes de atuar em casos individuais. |
+| **Cards por coluna** | Nome, localização, segmento, score, próxima ação e chips de acompanhamento/destino quando aplicável. | Selecione o lead com maior urgência comercial (score + contexto + prazo). |
+| **Barra de filtros** | Busca, etapa, acompanhamento (`enviado em acompanhamento`/`sem acompanhamento`), ordenação e cards por coluna. | Use para montar fila operacional por objetivo (nutrição, qualificação, pós-envio). |
+| **Painel Detalhes** | Controles de mudança de etapa, evento objetivo, próxima ação, relatório gerencial e matching. | Execute ações com rastreabilidade e retorno imediato de transição. |
+
+##### Regras operacionais oficiais da etapa CRM
+- Faixas de score por estágio:
+  - `CURIOSO`: `0-39` (coluna `INBOX` no motor interno).
+  - `AQUECENDO`: `40-69`.
+  - `QUALIFICADO`: `70-100`.
+- Gate obrigatório para `QUALIFICADO`: `budget_confirmed + timeline_confirmed + need_confirmed`.
+- Se faltar sinal obrigatório, o lead pode ter score alto, mas permanece em `AQUECENDO`.
+- `ENVIADO` representa handoff comercial e mantém consistência de score/etapa para operação.
+- Movimentação manual (`Atualizar etapa`) ajusta score para a faixa da coluna de destino, mantendo coerência visual e de regra.
+
+##### Operação no painel Detalhes (passo a passo)
+1. Clique em `Abrir detalhes` no card desejado.
+2. Se necessário, ajuste `Mover etapa` e confirme em `Atualizar etapa`.
+3. Em **Automação por evento**, selecione o evento objetivo e clique `Aplicar evento`.
+4. Leia a mensagem de retorno:
+   - transição de etapa (origem -> destino),
+   - variação de score,
+   - pendências do gate de qualificação (quando existirem).
+5. Em **Próxima ação**, salve texto, data e hora.
+6. Para leads em `ENVIADO`, use `texto + data` para marcar como **ACOMPANHANDO**.
+7. Ajuste **Matching de parceiros** por quantidade (`1-50`) e prioridade para planejar encaminhamento.
+
+##### Quando usar cada função-chave
+- **Atualizar etapa**: quando houve decisão comercial manual validada pelo time.
+- **Aplicar evento**: quando um fato objetivo aconteceu (ex.: confirmou orçamento, sem resposta 7 dias, enviou documentos).
+- **Salvar próxima ação**: para garantir disciplina de acompanhamento e evitar lead `ENVIADO` sem dono/data.
+- **Visualizar relatório gerencial**: para justificar decisão a coordenação, vendas ou parceiros com evidência estruturada.
 
 ##### Relatório gerencial (cérebro da aplicação)
 Este é o artefato mais importante da solução para tomada de decisão.
@@ -274,7 +417,13 @@ Este é o artefato mais importante da solução para tomada de decisão.
 
 ![Node.js - Relatório gerencial (loop)](docs/readme_images/ui-crm-relatorio-gerencial-loop.gif)
 
-![Node.js - CRM (Kanban)](docs/readme_images/ui-crm-kanban.png)
+No relatório, o usuário final interpreta 6 blocos principais:
+1. **Resumo executivo**: destino recomendado/confirmado do lead e confiança da decisão.
+2. **Roteamento**: setor principal, setores secundários e justificativas de encaminhamento.
+3. **Inteligência de qualificação**: score, probabilidade, engine/modelo e fatores explicativos.
+4. **Engajamento e histórico CRM**: eventos, notas e linha do tempo operacional.
+5. **Matching e plano de ação**: parceiros aderentes e próximos passos por janela de tempo.
+6. **Riscos e governança**: alertas de operação e rastreabilidade das fontes.
 
 #### 8.2.5 Parceiros (Node.js)
 Busca, filtros e consistência de dados para matching e exportação CSV.
@@ -282,14 +431,95 @@ Também inclui:
 - coluna **Ordem** à esquerda do CNPJ;
 - janela com 20 registros visíveis e rolagem vertical;
 - painel **Detalhes do parceiro** com os mesmos campos principais da UI Streamlit (informações principais, contato e endereço);
-- campo **Selecionar parceiro** com ordem no label e busca direta por número da ordem via botão **Procurar**.
+- campo **Selecionar parceiro** com ordem no label e busca direta por número da ordem via botão **Procurar**;
+- botão **Limpar** para limpar simultaneamente **Selecionar parceiro** e **Procurar por ordem**.
 
 ![Node.js - Parceiros](docs/readme_images/ui-parceiros.png)
 
-#### 8.2.6 Configurações (Node.js)
-Parâmetros técnicos e manutenção operacional (incluindo deduplicação).
+<a id="826-guia-detalhado-configuracoes"></a>
+
+#### 8.2.6 Configurações (Node.js) - guia detalhado
+Guia operacional para manutenção de base e atualização controlada do modelo em produção.
 
 ![Node.js - Configurações](docs/readme_images/ui-configuracoes.png)
+
+##### O que o usuário consegue configurar nesta tela
+| Bloco | Finalidade | Resultado esperado |
+|---|---|---|
+| **Manutenção de leads (deduplicação)** | Identificar/remover duplicados mantendo o registro mais recente. | Base mais limpa para operação e treino. |
+| **Treinamento do modelo em produção** | Retreinar com a base atual de leads. | Novo modelo passa a valer para **novos scores**. |
+| **Random seed do treino** | Controlar reprodutibilidade do treino. | Mais consistência entre execuções quando a base é semelhante. |
+
+##### 8.2.6.1 Manutenção de leads (deduplicação) - como operar
+1. Defina `Janela de deduplicação (minutos)` conforme sua regra operacional.
+2. Rode `Dry-run (somente análise)` primeiro.
+3. Interprete os principais indicadores:
+   - `Grupos duplicados`, `Linhas para excluir`, `Leads antes/depois`,
+   - migração de `events`, `lead_notes` e estado CRM.
+4. Se o diagnóstico estiver correto, marque confirmação e clique `Executar limpeza agora`.
+
+##### 8.2.6.2 Treinamento do modelo em produção - como operar
+1. Preencha `Leads esperados na base` (opcional, recomendado para controle).
+2. Defina `Random seed do treino` (ex.: `42` para reprodutibilidade padrão).
+3. Escolha `Modo de treino`:
+   - `Rápido (recomendado)`: menor tempo, adequado para rotina.
+   - `Completo`: busca mais extensa, usado em janelas de revisão.
+4. Se necessário, marque `Ignorar diferença entre total esperado e total atual`.
+5. Marque confirmação e clique `Re-treinar modelo com base atual`.
+
+##### 8.2.6.3 Como interpretar o retorno do retreinamento
+- **Modelo vencedor / Runner-up**: comparação final da seleção.
+- **Leads usados no treino**: volume efetivamente consumido.
+- **Classe QUALIFICADO+ENVIADO vs CURIOSO+AQUECENDO**: balanço de classes do dataset.
+- **Razão qualificados**: percentual de classe positiva para monitorar viés de base.
+- **Aplicação**: confirma que o novo modelo afeta apenas **novos scores**.
+- **Tempo total e relatório salvo em**: rastreabilidade técnica da execução.
+
+##### 8.2.6.4 Boas práticas para usuário final
+- Sempre execute deduplicação em `dry-run` antes da limpeza real.
+- Evite retreinar em horário de pico operacional.
+- Mantenha histórico das seeds usadas nos treinos oficiais (auditoria e repetibilidade).
+- Após retreinar, valide em uma amostra de leads novos antes de escalar uso comercial.
+
+##### 8.2.6.5 Exemplo real de saída (após clicar em "Re-treinar modelo com base atual")
+Print da própria guia **Configurações** com o retorno exibido na UI:
+
+![Node.js - Configurações (resultado do retreinamento)](docs/readme_images/ui-configuracoes-retreino-resultado.png)
+
+Como o usuário final deve interpretar cada bloco do resultado:
+- **Mensagem / aviso verde**: confirma se o treino concluiu e qual modelo venceu.
+- **Leads usados no treino**: total realmente aproveitado no dataset.
+- **Leads esperados**: parâmetro de controle informado pelo usuário.
+- **Modo de treino / CV folds**: estratégia de busca (`quick` ou `full`) e validação.
+- **Modelo vencedor / Runner-up**: ranking final dos modelos avaliados.
+- **Classe QUALIFICADO+ENVIADO / CURIOSO+AQUECENDO**: distribuição das classes para leitura de equilíbrio da base.
+- **Razão qualificados**: percentual da classe de maior intenção comercial.
+- **Afeta leads existentes**: deve aparecer `não` para indicar ausência de recálculo retroativo automático.
+- **Aplicação**: esclarece que o novo modelo vale para novos scores após o treino.
+- **Tempo total**: duração do processo para planejamento operacional.
+- **Razões de seleção**: explicação técnica resumida do desempate do modelo vencedor.
+- **Relatório salvo em**: caminho do artefato para auditoria e rastreabilidade.
+
+<a id="827-guia-detalhado-sobre-nos"></a>
+
+#### 8.2.7 Sobre Nós (Node.js) - guia detalhado
+Esta guia consolida a identidade do produto, proposta de valor e composição do time em formato orientado ao usuário final.
+
+![Node.js - Sobre Nós](docs/readme_images/ui-sobre-nos.png)
+
+Como interpretar os blocos da guia:
+- **Hero principal**: posiciona o propósito do Growth_Equestre e a mensagem central do produto.
+- **Nossa Missão**: explica o objetivo operacional (reduzir adivinhação comercial) e como a plataforma converte dados em decisão prática.
+- **Nossos Pilares de Tecnologia**: detalha os três pilares de ML (Lead Scoring, Ranking de Parceiros e Next Best Action) com leitura objetiva para negócio.
+- **A Equipe**: apresenta os integrantes e reforça a visão multidisciplinar por trás da solução.
+- **Compromisso com valores humanos**: explicita o alinhamento entre tecnologia, ética, qualidade de vida e governança de dados.
+
+Quando usar essa guia no dia a dia:
+1. **Onboarding de usuário**: para contextualizar rapidamente objetivo, escopo e capacidade da plataforma.
+2. **Apresentações e pitch**: para alinhar narrativa de produto com evidências visuais da UI.
+3. **Governança interna**: para reforçar o princípio de uso responsável de dados e operação com propósito.
+
+[![Voltar ao Indice](https://img.shields.io/badge/%E2%AC%86%EF%B8%8F-Voltar%20ao%20%C3%8Dndice-0b5fff?style=for-the-badge)](#indice)
 
 ---
 
@@ -360,9 +590,11 @@ docker compose up -d --build scoring
 | `/leads` | `GET` | Lista leads |
 | `/leads` | `POST` | Cria lead |
 | `/leads/:id/score` | `POST` | Calcula score do lead |
-| `/leads/delete` | `POST` | Exclusão em lote |
+| `/leads/bulk-delete` | `POST` | Exclusão em lote |
 | `/crm/board` | `GET` | Dados do Kanban |
 | `/crm/move` | `POST` | Move lead no Kanban |
+| `/crm/event-rules` | `GET` | Lista regras objetivas de automação por evento no CRM |
+| `/crm/leads/:id/apply-rule` | `POST` | Aplica evento objetivo (delta de score + atualização de status/etapa) |
 | `/crm/leads/:id/matches` | `GET` | Matching de parceiros |
 | `/crm/leads/:id/managerial-report` | `GET` | Relatório gerencial completo do lead (setor destino, justificativas, score, histórico, riscos e plano de ação) |
 | `/crm/leads/:id/relatorio-gerencial` | `GET` | Alias em PT-BR para o relatório gerencial |
@@ -456,6 +688,10 @@ Inclui:
 - manual de setup no Windows/VS Code;
 - documento técnico da solução de Data Science.
 
+Complemento atualizado da automação CRM (evento -> score/status/etapa):
+- `manuais_and_docs/Growth_Equestre_MVP_Guia_Uso_PT-BR_ATUALIZACAO_CRM_EVENTOS_2026-02-18.md`
+- `manuais_and_docs/README.md`
+
 ---
 
 <a id="16-automacao-das-evidencias-do-relatorio"></a>
@@ -463,6 +699,7 @@ Inclui:
 ## 16. Automação das Evidências do Relatório
 
 [![⬆️ Voltar ao Índice](https://img.shields.io/badge/%E2%AC%86%EF%B8%8F-Voltar%20ao%20%C3%8Dndice-0b5fff?style=for-the-badge)](#indice)
+### 16.1 Relatório gerencial (print + loop)
 Para manter o print e o loop do relatório gerencial sempre atualizados:
 
 1. Script local de captura:
@@ -480,9 +717,39 @@ Para manter o print e o loop do relatório gerencial sempre atualizados:
 
 Melhor ponto da documentação para essa evidência: seção **8.2.4 CRM (Kanban)**, onde o usuário já está no contexto do botão **Visualizar relatório gerencial**.
 
+### 16.2 Telas principais da UI Node.js
+Para atualizar os prints das guias principais da UI Node.js:
+
+1. Script local de captura:
+   - `tools/docs/capture_ui_core_screens.py`
+2. Geração local (inicia a UI automaticamente):
+   ```powershell
+   python tools/docs/capture_ui_core_screens.py --ui-url http://127.0.0.1:3200 --start-server
+   ```
+3. (Opcional) Capturar também as evidências detalhadas da guia **Criar lead (demos)**:
+   ```powershell
+   python tools/docs/capture_ui_core_screens.py --ui-url http://127.0.0.1:3200 --start-server --capture-create-deep
+   ```
+4. (Opcional) Capturar também a saída da seção de retreinamento:
+   ```powershell
+   python tools/docs/capture_ui_core_screens.py --ui-url http://127.0.0.1:3200 --start-server --capture-retrain-result
+   ```
+5. Arquivos gerados/atualizados:
+   - `docs/readme_images/ui-criar-lead-demos.png`
+   - `docs/readme_images/ui-criar-lead-demos-resultado.png` (quando usado `--capture-create-deep`)
+   - `docs/readme_images/ui-criar-lead-demos-roteiro.png` (quando usado `--capture-create-deep`)
+   - `docs/readme_images/ui-leads.png`
+   - `docs/readme_images/ui-crm-kanban.png`
+   - `docs/readme_images/ui-configuracoes.png`
+   - `docs/readme_images/ui-configuracoes-retreino-resultado.png` (quando usado `--capture-retrain-result`)
+
 ---
 
-## Licença e Uso
+<a id="17-licenca-e-uso"></a>
+
+## 17. Licença e Uso
+
+[![Voltar ao Indice](https://img.shields.io/badge/%E2%AC%86%EF%B8%8F-Voltar%20ao%20%C3%8Dndice-0b5fff?style=for-the-badge)](#indice)
 Projeto acadêmico/hackathon com foco demonstrativo.
 
 Se for evoluir para produção, recomenda-se:
@@ -490,4 +757,3 @@ Se for evoluir para produção, recomenda-se:
 - observabilidade centralizada;
 - autenticação/autorização;
 - governança de dados e LGPD.
-

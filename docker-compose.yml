@@ -19,8 +19,13 @@ services:
 
   scoring:
     build: ./scoring_service
+    environment:
+      SCORING_TRAIN_DATABASE_URL: ${DATABASE_URL:-postgres://app:app@db:5432/appdb}
     ports:
       - "8000:8000"
+    depends_on:
+      db:
+        condition: service_healthy
     volumes:
       - ./data:/app/data
 
@@ -49,6 +54,16 @@ services:
       BACKEND_URL: http://backend:3000
     ports:
       - "8501:8501"
+    depends_on:
+      - backend
+
+  ui_web:
+    build: ./ui_web
+    environment:
+      PORT: 3100
+      BACKEND_URL: http://backend:3000
+    ports:
+      - "${UI_WEB_PORT:-3100}:3100"
     depends_on:
       - backend
 

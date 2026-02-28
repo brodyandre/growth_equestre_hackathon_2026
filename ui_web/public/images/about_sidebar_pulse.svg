@@ -1,0 +1,98 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 820" role="img" aria-label="Pulse icon inspired by EquipePulse logo">
+  <defs>
+    <radialGradient id="bgGlowA" cx="0" cy="0" r="1" gradientUnits="userSpaceOnUse" gradientTransform="translate(330 220) rotate(22) scale(470 300)">
+      <stop offset="0" stop-color="#5BE7FF" stop-opacity="0.52"/>
+      <stop offset="1" stop-color="#5BE7FF" stop-opacity="0"/>
+    </radialGradient>
+    <radialGradient id="bgGlowB" cx="0" cy="0" r="1" gradientUnits="userSpaceOnUse" gradientTransform="translate(930 540) rotate(-18) scale(430 290)">
+      <stop offset="0" stop-color="#FFB86B" stop-opacity="0.46"/>
+      <stop offset="1" stop-color="#FFB86B" stop-opacity="0"/>
+    </radialGradient>
+    <radialGradient id="coreGlow" cx="0" cy="0" r="1" gradientUnits="userSpaceOnUse" gradientTransform="translate(595 406) rotate(90) scale(246)">
+      <stop offset="0" stop-color="#7DF0FF" stop-opacity="0.68"/>
+      <stop offset="0.62" stop-color="#1D6BD6" stop-opacity="0.18"/>
+      <stop offset="1" stop-color="#1D6BD6" stop-opacity="0"/>
+    </radialGradient>
+    <linearGradient id="pulseMain" x1="208" y1="410" x2="1000" y2="410" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#52D0FF"/>
+      <stop offset="0.48" stop-color="#D0F9FF"/>
+      <stop offset="1" stop-color="#58B8FF"/>
+    </linearGradient>
+    <linearGradient id="pulseEcho" x1="208" y1="410" x2="1000" y2="410" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#64DCFF" stop-opacity="0.2"/>
+      <stop offset="0.5" stop-color="#F0FDFF" stop-opacity="0.95"/>
+      <stop offset="1" stop-color="#64DCFF" stop-opacity="0.2"/>
+    </linearGradient>
+    <filter id="pulseBlur" x="150" y="234" width="924" height="358" filterUnits="userSpaceOnUse">
+      <feGaussianBlur stdDeviation="9.4"/>
+    </filter>
+    <filter id="softBlur" x="-80" y="-80" width="1360" height="980" filterUnits="userSpaceOnUse">
+      <feGaussianBlur stdDeviation="26"/>
+    </filter>
+  </defs>
+
+  <g filter="url(#softBlur)">
+    <ellipse cx="360" cy="210" rx="260" ry="170" fill="url(#bgGlowA)"/>
+    <ellipse cx="920" cy="540" rx="240" ry="160" fill="url(#bgGlowB)"/>
+  </g>
+
+  <ellipse cx="595" cy="406" rx="340" ry="180" fill="url(#coreGlow)"/>
+  <ellipse cx="595" cy="406" rx="362" ry="190" fill="none" stroke="#79D9FF" stroke-opacity="0.34" stroke-width="2"/>
+  <ellipse cx="595" cy="406" rx="394" ry="206" fill="none" stroke="#8AE7FF" stroke-opacity="0.18" stroke-width="2" stroke-dasharray="12 14"/>
+
+  <path
+    d="M206 410H350L390 354L452 506L526 256L590 410H682L744 330L800 470L860 372H994"
+    stroke="#5ED8FF"
+    stroke-width="16"
+    stroke-linecap="round"
+    stroke-linejoin="round"
+    stroke-opacity="0.52"
+    filter="url(#pulseBlur)"
+  />
+  <path
+    d="M206 410H350L390 354L452 506L526 256L590 410H682L744 330L800 470L860 372H994"
+    stroke="url(#pulseMain)"
+    stroke-width="8"
+    stroke-linecap="round"
+    stroke-linejoin="round"
+  />
+  <path
+    d="M206 410H350L390 354L452 506L526 256L590 410H682L744 330L800 470L860 372H994"
+    stroke="url(#pulseEcho)"
+    stroke-width="3"
+    stroke-linecap="round"
+    stroke-linejoin="round"
+    stroke-dasharray="16 10"
+  />
+
+  <circle cx="526" cy="256" r="11" fill="#C8F6FF"/>
+  <circle cx="526" cy="256" r="18" fill="none" stroke="#9CE8FF" stroke-opacity="0.42" stroke-width="2"/>
+  <circle cx="590" cy="410" r="8" fill="#BDEFFF"/>
+  <circle cx="744" cy="330" r="7" fill="#C6F2FF"/>
+
+  <path
+    d="M668 252C701 250 740 259 771 286C792 305 802 327 802 347C802 358 798 369 789 376C772 389 750 383 739 366C726 345 738 318 764 309C739 299 700 299 666 315"
+    fill="none"
+    stroke="#8DE8FF"
+    stroke-width="6"
+    stroke-linecap="round"
+    stroke-linejoin="round"
+    stroke-opacity="0.76"
+  />
+  <path
+    d="M650 262C680 254 721 258 750 282C771 300 782 321 782 342"
+    fill="none"
+    stroke="#E5FDFF"
+    stroke-width="2.6"
+    stroke-linecap="round"
+    stroke-opacity="0.82"
+  />
+
+  <g fill="#B8ECFF" fill-opacity="0.72">
+    <circle cx="336" cy="300" r="4"/>
+    <circle cx="404" cy="262" r="3"/>
+    <circle cx="908" cy="330" r="4"/>
+    <circle cx="886" cy="462" r="3"/>
+    <circle cx="780" cy="206" r="3"/>
+  </g>
+</svg>

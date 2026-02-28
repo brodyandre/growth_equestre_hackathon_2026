@@ -135,10 +135,32 @@ def make_loop_gif(frame_paths: list[Path], gif_path: Path) -> None:
         save_all=True,
         append_images=frames[1:],
         loop=0,
-        duration=1000,
+        duration=900,
         optimize=True,
         disposal=2,
     )
+
+
+def make_motion_frames_from_still(still_path: Path, tmp_dir: Path) -> list[Path]:
+    base = Image.open(still_path).convert("RGB")
+    w, h = base.size
+    max_shift = max(0, h - 2)
+    shifts = [0, min(8, max_shift), min(16, max_shift), min(8, max_shift)]
+
+    out_paths: list[Path] = []
+    for idx, shift in enumerate(shifts):
+        if shift <= 0:
+            frame = base.copy()
+        else:
+            frame = Image.new("RGB", (w, h), (5, 10, 18))
+            crop = base.crop((0, shift, w, h))
+            frame.paste(crop, (0, 0))
+
+        out = tmp_dir / f"frame_motion_{idx:02d}.png"
+        frame.save(out)
+        out_paths.append(out)
+
+    return out_paths
 
 
 def capture_assets(ui_url: str) -> None:
@@ -156,6 +178,9 @@ def capture_assets(ui_url: str) -> None:
     driver = webdriver.Chrome(options=opts)
     wait = WebDriverWait(driver, 25)
     try:
+        def get_report_dialog():
+            return driver.find_element(By.CSS_SELECTOR, ".k-report-modal.is-open .k-report-dialog")
+
         driver.get(f"{ui_url.rstrip('/')}/kanban")
         wait.until(ec.presence_of_element_located((By.ID, "kanbanRoot")))
         ensure_lead_selected(driver, wait)
@@ -167,29 +192,33 @@ def capture_assets(ui_url: str) -> None:
         wait.until(ec.presence_of_element_located((By.CSS_SELECTOR, "#kReportBody .k-report-section")))
         time.sleep(0.4)
 
-        dialog = driver.find_element(By.CSS_SELECTOR, ".k-report-modal.is-open .k-report-dialog")
-        dialog.screenshot(str(PNG_PATH))
+        get_report_dialog().screenshot(str(PNG_PATH))
 
-        body = driver.find_element(By.ID, "kReportBody")
+        # The modal scroll is owned by ".k-report-dialog" (overflow: auto), not by #kReportBody.
+        # We scroll the dialog to capture multiple report sections in sequence.
         max_scroll = int(
             driver.execute_script(
                 "return Math.max(arguments[0].scrollHeight - arguments[0].clientHeight, 0);",
-                body,
+                get_report_dialog(),
             )
             or 0
         )
 
         positions = [0]
         if max_scroll > 0:
-            positions.extend([int(max_scroll * 0.33), int(max_scroll * 0.66), max_scroll])
+            positions.extend([int(max_scroll * 0.34), int(max_scroll * 0.68), max_scroll])
 
         frame_paths: list[Path] = []
         for idx, pos in enumerate(positions):
-            driver.execute_script("arguments[0].scrollTop = arguments[1];", body, int(pos))
-            time.sleep(0.25)
+            # Re-read the dialog every iteration to avoid stale references while report content hydrates.
+            driver.execute_script("arguments[0].scrollTop = arguments[1];", get_report_dialog(), int(pos))
+            time.sleep(0.35)
             frame = tmp_dir / f"frame_{idx:02d}.png"
-            dialog.screenshot(str(frame))
+            get_report_dialog().screenshot(str(frame))
             frame_paths.append(frame)
+
+        if len(frame_paths) <= 1:
+            frame_paths = make_motion_frames_from_still(PNG_PATH, tmp_dir)
 
         make_loop_gif(frame_paths, GIF_PATH)
     finally:
@@ -239,4 +268,3 @@ def main() -> int:
 
 if __name__ == "__main__":
     raise SystemExit(main())
-
