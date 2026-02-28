@@ -161,16 +161,21 @@ def nav_center(driver: webdriver.Chrome, selector: str) -> tuple[float, float]:
 
 
 def draw_cursor(draw: ImageDraw.ImageDraw, x: float, y: float, scale: float = 1.0) -> None:
-    pts = [
-        (x, y),
-        (x + 20 * scale, y + 52 * scale),
-        (x + 30 * scale, y + 40 * scale),
-        (x + 45 * scale, y + 70 * scale),
-        (x + 54 * scale, y + 64 * scale),
-        (x + 39 * scale, y + 35 * scale),
-        (x + 62 * scale, y + 35 * scale),
+    # Mouse pointer with a classic UI arrow silhouette (tip is at x,y).
+    base_pts = [
+        (0, 0),
+        (8, 30),
+        (15, 22),
+        (25, 42),
+        (31, 39),
+        (21, 19),
+        (35, 19),
     ]
-    draw.polygon(pts, fill=(255, 255, 255, 245), outline=(15, 25, 40, 255), width=max(1, int(2 * scale)))
+    pts = [(x + px * scale, y + py * scale) for (px, py) in base_pts]
+    shadow = [(px + 2.0 * scale, py + 2.0 * scale) for (px, py) in pts]
+
+    draw.polygon(shadow, fill=(0, 0, 0, 130))
+    draw.polygon(pts, fill=(252, 252, 252, 255), outline=(8, 16, 28, 255), width=max(2, int(2 * scale)))
 
 
 def decorate_frame(
@@ -185,12 +190,25 @@ def decorate_frame(
     draw = ImageDraw.Draw(img, "RGBA")
     w, _ = img.size
 
-    title_font = _font(34)
-    sub_font = _font(24)
+    title_font = _font(27)
+    sub_font = _font(20)
 
-    draw.rounded_rectangle((24, 22, 820, 138), radius=22, fill=(5, 18, 40, 160), outline=(92, 184, 255, 180), width=2)
-    draw.text((44, 40), "Tour UI Node.js + EJS", font=title_font, fill=(232, 247, 255, 255))
-    draw.text((44, 88), f"{idx + 1}/{total} - {label}", font=sub_font, fill=(150, 222, 255, 255))
+    panel_w = min(520, max(380, int(w * 0.24)))
+    panel_h = 92
+    panel_x2 = w - 24
+    panel_x1 = panel_x2 - panel_w
+    panel_y1 = 18
+    panel_y2 = panel_y1 + panel_h
+
+    draw.rounded_rectangle(
+        (panel_x1, panel_y1, panel_x2, panel_y2),
+        radius=20,
+        fill=(5, 18, 40, 164),
+        outline=(92, 184, 255, 188),
+        width=2,
+    )
+    draw.text((panel_x1 + 18, panel_y1 + 13), "Tour UI Node.js + EJS", font=title_font, fill=(232, 247, 255, 255))
+    draw.text((panel_x1 + 18, panel_y1 + 49), f"{idx + 1}/{total} - {label}", font=sub_font, fill=(150, 222, 255, 255))
 
     tx, ty = target
     if phase in {"click1", "click2"}:
@@ -220,14 +238,15 @@ def decorate_frame(
 
 
 def make_gif(frames: list[Image.Image], durations: list[int], out_path: Path) -> None:
-    converted = [f.convert("P", palette=Image.Palette.ADAPTIVE, colors=160) for f in frames]
+    converted = [f.convert("RGB") for f in frames]
     converted[0].save(
         out_path,
+        format="GIF",
         save_all=True,
         append_images=converted[1:],
         loop=0,
         duration=durations,
-        optimize=True,
+        optimize=False,
         disposal=2,
     )
 
