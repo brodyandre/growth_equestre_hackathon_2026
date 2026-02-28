@@ -1,0 +1,24 @@
+name: Feature request
+description: Sugestão de funcionalidade para a UI Web
+labels: ["frontend"]
+body:
+  - type: textarea
+    id: problem
+    attributes:
+      label: Problema / necessidade
+      description: O que você quer resolver com essa feature?
+    validations:
+      required: true
+  - type: textarea
+    id: solution
+    attributes:
+      label: Proposta
+      description: Como você imagina a solução?
+    validations:
+      required: true
+  - type: textarea
+    id: acceptance
+    attributes:
+      label: Critérios de aceite
+      placeholder: |
+        - [ ] ...

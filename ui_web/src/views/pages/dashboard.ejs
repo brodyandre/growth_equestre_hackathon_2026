@@ -1,0 +1,74 @@
+<div class="kpi-row overview-kpi-row">
+  <article class="card">
+    <div class="card-title">Leads (total)</div>
+    <div class="card-value" id="kpiLeads">-</div>
+    <div class="card-sub muted">Fonte: <span class="mono">/api/crm/board</span></div>
+  </article>
+
+  <article class="card">
+    <div class="card-title">Curioso</div>
+    <div class="card-value" id="kpiCurious">-</div>
+    <div class="card-sub muted">Status comercial CURIOSO</div>
+  </article>
+
+  <article class="card">
+    <div class="card-title">Aquecendo</div>
+    <div class="card-value" id="kpiWarm">-</div>
+    <div class="card-sub muted">Status comercial AQUECENDO</div>
+  </article>
+
+  <article class="card">
+    <div class="card-title">Qualificados</div>
+    <div class="card-value" id="kpiQualified">-</div>
+    <div class="card-sub muted">Status comercial QUALIFICADO</div>
+  </article>
+
+  <article class="card">
+    <div class="card-title">Enviado</div>
+    <div class="card-value" id="kpiSent">-</div>
+    <div class="card-sub muted">Status comercial ENVIADO</div>
+  </article>
+
+  <article class="card">
+    <div class="card-title">Convers&atilde;o p/ qualificado</div>
+    <div class="card-value" id="kpiConversion">-</div>
+    <div class="card-sub muted">Percentual de leads qualificados</div>
+  </article>
+</div>
+
+<div class="card mt-16">
+  <div class="card-title">Modelo de ML em producao</div>
+  <div id="mlWinnerLabel" class="ml-model-winner mt-8">Carregando...</div>
+  <div id="mlFineTuneLabel" class="ml-model-tuning muted mt-8">Carregando ajuste de fine tuning...</div>
+  <div id="mlMetaLabel" class="card-sub muted"></div>
+</div>
+
+<div class="card mt-16">
+  <div class="card-title">Acoes rapidas</div>
+  <div class="btn-row mt-12">
+    <a class="btn" href="/kanban">Abrir CRM (Kanban)</a>
+    <a class="btn btn-ghost" href="/leads">Explorar Leads</a>
+    <a class="btn btn-ghost" href="/partners">Explorar Parceiros</a>
+  </div>
+</div>
+
+<div class="card mt-16">
+  <div class="card-title">Resumo por status</div>
+  <div id="dashboardTable" class="table mt-12"></div>
+</div>
+
+<div class="card mt-16">
+  <div class="toolbar">
+    <div class="card-title">Parceiros (diretorio)</div>
+    <select id="overviewUf" class="input" style="max-width: 180px">
+      <option value="">Todos os UFs</option>
+      <option value="MG">MG</option>
+      <option value="SP">SP</option>
+      <option value="GO">GO</option>
+    </select>
+    <button id="btnOverviewPartnersReload" class="btn btn-ghost">Atualizar resumo</button>
+  </div>
+
+  <div id="overviewPartnersKpis" class="kpi-row mt-12"></div>
+  <div id="overviewPartnersTable" class="table mt-12"></div>
+</div>

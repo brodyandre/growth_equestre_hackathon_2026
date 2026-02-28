@@ -1,0 +1,30 @@
+name: Bug report
+description: Reporte um problema na UI Web
+labels: ["bug"]
+body:
+  - type: textarea
+    id: desc
+    attributes:
+      label: O que aconteceu?
+      description: Descreva o bug e o comportamento esperado.
+    validations:
+      required: true
+  - type: textarea
+    id: steps
+    attributes:
+      label: Passos para reproduzir
+      placeholder: |
+        1) ...
+        2) ...
+    validations:
+      required: true
+  - type: input
+    id: env
+    attributes:
+      label: Ambiente
+      placeholder: "Windows 11 / Node 20 / Docker Desktop ..."
+  - type: textarea
+    id: logs
+    attributes:
+      label: Logs/prints
+      description: Cole logs e/ou prints.

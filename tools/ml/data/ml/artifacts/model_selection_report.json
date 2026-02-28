@@ -1,0 +1,45 @@
+{
+  "winner": "logit_fine",
+  "runner_up": "rf_fine",
+  "selection_reasons": [
+    "ROC-AUC superior sem empate tecnico."
+  ],
+  "metrics": [
+    {
+      "model": "logit_fine",
+      "val_roc_auc": 0.9675324675324676,
+      "val_pr_auc": 0.8184322986954566,
+      "val_brier": 0.06949785404828326,
+      "val_f1": 0.6956521739130435,
+      "val_precision": 0.8888888888888888,
+      "val_recall": 0.5714285714285714,
+      "val_latency_ms": 0.059995651785014335,
+      "test_roc_auc": 1.0,
+      "test_pr_auc": 1.0,
+      "test_brier": 0.03814410149282586,
+      "test_f1": 1.0,
+      "test_precision": 1.0,
+      "test_recall": 1.0,
+      "test_latency_ms": 0.0570811587723269
+    },
+    {
+      "model": "rf_fine",
+      "val_roc_auc": 0.9597402597402597,
+      "val_pr_auc": 0.8442407532881879,
+      "val_brier": 0.07361132854773607,
+      "val_f1": 0.6956521739130435,
+      "val_precision": 0.8888888888888888,
+      "val_recall": 0.5714285714285714,
+      "val_latency_ms": 0.4305521741617417,
+      "test_roc_auc": 1.0,
+      "test_pr_auc": 1.0,
+      "test_brier": 0.016229211715637678,
+      "test_f1": 1.0,
+      "test_precision": 1.0,
+      "test_recall": 1.0,
+      "test_latency_ms": 0.4266391304132623
+    }
+  ],
+  "random_state": 42,
+  "target_col": "label_qualified"
+}
