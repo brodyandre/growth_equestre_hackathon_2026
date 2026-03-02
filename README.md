@@ -52,6 +52,7 @@
 - [15. Documentação Complementar](#15-documentacao-complementar)
 - [16. 3 Questoes de LGPD (uso pratico na operacao)](#16-3-questoes-de-lgpd-uso-pratico-na-operacao)
 - [17. Licença e Uso](#17-licenca-e-uso)
+- [18. Contribuidores Autorizados no GitHub](#18-contribuidores-autorizados-no-github)
 - [18. Colaboradores](#18-colaboradores)
 
 ---
@@ -829,3 +830,22 @@ Colaboradores autorizados no GitHub deste repositorio:
 - [@everton754](https://github.com/everton754) - Everton Santos
 - [@Laisallz](https://github.com/Laisallz) - Lisane Lucia Zanatta
 - [@giacomo1960](https://github.com/giacomo1960) - Giacomo Villa
+
+---
+
+<a id="18-contribuidores-autorizados-no-github"></a>
+
+## 18. Contribuidores Autorizados no GitHub
+
+[![Voltar ao Indice](https://img.shields.io/badge/%E2%AC%86%EF%B8%8F-Voltar%20ao%20%C3%8Dndice-0b5fff?style=for-the-badge)](#indice)
+
+Esta seção é atualizada automaticamente pela automação do repositório, listando os usuários que contribuíram no GitHub para este projeto.
+
+<!-- CONTRIBUTORS:START -->
+<!-- Gerado automaticamente por tools/docs/update_readme_contributors.py -->
+- [@brodyandre](https://github.com/brodyandre) - Luiz André de Souza - 71 contribuicoes
+- [@Eduardo-Marchi2025](https://github.com/Eduardo-Marchi2025) - Eduardo Marchi - 2 contribuicoes
+- [@aluizr](https://github.com/aluizr) - AndreRibeiro - 1 contribuicoes
+- [@giacomo1960](https://github.com/giacomo1960) - giacomo villa - 1 contribuicoes
+<!-- CONTRIBUTORS:END -->
+
