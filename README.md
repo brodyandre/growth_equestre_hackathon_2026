@@ -834,7 +834,7 @@ Colaboradores autorizados no GitHub deste repositorio:
 
 <a id="18-contribuidores-autorizados-no-github"></a>
 
-## 18. Contribuidores Autorizados no GitHub
+## 18.1 Contribuidores Autorizados no GitHub
 
 [![Voltar ao Indice](https://img.shields.io/badge/%E2%AC%86%EF%B8%8F-Voltar%20ao%20%C3%8Dndice-0b5fff?style=for-the-badge)](#indice)
 
