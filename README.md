@@ -53,7 +53,7 @@
 - [16. 3 Questoes de LGPD (uso pratico na operacao)](#16-3-questoes-de-lgpd-uso-pratico-na-operacao)
 - [17. Licença e Uso](#17-licenca-e-uso)
 - [18. Contribuidores Autorizados no GitHub](#18-contribuidores-autorizados-no-github)
-- [18. Colaboradores](#18-colaboradores)
+- [18.1 Colaboradores](#18-colaboradores)
 
 ---
 
