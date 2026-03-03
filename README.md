@@ -827,7 +827,6 @@ Colaboradores autorizados no GitHub deste repositorio:
 - [@aluizr](https://github.com/aluizr) - Andre Luiz Ribeiro
 - [@Eduardo-Marchi2025](https://github.com/Eduardo-Marchi2025) - Eduardo Marchi
 - [@emanuelssergio](https://github.com/emanuelssergio) - Emanuel Silva Sergio
-- [@everton754](https://github.com/everton754) - Everton Santos
 - [@Laisallz](https://github.com/Laisallz) - Lisane Lucia Zanatta
 - [@giacomo1960](https://github.com/giacomo1960) - Giacomo Villa
 
