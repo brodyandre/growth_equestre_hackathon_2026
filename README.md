@@ -54,6 +54,7 @@
 - [17. Licença e Uso](#17-licenca-e-uso)
 - [18. Contribuidores Autorizados no GitHub](#18-contribuidores-autorizados-no-github)
 - [18.1 Colaboradores](#18-colaboradores)
+- [19. Video Demo YouTube](#19-video-demo-youtube)
 
 ---
 
@@ -847,4 +848,20 @@ Esta seção é atualizada automaticamente pela automação do repositório, lis
 - [@aluizr](https://github.com/aluizr) - AndreRibeiro - 1 contribuicoes
 - [@giacomo1960](https://github.com/giacomo1960) - giacomo villa - 1 contribuicoes
 <!-- CONTRIBUTORS:END -->
+---
+
+<a id="19-video-demo-youtube"></a>
+
+## 19. Video Demo YouTube
+
+[![Voltar ao Indice](https://img.shields.io/badge/%E2%AC%86%EF%B8%8F-Voltar%20ao%20%C3%8Dndice-0b5fff?style=for-the-badge)](#indice)
+
+Este video demo foi pensado para apresentar a experiencia completa do usuario em poucos minutos: da visao executiva dos indicadores, passando pela criacao e qualificacao de leads, ate a operacao no CRM Kanban com priorizacao, handoff e acompanhamento das proximas acoes.
+
+Mais do que mostrar telas, o conteudo evidencia como a plataforma reduz friccao operacional, acelera decisoes comerciais e entrega clareza para cada etapa da jornada do lead.
+
+Assista ao video:
+
+- https://lnkd.in/d56pNU5P
+
 
