@@ -843,10 +843,10 @@ Esta seção é atualizada automaticamente pela automação do repositório, lis
 
 <!-- CONTRIBUTORS:START -->
 <!-- Gerado automaticamente por tools/docs/update_readme_contributors.py -->
-- [@brodyandre](https://github.com/brodyandre) - Luiz André de Souza - 71 contribuicoes
+- [@brodyandre](https://github.com/brodyandre) - Luiz André de Souza - 75 contribuicoes
 - [@Eduardo-Marchi2025](https://github.com/Eduardo-Marchi2025) - Eduardo Marchi - 2 contribuicoes
+- [@giacomo1960](https://github.com/giacomo1960) - giacomo villa - 2 contribuicoes
 - [@aluizr](https://github.com/aluizr) - AndreRibeiro - 1 contribuicoes
-- [@giacomo1960](https://github.com/giacomo1960) - giacomo villa - 1 contribuicoes
 <!-- CONTRIBUTORS:END -->
 ---
 
